@@ -49,13 +49,15 @@ void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
 
   } else if (inter == river_window_manager_v1_interface.name) {
     if (version >= 4) {
-      client->mRiverWindowManager =
-          (river_window_manager_v1 *)wl_registry_bind(
-              client->mRegistry, name, &river_window_manager_v1_interface, 4);
+      client->mRiverWindowManager = (river_window_manager_v1 *)wl_registry_bind(
+          client->mRegistry, name, &river_window_manager_v1_interface, 4);
       river_window_manager_v1_add_listener(
-          client->mRiverWindowManager,
-          &client->mRiverWindowManagementListener, client);
+          client->mRiverWindowManager, &client->mRiverWindowManagementListener,
+          client);
     }
+  } else if (inter == river_layer_shell_v1_interface.name) {
+    wl_registry_bind(client->mRegistry, name, &river_layer_shell_v1_interface,
+                     version);
   } else if (inter == river_input_manager_v1_interface.name) {
     client->mRiverInputManager = (river_input_manager_v1 *)wl_registry_bind(
         client->mRegistry, name, &river_input_manager_v1_interface, 1);

@@ -7,6 +7,7 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include "../protocol/river-input-management-v1-protocol.h"
+#include "../protocol/river-layer-shell-v1-protocol.h"
 #include "../protocol/river-window-management-v1-protocol.h"
 #include "../protocol/river-xkb-bindings-v1-protocol.h"
 
@@ -212,12 +213,10 @@ class TCCClient {
                 struct river_seat_v1 *id);
 
   static void river_window_closed(void *data, struct river_window_v1 *id);
-  static void river_window_dimensions_hint(void *data,
-                                           struct river_window_v1 *id,
-                                           int32_t min_width,
-                                           int32_t min_height,
-                                           int32_t max_width,
-                                           int32_t max_height);
+  static void
+  river_window_dimensions_hint(void *data, struct river_window_v1 *id,
+                               int32_t min_width, int32_t min_height,
+                               int32_t max_width, int32_t max_height);
   static void river_window_dimensions(void *data, struct river_window_v1 *id,
                                       int32_t width, int32_t height);
   static void river_window_app_id(void *data, struct river_window_v1 *id,
@@ -229,25 +228,22 @@ class TCCClient {
   static void river_window_decoration_hint(void *data,
                                            struct river_window_v1 *id,
                                            uint32_t hint);
-  static void
-  river_window_pointer_move_requested(void *data, struct river_window_v1 *id,
-                                      struct river_seat_v1 *seat);
-  static void
-  river_window_pointer_resize_requested(void *data,
-                                        struct river_window_v1 *id,
-                                        struct river_seat_v1 *seat,
-                                        uint32_t edges);
-  static void
-  river_window_show_window_menu_requested(void *data,
-                                          struct river_window_v1 *id,
-                                          int32_t x, int32_t y);
+  static void river_window_pointer_move_requested(void *data,
+                                                  struct river_window_v1 *id,
+                                                  struct river_seat_v1 *seat);
+  static void river_window_pointer_resize_requested(void *data,
+                                                    struct river_window_v1 *id,
+                                                    struct river_seat_v1 *seat,
+                                                    uint32_t edges);
+  static void river_window_show_window_menu_requested(
+      void *data, struct river_window_v1 *id, int32_t x, int32_t y);
   static void river_window_maximize_requested(void *data,
                                               struct river_window_v1 *id);
   static void river_window_unmaximize_requested(void *data,
                                                 struct river_window_v1 *id);
-  static void
-  river_window_fullscreen_requested(void *data, struct river_window_v1 *id,
-                                    struct river_output_v1 *output);
+  static void river_window_fullscreen_requested(void *data,
+                                                struct river_window_v1 *id,
+                                                struct river_output_v1 *output);
   static void
   river_window_exit_fullscreen_requested(void *data,
                                          struct river_window_v1 *id);
@@ -273,29 +269,27 @@ class TCCClient {
   static void river_seat_removed(void *data, struct river_seat_v1 *id);
   static void river_seat_wl_seat(void *data, struct river_seat_v1 *id,
                                  uint32_t seat_id);
-  static void
-  river_seat_pointer_enter(void *data, struct river_seat_v1 *id,
-                           struct river_window_v1 *window);
+  static void river_seat_pointer_enter(void *data, struct river_seat_v1 *id,
+                                       struct river_window_v1 *window);
   static void river_seat_pointer_leave(void *data, struct river_seat_v1 *id);
-  static void
-  river_seat_window_interaction(void *data, struct river_seat_v1 *id,
-                                struct river_window_v1 *window);
-  static void
-  river_seat_shell_surface_interaction(
+  static void river_seat_window_interaction(void *data,
+                                            struct river_seat_v1 *id,
+                                            struct river_window_v1 *window);
+  static void river_seat_shell_surface_interaction(
       void *data, struct river_seat_v1 *id,
       struct river_shell_surface_v1 *shell_surface);
   static void river_seat_op_delta(void *data, struct river_seat_v1 *id,
                                   int32_t dx, int32_t dy);
   static void river_seat_op_release(void *data, struct river_seat_v1 *id);
-  static void river_seat_pointer_position(void *data,
-                                          struct river_seat_v1 *id,
+  static void river_seat_pointer_position(void *data, struct river_seat_v1 *id,
                                           int32_t x, int32_t y);
 
   static void
   river_xkb_binding_pressed(void *data,
                             struct river_xkb_binding_v1 *river_xkb_binding_v1);
-  static void river_xkb_binding_released(
-      void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1);
+  static void
+  river_xkb_binding_released(void *data,
+                             struct river_xkb_binding_v1 *river_xkb_binding_v1);
   static void river_xkb_binding_stop_repeat(
       void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1);
 

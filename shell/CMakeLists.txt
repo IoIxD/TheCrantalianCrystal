@@ -7,4 +7,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE sources *.cpp *.c)
 
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} PRIVATE wayland-client)
+target_link_libraries(${PROJECT_NAME} PRIVATE wayland-client wayland-egl EGL GL)
