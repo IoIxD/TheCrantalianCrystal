@@ -148,19 +148,22 @@ void TCCClient::river_window_decoration_hint(void *data,
                                              uint32_t hint) {
   Window *window = (Window *)data;
 
-  if (window->has_decor) {
+  bool wants_decor = hint != RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD;
+
+  if (wants_decor == window->has_decor) {
     return;
   }
 
-  window->has_decor = true;
-  window->decor_surface =
-      wl_compositor_create_surface(window->client->mCompositor);
-  window->decor =
-      river_window_v1_get_decoration_below(id, window->decor_surface);
-  window->decor_width = window->width + 6;
-  window->decor_height = window->height + 27;
-
-  window->setup_egl();
+  if (wants_decor) {
+    window->has_decor = true;
+    window->decor_surface =
+        wl_compositor_create_surface(window->client->mCompositor);
+    window->decor =
+        river_window_v1_get_decoration_below(id, window->decor_surface);
+    window->decor_width = window->width + 6;
+    window->decor_height = window->height + 27;
+    window->setup_egl();
+  }
 }
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
@@ -295,6 +298,9 @@ void TCCClient::window_manage(Window *window) {
     if (window->has_decor) {
       river_decoration_v1_set_offset(window->decor, -3, -23);
       window_set_position(window, 3, 23);
+
+      window->setup_egl();
+      window->egl_draw();
     } else {
       window_set_position(window, 0, 0);
     }
