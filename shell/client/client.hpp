@@ -11,6 +11,14 @@
 #include "../protocol/river-window-management-v1-protocol.h"
 #include "../protocol/river-xkb-bindings-v1-protocol.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <wayland-egl.h>
+
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
+
 class TCCClient {
   enum Action {
     ACTION_NONE,
@@ -46,6 +54,22 @@ class TCCClient {
     Seat *pointer_move_requested = nullptr;
     Seat *pointer_resize_requested = nullptr;
     uint32_t pointer_resize_requested_edges = 0;
+
+    bool has_decor;
+    wl_surface *decor_surface;
+    river_decoration_v1 *decor;
+    int decor_width;
+    int decor_height;
+
+    wl_egl_window *egl_window;
+    EGLDisplay egl_display;
+    EGLContext egl_context;
+    EGLConfig egl_config;
+    EGLSurface egl_surface;
+    GLuint egl_shader_program;
+
+    void setup_egl();
+    void egl_draw();
   };
 
   struct Output {

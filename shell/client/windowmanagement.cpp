@@ -48,6 +48,14 @@ void TCCClient::river_wm_render_start(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   TCCClient *client = (TCCClient *)data;
 
+  for (Window *window : client->mWindows) {
+    if (window->has_decor) {
+      window->egl_draw();
+      river_decoration_v1_sync_next_commit(window->decor);
+      wl_surface_commit(window->decor_surface);
+    }
+  }
+
   for (Seat *seat : client->mSeats) {
     client->seat_render(seat);
   }
@@ -118,6 +126,8 @@ void TCCClient::river_window_dimensions(void *data, struct river_window_v1 *id,
   Window *window = (Window *)data;
   window->width = width;
   window->height = height;
+  window->decor_width = window->width + 6;
+  window->decor_height = window->height + 27;
 }
 
 void TCCClient::river_window_pointer_move_requested(
@@ -133,7 +143,25 @@ void TCCClient::river_window_pointer_resize_requested(
   window->pointer_resize_requested = (Seat *)river_seat_v1_get_user_data(seat);
   window->pointer_resize_requested_edges = edges;
 }
+void TCCClient::river_window_decoration_hint(void *data,
+                                             struct river_window_v1 *id,
+                                             uint32_t hint) {
+  Window *window = (Window *)data;
 
+  if (window->has_decor) {
+    return;
+  }
+
+  window->has_decor = true;
+  window->decor_surface =
+      wl_compositor_create_surface(window->client->mCompositor);
+  window->decor =
+      river_window_v1_get_decoration_below(id, window->decor_surface);
+  window->decor_width = window->width + 6;
+  window->decor_height = window->height + 27;
+
+  window->setup_egl();
+}
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
     void *data, struct river_window_v1 *id, int32_t min_width,
@@ -144,9 +172,7 @@ void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
                                    const char *title) {}
 void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
                                     struct river_window_v1 *parent) {}
-void TCCClient::river_window_decoration_hint(void *data,
-                                             struct river_window_v1 *id,
-                                             uint32_t hint) {}
+
 void TCCClient::river_window_show_window_menu_requested(
     void *data, struct river_window_v1 *id, int32_t x, int32_t y) {}
 void TCCClient::river_window_maximize_requested(void *data,
@@ -265,7 +291,13 @@ void TCCClient::window_set_position(Window *window, int32_t x, int32_t y) {
 void TCCClient::window_manage(Window *window) {
   if (window->is_new) {
     window->is_new = false;
-    window_set_position(window, 0, 0);
+    river_window_v1_use_ssd(window->id);
+    if (window->has_decor) {
+      river_decoration_v1_set_offset(window->decor, -3, -23);
+      window_set_position(window, 3, 23);
+    } else {
+      window_set_position(window, 0, 0);
+    }
     river_window_v1_propose_dimensions(window->id, 0, 0);
   }
   if (window->pointer_move_requested != nullptr) {
@@ -447,8 +479,10 @@ void TCCClient::seat_manage(Seat *seat) {
 }
 
 void TCCClient::seat_render(Seat *seat) {
+
   switch (seat->op) {
   case SEAT_OP_NONE:
+
     break;
   case SEAT_OP_MOVE:
     window_set_position(seat->op_window, seat->op_start_x + seat->op_dx,
