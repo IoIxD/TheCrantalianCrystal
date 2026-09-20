@@ -1,1 +1,2 @@
-*.c linguist-vendored
+*.c linguist-generated
+*.h linguist-generated
