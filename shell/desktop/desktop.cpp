@@ -10,11 +10,7 @@ void TCCDesktopClient::layer_surface_configure(
     void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial,
     uint32_t w, uint32_t h) {
   TCCDesktopClient *client = (TCCDesktopClient *)data;
-  // client->mWidth = w;
-  // client->mHeight = h;
-  // if (client->mEGLWindow) {
-  // wl_egl_window_resize(client->mEGLWindow, w, h, 0, 0);
-  // }
+  /* ignore the width and height set we fucken damn well know what we're setting it to.) */
   zwlr_layer_surface_v1_ack_configure(surface, serial);
 }
 
@@ -210,11 +206,7 @@ void TCCDesktopClient::egl_draw() {
   glBindTexture(GL_TEXTURE_2D, mTexture);
   glColor3f(1.0f, 1.0f, 1.0f);
 
-  // Instead of cropping the texture coordinates, overscale the quad's
-  // geometry on whichever axis the image is relatively narrower on. The
-  // excess falls outside the [-1, 1] clip volume and is discarded by the
-  // rasterizer, giving the same aspect-correct "cover" zoom as a texcoord
-  // crop would, but driven from the vertices.
+  // todo: merge this into a field in the window instead of calculating it every time.
   float screenAspect = (float)mWidth / (float)mHeight;
   float imageAspect = (float)gDesktopImage.width / (float)gDesktopImage.height;
   float scaleX = 1.0f;
@@ -225,10 +217,6 @@ void TCCDesktopClient::egl_draw() {
     scaleY = screenAspect / imageAspect;
   }
 
-  // Texture coordinates are flipped vertically (v swapped between the
-  // top and bottom vertices) because the decoded pixel data is stored
-  // top-to-bottom while GL samples textures bottom-to-top, so this is
-  // what makes the image appear right-side up on screen.
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 1.0f);
   glVertex3f(-scaleX, -scaleY, 1); // bottom-left
