@@ -329,7 +329,8 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
     return;
   }
 
-  for (XkbBinding *binding : std::vector<XkbBinding *>(seat->xkb_bindings)) {
+  for (std::shared_ptr<XkbBinding> binding :
+       std::vector<std::shared_ptr<XkbBinding>>(seat->xkb_bindings)) {
     xkb_binding_destroy(binding);
   }
   for (PointerBinding *binding :

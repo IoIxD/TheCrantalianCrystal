@@ -128,7 +128,7 @@ class TCCClient {
     Window *hovered = nullptr;
     Window *interacted = nullptr;
 
-    std::vector<XkbBinding *> xkb_bindings;
+    std::vector<std::shared_ptr<XkbBinding>> xkb_bindings;
     std::vector<PointerBinding *> pointer_bindings;
     Action pending_action = ACTION_NONE;
 
@@ -370,7 +370,7 @@ class TCCClient {
 
   void xkb_binding_create(Seat *seat, uint32_t mods, xkb_keysym_t keysym,
                           Action action);
-  void xkb_binding_destroy(XkbBinding *binding);
+  void xkb_binding_destroy(std::shared_ptr<XkbBinding> binding);
 
   void pointer_binding_create(Seat *seat, uint32_t mods, uint32_t button,
                               Action action);

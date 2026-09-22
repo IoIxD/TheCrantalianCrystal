@@ -4,24 +4,25 @@
 
 void TCCClient::xkb_binding_create(Seat *seat, uint32_t mods,
                                    xkb_keysym_t keysym, Action action) {
-  XkbBinding *binding = new XkbBinding();
-  binding->client = this;
-  binding->id = river_xkb_bindings_v1_get_xkb_binding(mRiverXKBBinding,
-                                                      seat->id, keysym, mods);
-  binding->seat = seat;
-  binding->action = action;
+  std::shared_ptr<XkbBinding> binding = std::make_shared<XkbBinding>();
+  auto binding_ptr = binding.get();
+  binding_ptr->client = this;
+  binding_ptr->id = river_xkb_bindings_v1_get_xkb_binding(
+      mRiverXKBBinding, seat->id, keysym, mods);
+  binding_ptr->seat = seat;
+  binding_ptr->action = action;
 
-  river_xkb_binding_v1_add_listener(binding->id, &mRiverXkbBindingListener,
-                                    binding);
-  river_xkb_binding_v1_enable(binding->id);
+  river_xkb_binding_v1_add_listener(binding_ptr->id, &mRiverXkbBindingListener,
+                                    binding_ptr);
+  river_xkb_binding_v1_enable(binding_ptr->id);
 
   seat->xkb_bindings.push_back(binding);
 }
 
-void TCCClient::xkb_binding_destroy(XkbBinding *binding) {
+void TCCClient::xkb_binding_destroy(std::shared_ptr<XkbBinding> binding) {
   river_xkb_binding_v1_destroy(binding->id);
   std::erase(binding->seat->xkb_bindings, binding);
-  delete binding;
+  // delete binding;
 }
 
 void TCCClient::pointer_binding_create(Seat *seat, uint32_t mods,
