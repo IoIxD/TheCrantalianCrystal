@@ -195,7 +195,7 @@ void TCCClient::Window::egl_draw() {
   glUseProgram(0);
   glDisable(GL_BLEND);
 
-  draw_text(title, 32, 24, true);
+  draw_text(title, 32, 22, true);
 
   eglSwapBuffers(egl_display, egl_surface);
 };
@@ -223,9 +223,6 @@ TCCClient::Window::get_glyph(FT_Face f, unsigned long c) {
   g->bearingY = slot->bitmap_top;
   g->advance = slot->advance.x >> 6; // 26.6 fixed point -> pixels
 
-  // Build an RGBA buffer from the 8-bit alpha bitmap
-  // (OpenGL 1.1 doesn't have GL_ALPHA-only guarantees everywhere as reliably
-  // as RGBA, and this makes tinting via glColor trivial)
   int w = g->width > 0 ? g->width : 1;
   int h = g->height > 0 ? g->height : 1;
   unsigned char *rgba = (unsigned char *)malloc(w * h * 4);
