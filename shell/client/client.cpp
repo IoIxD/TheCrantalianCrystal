@@ -77,6 +77,13 @@ void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
   } else if (inter == river_input_manager_v1_interface.name) {
     client->mRiverInputManager = (river_input_manager_v1 *)wl_registry_bind(
         client->mRegistry, name, &river_input_manager_v1_interface, 1);
+  } else if (inter == wl_seat_interface.name) {
+    // Bound later, once river_seat_v1.wl_seat tells us which seat it is.
+    client->mWlSeatVersions[name] = version;
+  } else if (inter == wp_cursor_shape_manager_v1_interface.name) {
+    client->mCursorShapeManager =
+        (wp_cursor_shape_manager_v1 *)wl_registry_bind(
+            client->mRegistry, name, &wp_cursor_shape_manager_v1_interface, 1);
   } else if (inter == river_xkb_bindings_v1_interface.name) {
     client->mRiverXKBBinding = (river_xkb_bindings_v1 *)wl_registry_bind(
         client->mRegistry, name, &river_xkb_bindings_v1_interface, 1);
@@ -91,6 +98,7 @@ void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
 void TCCClient::global_remove(void *data, struct wl_registry *wl_registry,
                               uint32_t name) {
   TCCClient *client = (TCCClient *)data;
+  client->mWlSeatVersions.erase(name);
 };
 
 void TCCClient::run() {

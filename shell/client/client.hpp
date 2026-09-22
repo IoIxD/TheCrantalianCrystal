@@ -11,6 +11,7 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "../protocol/cursor-shape-v1-protocol.h"
 #include "../protocol/river-input-management-v1-protocol.h"
 #include "../protocol/river-layer-shell-v1-protocol.h"
 #include "../protocol/river-window-management-v1-protocol.h"
@@ -27,9 +28,12 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#define SSD_BORDER_SIZE 3
+#define SSD_BORDER_SIZE 5
+#define SSD_BORDER_LEEWAY 5
+#define SSD_BORDER_SIZE_STR "5" /* SSD_BORDER_SIZE */
 #define SSD_BORDER_SIZE_TOP 32
 #define SSD_BORDER_SIZE_TOP_STR "31" /* SSD_BORDER_SIZE_TOP - 1 */
+#define SSD_BORDER_SIZE_TOTAL SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE
 
 class TCCClient : public std::enable_shared_from_this<TCCClient> {
 public:
@@ -96,10 +100,17 @@ private:
     uint32_t pointer_resize_requested_edges = 0;
 
     bool has_decor;
-    wl_surface *decor_surface;
-    river_decoration_v1 *decor;
+    struct decor {
+      river_decoration_v1 *decor;
+      wl_surface *surface;
+    };
+
+    decor main_decor;
+
     int decor_width;
     int decor_height;
+
+    int known_width = 0, known_height = 0;
 
     wl_egl_window *egl_window;
     EGLDisplay egl_display;
@@ -151,6 +162,16 @@ private:
     // For SEAT_OP_RESIZE only
     int32_t op_start_width = 0, op_start_height = 0;
     uint32_t op_edges = 0;
+
+    double pointer_x = 0, pointer_y = 0;
+
+    // The wl_seat advertised by river_seat_v1.wl_seat, and its pointer.
+    wl_seat *wl_seat_id = nullptr;
+    wl_pointer *wl_pointer_id = nullptr;
+    // Only set if the compositor supports wp_cursor_shape_manager_v1.
+    wp_cursor_shape_device_v1 *cursor_shape_device = nullptr;
+    // Window whose decoration surface currently has wl_pointer focus.
+    Window *pointer_window = nullptr;
   };
 
   wl_display *mDisplay = nullptr;
@@ -160,6 +181,9 @@ private:
   std::vector<Window *> mWindows;
   std::vector<Output *> mOutputs;
   std::vector<Seat *> mSeats;
+
+  // wl_seat global name -> advertised version
+  std::unordered_map<uint32_t, uint32_t> mWlSeatVersions;
 
   bool mRunning = true;
   bool mStopping = false;
@@ -184,6 +208,7 @@ private:
   river_window_manager_v1 *mRiverWindowManager = nullptr;
   river_input_manager_v1 *mRiverInputManager = nullptr;
   river_xkb_bindings_v1 *mRiverXKBBinding = nullptr;
+  wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
   const river_window_manager_v1_listener mRiverWindowManagementListener = {
       .unavailable = river_wm_unavailable,
       .finished = river_wm_finished,
@@ -238,6 +263,24 @@ private:
       .op_delta = river_seat_op_delta,
       .op_release = river_seat_op_release,
       .pointer_position = river_seat_pointer_position,
+  };
+
+  const wl_seat_listener mWlSeatListener = {
+      .capabilities = wl_seat_capabilities,
+      .name = wl_seat_name,
+  };
+
+  const wl_pointer_listener mWlPointerListener = {
+      .enter = wl_pointer_enter,
+      .leave = wl_pointer_leave,
+      .motion = wl_pointer_motion,
+      .button = wl_pointer_button,
+      .axis = wl_pointer_axis,
+      .frame = wl_pointer_frame,
+      .axis_source = wl_pointer_axis_source,
+      .axis_stop = wl_pointer_axis_stop,
+      .axis_discrete = wl_pointer_axis_discrete,
+      .axis_value120 = wl_pointer_axis_value120,
   };
 
   const river_xkb_binding_v1_listener mRiverXkbBindingListener = {
@@ -350,6 +393,36 @@ private:
   static void river_seat_pointer_position(void *data, struct river_seat_v1 *id,
                                           int32_t x, int32_t y);
 
+  static void wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
+                                   uint32_t capabilities);
+  static void wl_seat_name(void *data, struct wl_seat *wl_seat,
+                           const char *name);
+
+  static void wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
+                               uint32_t serial, struct wl_surface *surface,
+                               wl_fixed_t surface_x, wl_fixed_t surface_y);
+  static void wl_pointer_leave(void *data, struct wl_pointer *wl_pointer,
+                               uint32_t serial, struct wl_surface *surface);
+  static void wl_pointer_motion(void *data, struct wl_pointer *wl_pointer,
+                                uint32_t time, wl_fixed_t surface_x,
+                                wl_fixed_t surface_y);
+  static void wl_pointer_button(void *data, struct wl_pointer *wl_pointer,
+                                uint32_t serial, uint32_t time, uint32_t button,
+                                uint32_t state);
+  static void wl_pointer_axis(void *data, struct wl_pointer *wl_pointer,
+                              uint32_t time, uint32_t axis, wl_fixed_t value);
+  static void wl_pointer_frame(void *data, struct wl_pointer *wl_pointer);
+  static void wl_pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
+                                     uint32_t axis_source);
+  static void wl_pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
+                                   uint32_t time, uint32_t axis);
+  static void wl_pointer_axis_discrete(void *data,
+                                       struct wl_pointer *wl_pointer,
+                                       uint32_t axis, int32_t discrete);
+  static void wl_pointer_axis_value120(void *data,
+                                       struct wl_pointer *wl_pointer,
+                                       uint32_t axis, int32_t value120);
+
   static void
   river_xkb_binding_pressed(void *data,
                             struct river_xkb_binding_v1 *river_xkb_binding_v1);
@@ -393,6 +466,11 @@ private:
   void seat_action(Seat *seat, Action action);
   void seat_manage(Seat *seat);
   void seat_render(Seat *seat);
+
+  uint32_t get_pointer_edges(Seat *seat, Window *window, int x = -1,
+                             int y = -1);
+
+  Window *window_from_decor_surface(wl_surface *surface);
 
 public:
   TCCClient();

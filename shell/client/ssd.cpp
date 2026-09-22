@@ -1,6 +1,7 @@
 #include "client.hpp"
 #include <assert.h>
 #include <csignal>
+#include <format>
 
 static const char *vertex_shader_src = R"(#version 330
 layout (location = 0) in vec2 position;
@@ -35,15 +36,19 @@ void main() {
         discard;
     }
 
-    float border_dist = (dist + 2.0);
-    float black_dist = (dist + 3.0);
+)"
+
+#if 0
+R"(float border_dist = (dist + 2.0);
+    float black_dist = (dist + )" SSD_BORDER_SIZE_STR R"(.0);
     float darken = 0.15 * (1.0 - smoothstep(0.0, 1.0, border_dist));
     mixedColor -= darken;
     if(resolution.y - frag_coord.y >= )" SSD_BORDER_SIZE_TOP_STR R"() {
         float black = 0.15 * (1.0 - smoothstep(0.0, 1.0, black_dist));
         mixedColor -= black;
-    }
-
+        })"
+#endif
+                                         R"(
 
     gl_FragColor = vec4(mixedColor.rgb, alpha);
 }
@@ -140,7 +145,8 @@ void TCCClient::Window::setup_egl() {
 
   free(configs);
 
-  egl_window = wl_egl_window_create(decor_surface, decor_width, decor_height);
+  egl_window =
+      wl_egl_window_create(main_decor.surface, decor_width, decor_height);
   if (!egl_window) {
     printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
     raise(SIGTRAP);
@@ -168,9 +174,16 @@ void TCCClient::Window::setup_egl() {
 
   egl_shader_program = create_shader_program();
 };
+
 void TCCClient::Window::egl_draw() {
-  wl_egl_window_resize(egl_window, decor_width, decor_height, 0, 0);
-  glViewport(0, 0, decor_width, decor_height);
+  if (!eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context)) {
+    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+    raise(SIGTRAP);
+  };
+
+  wl_egl_window_resize(egl_window, decor_width + SSD_BORDER_LEEWAY,
+                       decor_height + 5, 0, 0);
+  glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
 
   glClearColor(0.f, 0.0f, 0.f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -284,7 +297,8 @@ void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
   glDisable(GL_DEPTH_TEST);
 
   float penX = x;
-  const unsigned char *p = (const unsigned char *)text.c_str();
+  std::string text_ptr = text;
+  const unsigned char *p = (const unsigned char *)text_ptr.c_str();
 
   while (*p) {
     uint32_t codepoint;
