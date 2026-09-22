@@ -1,3 +1,4 @@
+#include "../utils/texture.hpp"
 #include "client.hpp"
 #include <assert.h>
 #include <csignal>
@@ -36,19 +37,14 @@ void main() {
         discard;
     }
 
-)"
-
-#if 0
-R"(float border_dist = (dist + 2.0);
+    float border_dist = (dist + 2.0);
     float black_dist = (dist + )" SSD_BORDER_SIZE_STR R"(.0);
     float darken = 0.15 * (1.0 - smoothstep(0.0, 1.0, border_dist));
     mixedColor -= darken;
     if(resolution.y - frag_coord.y >= )" SSD_BORDER_SIZE_TOP_STR R"() {
         float black = 0.15 * (1.0 - smoothstep(0.0, 1.0, black_dist));
         mixedColor -= black;
-        })"
-#endif
-                                         R"(
+    }
 
     gl_FragColor = vec4(mixedColor.rgb, alpha);
 }
@@ -176,13 +172,17 @@ void TCCClient::Window::setup_egl() {
 };
 
 void TCCClient::Window::egl_draw() {
+  // Resize before making the context current: eglMakeCurrent validates the
+  // framebuffer and grabs a back buffer at the current size, so a resize done
+  // after it only takes effect on the next frame.
+  wl_egl_window_resize(egl_window, decor_width + SSD_BORDER_LEEWAY,
+                       decor_height + SSD_BORDER_LEEWAY, 0, 0);
+
   if (!eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context)) {
     printf("eglMakeCurrent error (init) %08X\n", eglGetError());
     raise(SIGTRAP);
   };
 
-  wl_egl_window_resize(egl_window, decor_width + SSD_BORDER_LEEWAY,
-                       decor_height + 5, 0, 0);
   glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
 
   glClearColor(0.f, 0.0f, 0.f, 0.f);
@@ -250,12 +250,7 @@ TCCClient::Window::get_glyph(FT_Face f, unsigned long c) {
     }
   }
 
-  glGenTextures(1, &g->texture);
-  glBindTexture(GL_TEXTURE_2D, g->texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-               rgba);
+  g->texture = TextureManager::NewGLTextureID(w, h, rgba);
 
   free(rgba);
   g->loaded = 1;

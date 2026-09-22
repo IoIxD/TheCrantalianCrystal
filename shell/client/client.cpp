@@ -6,6 +6,7 @@
 #include <csignal>
 #include <string>
 
+#include "../utils/texture.hpp"
 #include "font.hpp"
 
 TCCClient::TCCClient() {
@@ -115,3 +116,5 @@ void TCCClient::run() {
     }
   }
 }
+
+TCCClient::Window::Glyph::~Glyph() { TextureManager::FreeGLTextureID(texture); }

@@ -68,6 +68,7 @@ private:
 
   struct Seat;
 
+private:
   struct Window {
     class Glyph {
     public:
@@ -76,7 +77,7 @@ private:
       int bearingX = 0, bearingY = 0;
       long advance = 0;
       int loaded = 0;
-      ~Glyph() { glDeleteTextures(1, &texture); }
+      ~Glyph();
     };
 
     std::unordered_map<unsigned long, std::shared_ptr<Glyph>> glyphCache;
