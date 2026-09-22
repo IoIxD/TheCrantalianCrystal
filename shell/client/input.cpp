@@ -6,7 +6,7 @@ void TCCClient::xkb_binding_create(Seat *seat, uint32_t mods,
                                    xkb_keysym_t keysym, Action action) {
   std::shared_ptr<XkbBinding> binding = std::make_shared<XkbBinding>();
   auto binding_ptr = binding.get();
-  binding_ptr->client = this;
+  binding_ptr->client = this->shared_from_this();
   binding_ptr->id = river_xkb_bindings_v1_get_xkb_binding(
       mRiverXKBBinding, seat->id, keysym, mods);
   binding_ptr->seat = seat;
@@ -27,23 +27,23 @@ void TCCClient::xkb_binding_destroy(std::shared_ptr<XkbBinding> binding) {
 
 void TCCClient::pointer_binding_create(Seat *seat, uint32_t mods,
                                        uint32_t button, Action action) {
-  PointerBinding *binding = new PointerBinding();
-  binding->client = this;
+  std::shared_ptr<PointerBinding> binding = std::make_shared<PointerBinding>();
+  binding->client = this->shared_from_this();
   binding->id = river_seat_v1_get_pointer_binding(seat->id, button, mods);
   binding->seat = seat;
   binding->action = action;
 
-  river_pointer_binding_v1_add_listener(binding->id,
-                                        &mRiverPointerBindingListener, binding);
+  river_pointer_binding_v1_add_listener(
+      binding->id, &mRiverPointerBindingListener, binding.get());
   river_pointer_binding_v1_enable(binding->id);
 
   seat->pointer_bindings.push_back(binding);
 }
 
-void TCCClient::pointer_binding_destroy(PointerBinding *binding) {
+void TCCClient::pointer_binding_destroy(
+    std::shared_ptr<PointerBinding> binding) {
   river_pointer_binding_v1_destroy(binding->id);
   std::erase(binding->seat->pointer_bindings, binding);
-  delete binding;
 }
 
 void TCCClient::river_xkb_binding_pressed(

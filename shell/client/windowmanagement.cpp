@@ -75,7 +75,7 @@ void TCCClient::river_wm_window(
   TCCClient *client = (TCCClient *)data;
 
   Window *window = new Window();
-  window->client = client;
+  window->client = client->shared_from_this();
   window->id = id;
   window->node = river_window_v1_get_node(window->id);
   window->is_new = true;
@@ -92,7 +92,7 @@ void TCCClient::river_wm_output(
   TCCClient *client = (TCCClient *)data;
 
   Output *output = new Output();
-  output->client = client;
+  output->client = client->shared_from_this();
   output->id = id;
 
   river_output_v1_add_listener(output->id, &client->mRiverOutputListener,
@@ -107,7 +107,7 @@ void TCCClient::river_wm_seat(
   TCCClient *client = (TCCClient *)data;
 
   Seat *seat = new Seat();
-  seat->client = client;
+  seat->client = client->shared_from_this();
   seat->id = id;
   seat->is_new = true;
 
@@ -329,12 +329,10 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
     return;
   }
 
-  for (std::shared_ptr<XkbBinding> binding :
-       std::vector<std::shared_ptr<XkbBinding>>(seat->xkb_bindings)) {
+  for (std::shared_ptr<XkbBinding> binding : seat->xkb_bindings) {
     xkb_binding_destroy(binding);
   }
-  for (PointerBinding *binding :
-       std::vector<PointerBinding *>(seat->pointer_bindings)) {
+  for (std::shared_ptr<PointerBinding> binding : seat->pointer_bindings) {
     pointer_binding_destroy(binding);
   }
 

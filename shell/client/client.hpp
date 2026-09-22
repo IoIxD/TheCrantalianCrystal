@@ -29,7 +29,7 @@
 #define SSD_BORDER_SIZE_TOP 32
 #define SSD_BORDER_SIZE_TOP_STR "31" /* SSD_BORDER_SIZE_TOP - 1 */
 
-class TCCClient {
+class TCCClient : public std::enable_shared_from_this<TCCClient> {
   enum Action {
     ACTION_NONE,
     ACTION_SPAWN_TERMINAL,
@@ -62,7 +62,7 @@ class TCCClient {
     std::unordered_map<unsigned long, std::shared_ptr<Glyph>> glyphCache;
     std::shared_ptr<Glyph> get_glyph(FT_Face f, unsigned long c);
 
-    TCCClient *client;
+    std::shared_ptr<TCCClient> client;
     river_window_v1 *id;
     river_node_v1 *node;
 
@@ -99,27 +99,27 @@ class TCCClient {
   };
 
   struct Output {
-    TCCClient *client;
+    std::shared_ptr<TCCClient> client;
     river_output_v1 *id;
     bool removed = false;
   };
 
   struct XkbBinding {
-    TCCClient *client;
+    std::shared_ptr<TCCClient> client;
     river_xkb_binding_v1 *id;
     Seat *seat;
     Action action;
   };
 
   struct PointerBinding {
-    TCCClient *client;
+    std::shared_ptr<TCCClient> client;
     river_pointer_binding_v1 *id;
     Seat *seat;
     Action action;
   };
 
   struct Seat {
-    TCCClient *client;
+    std::shared_ptr<TCCClient> client;
     river_seat_v1 *id;
     bool is_new = false;
     bool removed = false;
@@ -129,7 +129,7 @@ class TCCClient {
     Window *interacted = nullptr;
 
     std::vector<std::shared_ptr<XkbBinding>> xkb_bindings;
-    std::vector<PointerBinding *> pointer_bindings;
+    std::vector<std::shared_ptr<PointerBinding>> pointer_bindings;
     Action pending_action = ACTION_NONE;
 
     SeatOp op = SEAT_OP_NONE;
@@ -374,7 +374,7 @@ class TCCClient {
 
   void pointer_binding_create(Seat *seat, uint32_t mods, uint32_t button,
                               Action action);
-  void pointer_binding_destroy(PointerBinding *binding);
+  void pointer_binding_destroy(std::shared_ptr<PointerBinding> binding);
 
   void seat_maybe_destroy(Seat *seat);
   void seat_focus(Seat *seat, Window *window);
