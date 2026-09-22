@@ -39,7 +39,7 @@ void main() {
     float black_dist = (dist + 3.0);
     float darken = 0.15 * (1.0 - smoothstep(0.0, 1.0, border_dist));
     mixedColor -= darken;
-    if(resolution.y - frag_coord.y >= 22 ) {
+    if(resolution.y - frag_coord.y >= )" SSD_BORDER_SIZE_TOP_STR R"() {
         float black = 0.15 * (1.0 - smoothstep(0.0, 1.0, black_dist));
         mixedColor -= black;
     }
@@ -195,5 +195,138 @@ void TCCClient::Window::egl_draw() {
   glUseProgram(0);
   glDisable(GL_BLEND);
 
+  draw_text(title, 32, 24, true);
+
   eglSwapBuffers(egl_display, egl_surface);
 };
+
+// Loads and caches a glyph's texture the first time it's needed
+std::shared_ptr<TCCClient::Window::Glyph>
+TCCClient::Window::get_glyph(FT_Face f, unsigned long c) {
+  FT_GlyphSlot slot = f->glyph;
+  FT_Bitmap *bmp = &slot->bitmap;
+
+  if (glyphCache.contains(c)) {
+    return glyphCache.at(c);
+  }
+
+  auto g = std::make_shared<Glyph>();
+
+  if (FT_Load_Char(f, c, FT_LOAD_RENDER)) {
+    fprintf(stderr, "Failed to load glyph '%c'\n", c);
+    return NULL;
+  }
+
+  g->width = bmp->width;
+  g->height = bmp->rows;
+  g->bearingX = slot->bitmap_left;
+  g->bearingY = slot->bitmap_top;
+  g->advance = slot->advance.x >> 6; // 26.6 fixed point -> pixels
+
+  // Build an RGBA buffer from the 8-bit alpha bitmap
+  // (OpenGL 1.1 doesn't have GL_ALPHA-only guarantees everywhere as reliably
+  // as RGBA, and this makes tinting via glColor trivial)
+  int w = g->width > 0 ? g->width : 1;
+  int h = g->height > 0 ? g->height : 1;
+  unsigned char *rgba = (unsigned char *)malloc(w * h * 4);
+  for (int y = 0; y < g->height; y++) {
+    for (int x = 0; x < g->width; x++) {
+      unsigned char alpha = bmp->buffer[y * bmp->pitch + x];
+      int idx = (y * w + x) * 4;
+      rgba[idx + 0] = 255;
+      rgba[idx + 1] = 255;
+      rgba[idx + 2] = 255;
+      rgba[idx + 3] = alpha;
+    }
+  }
+
+  glGenTextures(1, &g->texture);
+  glBindTexture(GL_TEXTURE_2D, g->texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               rgba);
+
+  free(rgba);
+  g->loaded = 1;
+
+  glyphCache.insert_or_assign(c, g);
+  return glyphCache.at(c);
+}
+
+static int utf8_decode(const unsigned char *s, uint32_t *out) {
+  if (s[0] < 0x80) {
+    *out = s[0];
+    return 1;
+  } else if ((s[0] & 0xE0) == 0xC0 && (s[1] & 0xC0) == 0x80) {
+    *out = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+    return 2;
+  } else if ((s[0] & 0xF0) == 0xE0 && (s[1] & 0xC0) == 0x80 &&
+             (s[2] & 0xC0) == 0x80) {
+    *out = ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+    return 3;
+  } else if ((s[0] & 0xF8) == 0xF0 && (s[1] & 0xC0) == 0x80 &&
+             (s[2] & 0xC0) == 0x80 && (s[3] & 0xC0) == 0x80) {
+    *out = ((s[0] & 0x07) << 18) | ((s[1] & 0x3F) << 12) |
+           ((s[2] & 0x3F) << 6) | (s[3] & 0x3F);
+    return 4;
+  }
+  // Invalid leading byte -- consume it and use replacement char
+  *out = 0xFFFD;
+  return 1;
+}
+
+void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
+                                  bool bold) {
+  // Save relevant GL state
+  glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT);
+
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_DEPTH_TEST);
+
+  float penX = x;
+  const unsigned char *p = (const unsigned char *)text.c_str();
+
+  while (*p) {
+    uint32_t codepoint;
+    int consumed = utf8_decode(p, &codepoint);
+    p += consumed;
+
+    auto g = get_glyph(bold ? client->mFTFaceBold : client->mFTFaceNormal,
+                       codepoint);
+
+    if (g->width > 0 && g->height > 0) {
+      auto px_to_ndc_x = [&](float px) {
+        return (px / decor_width) * 2.0f - 1.0f;
+      };
+      auto px_to_ndc_y = [&](float py) {
+        return 1.0f - (py / decor_height) * 2.0f;
+      };
+
+      float px0 = penX + g->bearingX;
+      float py0 = (float)y - g->bearingY; // top of glyph
+      float x0 = px_to_ndc_x(px0);
+      float y0 = px_to_ndc_y(py0);
+      float x1 = px_to_ndc_x(px0 + g->width);
+      float y1 = px_to_ndc_y(py0 + g->height); // bottom of glyph
+
+      glBindTexture(GL_TEXTURE_2D, g->texture);
+      glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 0.0f);
+      glVertex2f(x0, y0);
+      glTexCoord2f(1.0f, 0.0f);
+      glVertex2f(x1, y0);
+      glTexCoord2f(1.0f, 1.0f);
+      glVertex2f(x1, y1);
+      glTexCoord2f(0.0f, 1.0f);
+      glVertex2f(x0, y1);
+      glEnd();
+    }
+
+    penX += g->advance;
+  }
+
+  glPopAttrib();
+}

@@ -6,6 +6,8 @@
 #include <csignal>
 #include <string>
 
+#include "font.hpp"
+
 TCCClient::TCCClient() {
   mDisplay = wl_display_connect(NULL);
   if (mDisplay == nullptr) {
@@ -34,6 +36,20 @@ TCCClient::TCCClient() {
                     "not supported by the Wayland server\n");
     exit(1);
   }
+
+  /* freetype2 */
+  assert(FT_Init_FreeType(&mFTLibrary) == 0);
+  assert(FT_New_Memory_Face(mFTLibrary, OpenSans_Regular.data(),
+                            OpenSans_Regular.size(), 0, &mFTFaceNormal) == 0);
+  assert(FT_New_Memory_Face(mFTLibrary, OpenSans_Semibold.data(),
+                            OpenSans_Semibold.size(), 0, &mFTFaceBold) == 0);
+  FT_Set_Pixel_Sizes(mFTFaceNormal, 0, 14);
+  FT_Set_Pixel_Sizes(mFTFaceBold, 0, 14);
+}
+
+TCCClient::~TCCClient() {
+  assert(FT_Done_Face(mFTFaceNormal) == 0);
+  assert(FT_Done_FreeType(mFTLibrary) == 0);
 }
 
 void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,

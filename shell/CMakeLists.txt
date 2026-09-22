@@ -6,5 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE sources *.cpp *.c)
 
+find_package(Freetype REQUIRED)
+
 add_executable(${PROJECT_NAME} ${sources})
 target_link_libraries(${PROJECT_NAME} PRIVATE wayland-client wayland-egl EGL GL)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${FREETYPE_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${FREETYPE_INCLUDE_DIRS})

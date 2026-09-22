@@ -1,5 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 #include <wayland-client.h>
 
@@ -18,6 +21,13 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/glext.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+#define SSD_BORDER_SIZE 3
+#define SSD_BORDER_SIZE_TOP 32
+#define SSD_BORDER_SIZE_TOP_STR "31" /* SSD_BORDER_SIZE_TOP - 1 */
 
 class TCCClient {
   enum Action {
@@ -39,6 +49,19 @@ class TCCClient {
   struct Seat;
 
   struct Window {
+    class Glyph {
+    public:
+      GLuint texture = 0;
+      int width = 0, height = 0;
+      int bearingX = 0, bearingY = 0;
+      long advance = 0;
+      int loaded = 0;
+      ~Glyph() { glDeleteTextures(1, &texture); }
+    };
+
+    std::unordered_map<unsigned long, std::shared_ptr<Glyph>> glyphCache;
+    std::shared_ptr<Glyph> get_glyph(FT_Face f, unsigned long c);
+
     TCCClient *client;
     river_window_v1 *id;
     river_node_v1 *node;
@@ -50,6 +73,7 @@ class TCCClient {
     int32_t y = 0;
     int32_t width = 0;
     int32_t height = 0;
+    char title[2048];
 
     Seat *pointer_move_requested = nullptr;
     Seat *pointer_resize_requested = nullptr;
@@ -70,6 +94,8 @@ class TCCClient {
 
     void setup_egl();
     void egl_draw();
+
+    void draw_text(std::string text, int32_t x, int32_t y, bool bold);
   };
 
   struct Output {
@@ -127,6 +153,12 @@ class TCCClient {
 
   bool mRunning = true;
   bool mStopping = false;
+
+  FT_Library mFTLibrary;
+  FT_Face mFTFaceNormal;
+  FT_Face mFTFaceBold;
+  void *mFTData;
+  int mFTPx;
 
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
@@ -354,5 +386,6 @@ class TCCClient {
 
 public:
   TCCClient();
+  ~TCCClient();
   void run();
 };

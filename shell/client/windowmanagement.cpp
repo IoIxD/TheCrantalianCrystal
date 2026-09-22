@@ -126,8 +126,8 @@ void TCCClient::river_window_dimensions(void *data, struct river_window_v1 *id,
   Window *window = (Window *)data;
   window->width = width;
   window->height = height;
-  window->decor_width = window->width + 6;
-  window->decor_height = window->height + 27;
+  window->decor_width = window->width + SSD_BORDER_SIZE + SSD_BORDER_SIZE;
+  window->decor_height = window->height + SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE;
 }
 
 void TCCClient::river_window_pointer_move_requested(
@@ -160,10 +160,18 @@ void TCCClient::river_window_decoration_hint(void *data,
         wl_compositor_create_surface(window->client->mCompositor);
     window->decor =
         river_window_v1_get_decoration_below(id, window->decor_surface);
-    window->decor_width = window->width + 6;
-    window->decor_height = window->height + 27;
+    window->decor_width = window->width + SSD_BORDER_SIZE + SSD_BORDER_SIZE;
+    window->decor_height =
+        window->height + SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE;
     window->setup_egl();
   }
+}
+
+void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
+                                   const char *title) {
+  Window *window = (Window *)data;
+
+  strncpy(window->title, title, sizeof(window->title));
 }
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
@@ -171,8 +179,6 @@ void TCCClient::river_window_dimensions_hint(
     int32_t min_height, int32_t max_width, int32_t max_height) {}
 void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
                                     const char *app_id) {}
-void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
-                                   const char *title) {}
 void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
                                     struct river_window_v1 *parent) {}
 
@@ -296,8 +302,9 @@ void TCCClient::window_manage(Window *window) {
     window->is_new = false;
     river_window_v1_use_ssd(window->id);
     if (window->has_decor) {
-      river_decoration_v1_set_offset(window->decor, -3, -23);
-      window_set_position(window, 3, 23);
+      river_decoration_v1_set_offset(window->decor, -SSD_BORDER_SIZE,
+                                     -SSD_BORDER_SIZE_TOP);
+      window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
 
       window->setup_egl();
       window->egl_draw();
