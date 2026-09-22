@@ -10,10 +10,10 @@ void TCCDesktopClient::layer_surface_configure(
     void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial,
     uint32_t w, uint32_t h) {
   TCCDesktopClient *client = (TCCDesktopClient *)data;
-  /* ignore the width and height set we fucken damn well know what we're setting it to.) */
+  /* ignore the width and height set we fucken damn well know what we're setting
+   * it to.) */
   zwlr_layer_surface_v1_ack_configure(surface, serial);
 }
-
 void TCCDesktopClient::layer_surface_closed(
     void *data, struct zwlr_layer_surface_v1 *surface) {
   TCCDesktopClient *client = (TCCDesktopClient *)data;
@@ -22,23 +22,6 @@ void TCCDesktopClient::layer_surface_closed(
   zwlr_layer_surface_v1_destroy(surface);
   wl_surface_destroy(client->mSurface);
 }
-
-void TCCDesktopClient::output_geometry(void *data, struct wl_output *wl_output,
-                                       int32_t x, int32_t y,
-                                       int32_t physical_width,
-                                       int32_t physical_height,
-                                       int32_t subpixel, const char *make,
-                                       const char *model, int32_t transform) {
-
-};
-void TCCDesktopClient::output_mode(void *data, struct wl_output *wl_output,
-                                   uint32_t flags, int32_t width,
-                                   int32_t height, int32_t refresh) {
-  TCCDesktopClient *client = (TCCDesktopClient *)data;
-
-  client->mWidth = width;
-  client->mHeight = height;
-};
 
 void TCCDesktopClient::registry_global(void *data,
                                        struct wl_registry *wl_registry,
@@ -52,11 +35,6 @@ void TCCDesktopClient::registry_global(void *data,
         client->mRegistry, name, &wl_compositor_interface, version);
 
     client->mSurface = wl_compositor_create_surface(client->mCompositor);
-  } else if (inter == wl_output_interface.name) {
-    client->mOutput = (wl_output *)wl_registry_bind(client->mRegistry, name,
-                                                    &wl_output_interface, 1);
-    wl_output_add_listener(client->mOutput, &client->mOutputListener, client);
-    assert(client->mOutput);
   } else if (inter == zwlr_layer_shell_v1_interface.name) {
     client->mLayerShell = (zwlr_layer_shell_v1 *)wl_registry_bind(
         client->mRegistry, name, &zwlr_layer_shell_v1_interface, version);
@@ -65,8 +43,8 @@ void TCCDesktopClient::registry_global(void *data,
         client->mLayerShell, client->mSurface, NULL,
         ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, "tcc-desktop");
     zwlr_layer_surface_v1_set_margin(client->mLayerSurface, 0, 0, 0, 0);
-    zwlr_layer_surface_v1_set_size(client->mLayerSurface, client->mWidth,
-                                   client->mHeight);
+    zwlr_layer_surface_v1_set_size(
+        client->mLayerSurface, client->mOutput->width, client->mOutput->height);
 
     zwlr_layer_surface_v1_add_listener(client->mLayerSurface,
                                        &client->mLayerSurfaceListener, client);
@@ -81,8 +59,8 @@ void TCCDesktopClient::global_remove(void *data,
                                      struct wl_registry *wl_registry,
                                      uint32_t name) {};
 
-TCCDesktopClient::TCCDesktopClient(std::shared_ptr<TCCClient> client)
-    : mClient(client) {
+TCCDesktopClient::TCCDesktopClient(TCCClient::Output *output)
+    : mOutput(output) {
   mDisplay = wl_display_connect(NULL);
   mRegistry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(mRegistry, &mRegistryListener, this);
@@ -92,15 +70,13 @@ TCCDesktopClient::TCCDesktopClient(std::shared_ptr<TCCClient> client)
     return;
   }
 }
-void TCCDesktopClient::run() {
-  while (true) {
-    if (wl_display_dispatch_pending(mDisplay) < 0) {
-      fprintf(stderr, "dispatch failed\n");
-      exit(1);
-    }
-
-    egl_draw();
+void TCCDesktopClient::step() {
+  if (wl_display_dispatch_pending(mDisplay) < 0) {
+    fprintf(stderr, "dispatch failed\n");
+    exit(1);
   }
+
+  egl_draw();
 }
 
 void TCCDesktopClient::setup_egl() {
@@ -148,7 +124,7 @@ void TCCDesktopClient::setup_egl() {
 
   free(configs);
 
-  mEGLWindow = wl_egl_window_create(mSurface, mWidth, mHeight);
+  mEGLWindow = wl_egl_window_create(mSurface, mOutput->width, mOutput->height);
   if (!mEGLWindow) {
     printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
     raise(SIGTRAP);
@@ -195,9 +171,10 @@ void TCCDesktopClient::egl_draw() {
   };
 
   zwlr_layer_surface_v1_set_margin(mLayerSurface, 0, 0, 0, 0);
-  zwlr_layer_surface_v1_set_size(mLayerSurface, mWidth, mHeight);
-  wl_egl_window_resize(mEGLWindow, mWidth, mHeight, 0, 0);
-  glViewport(0, 0, mWidth, mHeight);
+  zwlr_layer_surface_v1_set_size(mLayerSurface, mOutput->width,
+                                 mOutput->height);
+  wl_egl_window_resize(mEGLWindow, mOutput->width, mOutput->height, 0, 0);
+  glViewport(0, 0, mOutput->width, mOutput->height);
 
   glClearColor(1.f, 0.0f, 0.f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -206,8 +183,9 @@ void TCCDesktopClient::egl_draw() {
   glBindTexture(GL_TEXTURE_2D, mTexture);
   glColor3f(1.0f, 1.0f, 1.0f);
 
-  // todo: merge this into a field in the window instead of calculating it every time.
-  float screenAspect = (float)mWidth / (float)mHeight;
+  // todo: merge this into a field in the window instead of calculating it every
+  // time.
+  float screenAspect = (float)mOutput->width / (float)mOutput->height;
   float imageAspect = (float)gDesktopImage.width / (float)gDesktopImage.height;
   float scaleX = 1.0f;
   float scaleY = 1.0f;

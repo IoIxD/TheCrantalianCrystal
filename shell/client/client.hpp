@@ -2,8 +2,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
+
 #include <wayland-client.h>
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -30,6 +32,20 @@
 #define SSD_BORDER_SIZE_TOP_STR "31" /* SSD_BORDER_SIZE_TOP - 1 */
 
 class TCCClient : public std::enable_shared_from_this<TCCClient> {
+public:
+  class Output : public std::enable_shared_from_this<Output> {
+  public:
+    std::shared_ptr<TCCClient> client;
+    river_output_v1 *id;
+    bool removed = false;
+    int x = 0;
+    int y = 0;
+    int width = 10;
+    int height = 10;
+    std::unique_ptr<class TCCDesktopClient> desktop_client;
+  };
+
+private:
   enum Action {
     ACTION_NONE,
     ACTION_SPAWN_TERMINAL,
@@ -96,12 +112,6 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     void egl_draw();
 
     void draw_text(std::string text, int32_t x, int32_t y, bool bold);
-  };
-
-  struct Output {
-    std::shared_ptr<TCCClient> client;
-    river_output_v1 *id;
-    bool removed = false;
   };
 
   struct XkbBinding {

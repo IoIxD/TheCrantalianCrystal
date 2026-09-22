@@ -52,17 +52,17 @@ void TCCClient::river_xkb_binding_pressed(
   binding->seat->pending_action = binding->action;
 }
 
-// Ignored events
-void TCCClient::river_xkb_binding_released(
-    void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
-void TCCClient::river_xkb_binding_stop_repeat(
-    void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
-
 void TCCClient::river_pointer_binding_pressed(
     void *data, struct river_pointer_binding_v1 *river_pointer_binding_v1) {
   PointerBinding *binding = (PointerBinding *)data;
   binding->seat->pending_action = binding->action;
 }
+
+// Ignored events
+void TCCClient::river_xkb_binding_released(
+    void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
+void TCCClient::river_xkb_binding_stop_repeat(
+    void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
 
 // Ignored event
 void TCCClient::river_pointer_binding_released(

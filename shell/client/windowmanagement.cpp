@@ -7,6 +7,8 @@
 
 #include <linux/input-event-codes.h>
 
+#include "../desktop/desktop.hpp"
+
 void TCCClient::river_wm_unavailable(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   fprintf(stderr, "error: another window manager is already running\n");
@@ -15,6 +17,7 @@ void TCCClient::river_wm_unavailable(
 
 void TCCClient::river_wm_finished(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
+  fprintf(stderr, "wm finished\n");
   exit(0);
 }
 
@@ -23,13 +26,16 @@ void TCCClient::river_wm_manage_start(
   TCCClient *client = (TCCClient *)data;
 
   // Destroy closed windows and removed outputs/seats.
-  for (Output *output : std::vector<Output *>(client->mOutputs)) {
+  // also update any of the outputs' desktop clients
+  for (Output *output : client->mOutputs) {
+    output->desktop_client->step();
+
     client->output_maybe_destroy(output);
   }
-  for (Window *window : std::vector<Window *>(client->mWindows)) {
+  for (Window *window : client->mWindows) {
     client->window_maybe_destroy(window);
   }
-  for (Seat *seat : std::vector<Seat *>(client->mSeats)) {
+  for (Seat *seat : client->mSeats) {
     client->seat_maybe_destroy(seat);
   }
 
@@ -91,7 +97,7 @@ void TCCClient::river_wm_output(
     struct river_output_v1 *id) {
   TCCClient *client = (TCCClient *)data;
 
-  Output *output = new Output();
+  auto output = new Output();
   output->client = client->shared_from_this();
   output->id = id;
 
@@ -204,17 +210,29 @@ void TCCClient::river_window_identifier(void *data, struct river_window_v1 *id,
                                         const char *identifier) {}
 
 void TCCClient::river_output_removed(void *data, struct river_output_v1 *id) {
-  Output *output = (Output *)data;
+  TCCClient::Output *output = (TCCClient::Output *)data;
   output->removed = true;
 }
 
-// Ignored events
 void TCCClient::river_output_wl_output(void *data, struct river_output_v1 *id,
-                                       uint32_t name) {}
+                                       uint32_t name) {
+  TCCClient::Output *output = (TCCClient::Output *)data;
+  output->width = 10;
+  output->height = 10;
+  output->desktop_client = std::make_unique<TCCDesktopClient>(output);
+}
 void TCCClient::river_output_position(void *data, struct river_output_v1 *id,
-                                      int32_t x, int32_t y) {}
+                                      int32_t x, int32_t y) {
+  TCCClient::Output *output = (TCCClient::Output *)data;
+  output->x = x;
+  output->y = y;
+}
 void TCCClient::river_output_dimensions(void *data, struct river_output_v1 *id,
-                                        int32_t width, int32_t height) {}
+                                        int32_t width, int32_t height) {
+  TCCClient::Output *output = (TCCClient::Output *)data;
+  output->width = (width < 1) ? 1 : width;
+  output->height = (height < 1) ? 1 : height;
+}
 
 void TCCClient::river_seat_removed(void *data, struct river_seat_v1 *id) {
   Seat *seat = (Seat *)data;

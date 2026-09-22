@@ -16,12 +16,11 @@
  */
 
 class TCCDesktopClient {
-  std::shared_ptr<TCCClient> mClient;
+  TCCClient::Output *mOutput;
 
   wl_display *mDisplay;
   wl_registry *mRegistry;
   wl_compositor *mCompositor;
-  wl_output *mOutput;
 
   wl_surface *mSurface;
 
@@ -35,9 +34,6 @@ class TCCDesktopClient {
   zwlr_layer_surface_v1 *mLayerSurface;
 
   GLuint mTexture;
-
-  int mWidth = 1024;
-  int mHeight = 768;
 
   void setup_egl();
   void egl_draw();
@@ -59,25 +55,12 @@ class TCCDesktopClient {
       .global_remove = global_remove,
   };
 
-  static void output_geometry(void *data, struct wl_output *wl_output,
-                              int32_t x, int32_t y, int32_t physical_width,
-                              int32_t physical_height, int32_t subpixel,
-                              const char *make, const char *model,
-                              int32_t transform);
-  static void output_mode(void *data, struct wl_output *wl_output,
-                          uint32_t flags, int32_t width, int32_t height,
-                          int32_t refresh);
-  const wl_output_listener mOutputListener = {
-      .geometry = output_geometry,
-      .mode = output_mode,
-  };
-
   const zwlr_layer_surface_v1_listener mLayerSurfaceListener = {
       .configure = layer_surface_configure,
       .closed = layer_surface_closed,
   };
 
 public:
-  TCCDesktopClient(std::shared_ptr<TCCClient> client);
-  void run();
+  TCCDesktopClient(TCCClient::Output *output);
+  void step();
 };
