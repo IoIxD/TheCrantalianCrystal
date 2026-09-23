@@ -6,25 +6,27 @@
 #include <format>
 
 static GLuint create_shader_program() {
-  auto compile_shader = [&](GLenum type, const char *src) -> GLuint {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, NULL);
-    glCompileShader(shader);
+  GLuint vertex_shader = 0, fragment_shader = 0;
+
+  int i = 0;
+  for (auto shader : {&vertex_shader, &fragment_shader}) {
+    *shader = glCreateShader((i == 0) ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+    auto src = ((i == 0) ? SSD_VERT_SOURCE : SSD_FRAG_SOURCE);
+
+    glShaderSource(*shader, 1, &src, NULL);
+    glCompileShader(*shader);
 
     GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
       char log[512];
-      glGetShaderInfoLog(shader, sizeof(log), NULL, log);
+      glGetShaderInfoLog(*shader, sizeof(log), NULL, log);
       printf("ERROR: shader compilation failed: %s\n", log);
       raise(SIGTRAP);
     }
 
-    return shader;
+    i++;
   };
-
-  GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, SSD_VERT_SOURCE);
-  GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, SSD_FRAG_SOURCE);
 
   GLuint program = glCreateProgram();
   glAttachShader(program, vertex_shader);
@@ -229,32 +231,29 @@ void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
   std::string text_ptr = text;
   const unsigned char *p = (const unsigned char *)text_ptr.c_str();
 
-  auto utf8_decode = [&](uint32_t *out) -> int {
+  while (*p) {
+    /* extract a utf8 codepoint from the string. */
+    uint32_t codepoint;
     if (p[0] < 0x80) {
-      *out = p[0];
-      return 1;
+      codepoint = p[0];
+      p += 1;
     } else if ((p[0] & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
-      *out = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
-      return 2;
+      codepoint = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
+      p += 2;
     } else if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 &&
                (p[2] & 0xC0) == 0x80) {
-      *out = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
-      return 3;
+      codepoint = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
+      p += 3;
     } else if ((p[0] & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 &&
                (p[2] & 0xC0) == 0x80 && (p[3] & 0xC0) == 0x80) {
-      *out = ((p[0] & 0x07) << 18) | ((p[1] & 0x3F) << 12) |
-             ((p[2] & 0x3F) << 6) | (p[3] & 0x3F);
-      return 4;
+      codepoint = ((p[0] & 0x07) << 18) | ((p[1] & 0x3F) << 12) |
+                  ((p[2] & 0x3F) << 6) | (p[3] & 0x3F);
+      p += 4;
+    } else {
+      // Invalid leading byte; consume it and use replacement char
+      codepoint = 0xFFFD;
+      p += 1;
     }
-    // Invalid leading byte; consume it and use replacement char
-    *out = 0xFFFD;
-    return 1;
-  };
-
-  while (*p) {
-    uint32_t codepoint;
-    int consumed = utf8_decode(&codepoint);
-    p += consumed;
 
     auto g = get_glyph(bold ? client->mFTFaceBold : client->mFTFaceNormal,
                        codepoint);
