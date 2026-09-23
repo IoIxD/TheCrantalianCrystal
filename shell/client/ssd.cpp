@@ -1,76 +1,30 @@
 #include "../utils/texture.hpp"
 #include "client.hpp"
+#include "ssd_shader.h"
 #include <assert.h>
 #include <csignal>
 #include <format>
 
-static const char *vertex_shader_src = R"(#version 330
-layout (location = 0) in vec2 position;
-out vec4 pos;
-void main() {
-  gl_Position = vec4(position, 0.0, 1.0);
-  pos = gl_Position;
-}
-)";
-
-static const char *fragment_shader_src = R"(#version 330
-in vec4 pos;
-uniform vec2 resolution;
-
-float rounded_box_sdf(vec2 p, vec2 half_size, float radius) {
-  vec2 q = abs(p) - half_size + radius;
-  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
-}
-
-void main() {
-    vec3 baseColor = vec3(.416, .196, .576);
-    vec3 lowColor = vec3(1.0, .612, .404);
-    float mixBy = (1.0 - pos.y);
-    if(mixBy > 0.75) mixBy = 0.75;
-
-    vec3 mixedColor = mix(baseColor,lowColor,mixBy);
-
-    vec2 frag_coord = (pos.xy * 0.5 + 0.5) * resolution;
-    float dist = rounded_box_sdf(frag_coord - resolution * 0.5, resolution * 0.5, 7.0);
-    float alpha = 1.0 - smoothstep(-0.75, 0.75, dist);
-    if (alpha <= 0.0) {
-        discard;
-    }
-
-    float border_dist = (dist + 2.0);
-    float black_dist = (dist + )" SSD_BORDER_SIZE_STR R"(.0);
-    float darken = 0.15 * (1.0 - smoothstep(0.0, 1.0, border_dist));
-    mixedColor -= darken;
-    if(resolution.y - frag_coord.y >= )" SSD_BORDER_SIZE_TOP_STR R"() {
-        float black = 0.15 * (1.0 - smoothstep(0.0, 1.0, black_dist));
-        mixedColor -= black;
-    }
-
-    gl_FragColor = vec4(mixedColor.rgb, alpha);
-}
-)";
-
-static GLuint compile_shader(GLenum type, const char *src) {
-  GLuint shader = glCreateShader(type);
-  glShaderSource(shader, 1, &src, NULL);
-  glCompileShader(shader);
-
-  GLint status;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-  if (status == GL_FALSE) {
-    char log[512];
-    glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-    printf("ERROR: shader compilation failed: %s\n", log);
-    raise(SIGTRAP);
-  }
-
-  return shader;
-}
-
 static GLuint create_shader_program() {
-  GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
-  GLuint fragment_shader =
-      compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
+  auto compile_shader = [&](GLenum type, const char *src) -> GLuint {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, NULL);
+    glCompileShader(shader);
+
+    GLint status;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE) {
+      char log[512];
+      glGetShaderInfoLog(shader, sizeof(log), NULL, log);
+      printf("ERROR: shader compilation failed: %s\n", log);
+      raise(SIGTRAP);
+    }
+
+    return shader;
+  };
+
+  GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, SSD_VERT_SOURCE);
+  GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, SSD_FRAG_SOURCE);
 
   GLuint program = glCreateProgram();
   glAttachShader(program, vertex_shader);
@@ -172,9 +126,6 @@ void TCCClient::Window::setup_egl() {
 };
 
 void TCCClient::Window::egl_draw() {
-  // Resize before making the context current: eglMakeCurrent validates the
-  // framebuffer and grabs a back buffer at the current size, so a resize done
-  // after it only takes effect on the next frame.
   wl_egl_window_resize(egl_window, decor_width + SSD_BORDER_LEEWAY,
                        decor_height + SSD_BORDER_LEEWAY, 0, 0);
 
@@ -194,6 +145,12 @@ void TCCClient::Window::egl_draw() {
   glUseProgram(egl_shader_program);
   glUniform2f(glGetUniformLocation(egl_shader_program, "resolution"),
               (float)decor_width, (float)decor_height);
+
+  glUniform1i(glGetUniformLocation(egl_shader_program, "ssd_border_size"),
+              SSD_BORDER_SIZE);
+  glUniform1i(glGetUniformLocation(egl_shader_program, "ssd_border_size_top"),
+              SSD_BORDER_SIZE_TOP - 1);
+
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 1.0f);
   glVertex3f(-1, -1, 1); // bottom-left
@@ -259,31 +216,8 @@ TCCClient::Window::get_glyph(FT_Face f, unsigned long c) {
   return glyphCache.at(c);
 }
 
-static int utf8_decode(const unsigned char *s, uint32_t *out) {
-  if (s[0] < 0x80) {
-    *out = s[0];
-    return 1;
-  } else if ((s[0] & 0xE0) == 0xC0 && (s[1] & 0xC0) == 0x80) {
-    *out = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
-    return 2;
-  } else if ((s[0] & 0xF0) == 0xE0 && (s[1] & 0xC0) == 0x80 &&
-             (s[2] & 0xC0) == 0x80) {
-    *out = ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
-    return 3;
-  } else if ((s[0] & 0xF8) == 0xF0 && (s[1] & 0xC0) == 0x80 &&
-             (s[2] & 0xC0) == 0x80 && (s[3] & 0xC0) == 0x80) {
-    *out = ((s[0] & 0x07) << 18) | ((s[1] & 0x3F) << 12) |
-           ((s[2] & 0x3F) << 6) | (s[3] & 0x3F);
-    return 4;
-  }
-  // Invalid leading byte -- consume it and use replacement char
-  *out = 0xFFFD;
-  return 1;
-}
-
 void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
                                   bool bold) {
-  // Save relevant GL state
   glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT);
 
   glEnable(GL_TEXTURE_2D);
@@ -295,9 +229,31 @@ void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
   std::string text_ptr = text;
   const unsigned char *p = (const unsigned char *)text_ptr.c_str();
 
+  auto utf8_decode = [&](uint32_t *out) -> int {
+    if (p[0] < 0x80) {
+      *out = p[0];
+      return 1;
+    } else if ((p[0] & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
+      *out = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
+      return 2;
+    } else if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 &&
+               (p[2] & 0xC0) == 0x80) {
+      *out = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
+      return 3;
+    } else if ((p[0] & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 &&
+               (p[2] & 0xC0) == 0x80 && (p[3] & 0xC0) == 0x80) {
+      *out = ((p[0] & 0x07) << 18) | ((p[1] & 0x3F) << 12) |
+             ((p[2] & 0x3F) << 6) | (p[3] & 0x3F);
+      return 4;
+    }
+    // Invalid leading byte; consume it and use replacement char
+    *out = 0xFFFD;
+    return 1;
+  };
+
   while (*p) {
     uint32_t codepoint;
-    int consumed = utf8_decode(p, &codepoint);
+    int consumed = utf8_decode(&codepoint);
     p += consumed;
 
     auto g = get_glyph(bold ? client->mFTFaceBold : client->mFTFaceNormal,

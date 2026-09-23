@@ -44,8 +44,8 @@ TCCClient::TCCClient() {
                             OpenSans_Regular.size(), 0, &mFTFaceNormal) == 0);
   assert(FT_New_Memory_Face(mFTLibrary, OpenSans_Semibold.data(),
                             OpenSans_Semibold.size(), 0, &mFTFaceBold) == 0);
-  FT_Set_Pixel_Sizes(mFTFaceNormal, 0, 13);
-  FT_Set_Pixel_Sizes(mFTFaceBold, 0, 13);
+  assert(FT_Set_Pixel_Sizes(mFTFaceNormal, 0, 13) == 0);
+  assert(FT_Set_Pixel_Sizes(mFTFaceBold, 0, 13) == 0);
 }
 
 TCCClient::~TCCClient() {

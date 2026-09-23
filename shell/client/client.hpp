@@ -30,9 +30,7 @@
 
 #define SSD_BORDER_SIZE 5
 #define SSD_BORDER_LEEWAY 5
-#define SSD_BORDER_SIZE_STR "5" /* SSD_BORDER_SIZE */
 #define SSD_BORDER_SIZE_TOP 32
-#define SSD_BORDER_SIZE_TOP_STR "31" /* SSD_BORDER_SIZE_TOP - 1 */
 #define SSD_BORDER_SIZE_TOTAL SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE
 
 class TCCClient : public std::enable_shared_from_this<TCCClient> {
