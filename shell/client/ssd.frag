@@ -47,14 +47,55 @@ void draw_backing_border(float alpha) {
 
 void draw_button(int type, vec2 lo, vec2 hi) {
     vec2 half_size = (hi - lo) * 0.5;
-    float radius = min(4.0, min(half_size.x, half_size.y));
+    float radius = min(16.0, min(half_size.x, half_size.y));
     float dist = rounded_box_sdf(frag_coord - (lo + half_size), half_size, radius);
     float alpha = 1.0 - smoothstep(-0.75, 0.75, dist);
 
+    if (alpha < 0.02) {
+        draw_backing_border(-1);
+        return;
+    }
+
     vec3 backingGradient = vec3(0, 0, 0);
-    mixedColorButton = mix(baseColorButton, lowColorButton, mixBy * 16.0);
-    vec3 mixedColorButtonAndBackground = mix(mixedColorButton, mixedColorBackground, 1.2 - alpha);
-    gl_FragColor = vec4(mixedColorButtonAndBackground.rgb, 1.0);
+
+    float fade = mixBy * (resolution.y / 32.0);
+
+    mixedColorButton = mix(baseColorButton, lowColorButton, fade);
+    mixedColorButton = mix(mixedColorButton, mixedColorBackground, 0.3);
+    vec3 finalBackground = mix(mixedColorBackground, mixedColorButton, alpha);
+
+    #define INSET(x) x = (vec3(1.0, 1.0, 1.0) - x) - vec3(0.3, 0.3, 0.3);
+
+    switch (type) {
+        case BUTTON_TYPE_CLOSE:
+        {
+            vec2 p = frag_coord - (lo + half_size);
+            float extent = min(half_size.x, half_size.y) - 5;
+            if (abs(p.x) <= extent && abs(p.y) <= extent && abs(abs(p.x) - abs(p.y)) <= 1.5) {
+                INSET(finalBackground);
+            }
+        }
+        break;
+        case BUTTON_TYPE_MINIMIZE:
+        {
+            if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 9 && frag_coord.y >= lo.y + 9) {
+                INSET(finalBackground);
+            }
+        }
+        break;
+        case BUTTON_TYPE_MAXIMIZE:
+        {
+            if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 5 && frag_coord.y >= lo.y + 5) {
+                if (frag_coord.x <= hi.x - 7 && frag_coord.x >= lo.x + 7 && frag_coord.y <= hi.y - 7 && frag_coord.y >= lo.y + 7) {} else {
+                    INSET(finalBackground);
+                }
+            }
+        }
+        break;
+        default:
+        break;
+    }
+    gl_FragColor = vec4(finalBackground.rgb, 1.0);
 }
 
 void main() {
@@ -71,9 +112,9 @@ void main() {
         if (frag_coord.x <= resolution.x - 10 && frag_coord.x >= resolution.x - 32) {
             draw_button(BUTTON_TYPE_CLOSE, vec2(resolution.x - 32, button_lo_y), vec2(resolution.x - 10, button_hi_y));
         } else if (frag_coord.x <= resolution.x - 35 && frag_coord.x >= resolution.x - 57) {
-            draw_button(BUTTON_TYPE_CLOSE, vec2(resolution.x - 57, button_lo_y), vec2(resolution.x - 35, button_hi_y));
+            draw_button(BUTTON_TYPE_MAXIMIZE, vec2(resolution.x - 57, button_lo_y), vec2(resolution.x - 35, button_hi_y));
         } else if (frag_coord.x <= resolution.x - 60 && frag_coord.x >= resolution.x - 82) {
-            draw_button(BUTTON_TYPE_CLOSE, vec2(resolution.x - 82, button_lo_y), vec2(resolution.x - 60, button_hi_y));
+            draw_button(BUTTON_TYPE_MINIMIZE, vec2(resolution.x - 82, button_lo_y), vec2(resolution.x - 60, button_hi_y));
         } else {
             draw_backing_border(-1.0);
         }
