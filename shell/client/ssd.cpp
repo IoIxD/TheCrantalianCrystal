@@ -259,19 +259,14 @@ void TCCClient::Window::draw_text(std::string text, int32_t x, int32_t y,
                        codepoint);
 
     if (g->width > 0 && g->height > 0) {
-      auto px_to_ndc_x = [&](float px) {
-        return (px / decor_width) * 2.0f - 1.0f;
-      };
-      auto px_to_ndc_y = [&](float py) {
-        return 1.0f - (py / decor_height) * 2.0f;
-      };
-
       float px0 = penX + g->bearingX;
-      float py0 = (float)y - g->bearingY; // top of glyph
-      float x0 = px_to_ndc_x(px0);
-      float y0 = px_to_ndc_y(py0);
-      float x1 = px_to_ndc_x(px0 + g->width);
-      float y1 = px_to_ndc_y(py0 + g->height); // bottom of glyph
+      // top of glyph
+      float py0 = (float)y - g->bearingY;
+      float x0 = (px0 / decor_width) * 2.0f - 1.0f;
+      float y0 = 1.0f - (py0 / decor_height) * 2.0f;
+      float x1 = ((float)(px0 + g->width) / decor_width) * 2.0f - 1.0f;
+      // bottom of glyph
+      float y1 = 1.0f - ((float)(py0 + g->height) / decor_height) * 2.0f;
 
       glBindTexture(GL_TEXTURE_2D, g->texture);
       glBegin(GL_QUADS);
