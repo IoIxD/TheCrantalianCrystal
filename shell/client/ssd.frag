@@ -1,4 +1,7 @@
 #version 330
+
+/* as somebody who has struggled with math for 24 fucking years of his life i will shamefully admit i used AI for some of this code */
+
 in vec4 pos;
 uniform vec2 resolution;
 uniform int ssd_border_size;
@@ -10,8 +13,8 @@ float rounded_box_sdf(vec2 p, vec2 half_size, float radius) {
 }
 
 void main() {
-    vec3 baseColor = vec3(.416, .196, .576);
-    vec3 lowColor = vec3(1.0, .612, .404);
+    vec3 baseColor = vec3(.416, .196, .576); /* #6a3293 */
+    vec3 lowColor = vec3(1.0, .612, .404); /* #ff9c67 */
     float mixBy = (1.0 - pos.y);
     if (mixBy > 0.75) mixBy = 0.75;
 
