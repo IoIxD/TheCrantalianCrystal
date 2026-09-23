@@ -11,6 +11,10 @@ uniform vec2 resolution;
 uniform int ssd_border_size;
 uniform int ssd_border_size_top;
 
+uniform bool close_held;
+uniform bool minimize_held;
+uniform bool maximize_held;
+
 vec3 baseColorBackground = vec3(.416, .196, .576); /* #6a3293 */
 vec3 lowColorBackground = vec3(1.0, .612, .404); /* #ff9c67 */
 vec3 mixedColorBackground = vec3(0, 0, 0);
@@ -51,7 +55,7 @@ void draw_button(int type, vec2 lo, vec2 hi) {
     float dist = rounded_box_sdf(frag_coord - (lo + half_size), half_size, radius);
     float alpha = 1.0 - smoothstep(-0.75, 0.75, dist);
 
-    if (alpha < 0.02) {
+    if (alpha < 0.01) {
         draw_backing_border(-1);
         return;
     }
@@ -64,30 +68,33 @@ void draw_button(int type, vec2 lo, vec2 hi) {
     mixedColorButton = mix(mixedColorButton, mixedColorBackground, 0.3);
     vec3 finalBackground = mix(mixedColorBackground, mixedColorButton, alpha);
 
-    #define INSET(x) x = (vec3(1.0, 1.0, 1.0) - x) - vec3(0.3, 0.3, 0.3);
+    #define INSET(x, by) x = (vec3(1.0, 1.0, 1.0) - x) - vec3(by,by,by);
 
     switch (type) {
         case BUTTON_TYPE_CLOSE:
         {
+            if (close_held) INSET(finalBackground, 0.5);
             vec2 p = frag_coord - (lo + half_size);
             float extent = min(half_size.x, half_size.y) - 5;
             if (abs(p.x) <= extent && abs(p.y) <= extent && abs(abs(p.x) - abs(p.y)) <= 1.5) {
-                INSET(finalBackground);
+                INSET(finalBackground, 0.3);
             }
         }
         break;
         case BUTTON_TYPE_MINIMIZE:
         {
+            if (minimize_held) INSET(finalBackground, 0.5);
             if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 9 && frag_coord.y >= lo.y + 9) {
-                INSET(finalBackground);
+                INSET(finalBackground, 0.3);
             }
         }
         break;
         case BUTTON_TYPE_MAXIMIZE:
         {
+            if (maximize_held) INSET(finalBackground, 0.5);
             if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 5 && frag_coord.y >= lo.y + 5) {
                 if (frag_coord.x <= hi.x - 7 && frag_coord.x >= lo.x + 7 && frag_coord.y <= hi.y - 7 && frag_coord.y >= lo.y + 7) {} else {
-                    INSET(finalBackground);
+                    INSET(finalBackground, 0.3);
                 }
             }
         }

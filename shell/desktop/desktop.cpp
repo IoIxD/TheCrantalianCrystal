@@ -1,4 +1,5 @@
 #include "desktop.hpp"
+#include <GL/gl.h>
 #include <assert.h>
 #include <csignal>
 
@@ -156,6 +157,66 @@ void TCCDesktopClient::setup_egl() {
       gDesktopImage.width, gDesktopImage.height, gDesktopImage.pixel_data);
 }
 
+void TCCDesktopClient::draw_desktop() {
+  float screenAspect = (float)mOutput->width / (float)mOutput->height;
+  float imageAspect = (float)gDesktopImage.width / (float)gDesktopImage.height;
+  float scaleX = 1.0f;
+  float scaleY = 1.0f;
+  if (imageAspect > screenAspect) {
+    scaleX = imageAspect / screenAspect;
+  } else {
+    scaleY = screenAspect / imageAspect;
+  }
+
+  glBegin(GL_QUADS);
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex3f(-scaleX, -scaleY, 0.9); // bottom-left
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex3f(scaleX, -scaleY, 0.9);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex3f(scaleX, scaleY, 0.9);
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex3f(-scaleX, scaleY, 0.9); // top-right
+  glEnd();
+}
+
+void TCCDesktopClient::draw_icon(int x, int y) {
+  glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT |
+               GL_VIEWPORT_BIT);
+  glViewport(x, mOutput->height - y, ICON_SIZE, ICON_SIZE);
+  float scaleX = mOutput->width / ICON_SIZE;
+  float scaleY = mOutput->height / ICON_SIZE;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glColor4f(1, 0, 0, 1);
+  glBegin(GL_QUADS);
+  // glTexCoord2f(0.0f, 1.0f);
+  glVertex3f(-scaleX, -scaleY, 1); // bottom-left
+  // glTexCoord2f(1.0f, 1.0f);
+  glVertex3f(scaleX, -scaleY, 1);
+  // glTexCoord2f(1.0f, 0.0f);
+  glVertex3f(scaleX, scaleY, 1);
+  // glTexCoord2f(0.0f, 0.0f);
+  glVertex3f(-scaleX, scaleY, 1); // top-right
+  glEnd();
+
+  glViewport(x, mOutput->height - y - 20, ICON_SIZE, 16);
+
+  glColor4f(0, 0, 0, 0.5);
+  glBegin(GL_QUADS);
+  glVertex3f(-scaleX, -scaleY, 1); // bottom-left
+  glVertex3f(scaleX, -scaleY, 1);
+  glVertex3f(scaleX, scaleY, 1);
+  glVertex3f(-scaleX, scaleY, 1); // top-right
+  glEnd();
+  glColor4f(1, 1, 1, 1);
+
+  glPopAttrib();
+}
+
 void TCCDesktopClient::egl_draw() {
   if (eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext) !=
       EGL_TRUE) {
@@ -176,28 +237,34 @@ void TCCDesktopClient::egl_draw() {
   glBindTexture(GL_TEXTURE_2D, mTexture);
   glColor3f(1.0f, 1.0f, 1.0f);
 
-  // todo: merge this into a field in the window instead of calculating it every
-  // time.
-  float screenAspect = (float)mOutput->width / (float)mOutput->height;
-  float imageAspect = (float)gDesktopImage.width / (float)gDesktopImage.height;
-  float scaleX = 1.0f;
-  float scaleY = 1.0f;
-  if (imageAspect > screenAspect) {
-    scaleX = imageAspect / screenAspect;
-  } else {
-    scaleY = screenAspect / imageAspect;
-  }
+  draw_desktop();
 
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex3f(-scaleX, -scaleY, 1); // bottom-left
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex3f(scaleX, -scaleY, 1);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex3f(scaleX, scaleY, 1);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex3f(-scaleX, scaleY, 1); // top-right
-  glEnd();
+  int icon_x = 25;
+  int icon_y = 25 + ICON_SIZE;
+
+  for (auto win : mOutput->minimized_windows) {
+#define TEXT_WIDTH 13
+    char titleShortened[TEXT_WIDTH + 1] = {0};
+    std::string title = win->title;
+    if (title.size() >= TEXT_WIDTH) {
+      char titleShortened_[TEXT_WIDTH - 3] = {0};
+      snprintf(titleShortened_, TEXT_WIDTH - 3, "%s", title.c_str());
+      snprintf(titleShortened, TEXT_WIDTH, "%s...", titleShortened_);
+    } else {
+      snprintf(titleShortened, TEXT_WIDTH, "%s", title.c_str());
+    }
+
+    draw_icon(icon_x, icon_y);
+
+    mGlyphManager.draw_text(titleShortened, icon_x, icon_y + 16, mOutput->width,
+                            mOutput->height, true, false);
+
+    icon_y += ICON_MARGIN;
+    if (icon_y >= mOutput->height - ICON_MARGIN) {
+      icon_x += ICON_MARGIN;
+      icon_y = 25 + ICON_SIZE;
+    }
+  }
 
   if (eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
     printf("eglSwapBuffers error %08X\n", eglGetError());

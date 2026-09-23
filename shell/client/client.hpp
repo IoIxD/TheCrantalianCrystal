@@ -25,29 +25,25 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#include "../utils/glyph.hpp"
 
 #define SSD_BORDER_SIZE 5
 #define SSD_BORDER_LEEWAY 5
 #define SSD_BORDER_SIZE_TOP 32
 #define SSD_BORDER_SIZE_TOTAL SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE
 
-class TCCClient : public std::enable_shared_from_this<TCCClient> {
-public:
-  class Output : public std::enable_shared_from_this<Output> {
-  public:
-    std::shared_ptr<TCCClient> client;
-    river_output_v1 *id;
-    bool removed = false;
-    int x = 0;
-    int y = 0;
-    int width = 10;
-    int height = 10;
-    std::unique_ptr<class TCCDesktopClient> desktop_client;
-  };
+// Nav button hitboxes, in decoration surface coordinates. These mirror the
+// button rects drawn in ssd.frag.
+#define SSD_NAV_BUTTON_WIDTH 22
+#define SSD_NAV_BUTTON_HEIGHT 21
+#define SSD_NAV_BUTTON_Y 6
+#define SSD_NAV_BUTTON_CLOSE_X_FROM_RIGHT 32
+#define SSD_NAV_BUTTON_MAX_X_FROM_RIGHT 57
+#define SSD_NAV_BUTTON_MIN_X_FROM_RIGHT 82
 
-private:
+class TCCClient : public std::enable_shared_from_this<TCCClient> {
+  struct Seat;
+
   enum Action {
     ACTION_NONE,
     ACTION_SPAWN_TERMINAL,
@@ -64,39 +60,33 @@ private:
     SEAT_OP_RESIZE,
   };
 
-  struct Seat;
+  enum NavButton {
+    NAV_BUTTON_NONE = 0,
+    NAV_BUTTON_CLOSE,
+    NAV_BUTTON_MIN,
+    NAV_BUTTON_MAX,
+    NAV_BUTTON_COUNT,
+  };
 
-private:
-  struct Window {
-    class Glyph {
-    public:
-      GLuint texture = 0;
-      int width = 0, height = 0;
-      int bearingX = 0, bearingY = 0;
-      long advance = 0;
-      int loaded = 0;
-      ~Glyph();
-    };
+public:
+  class Window {
+    GlyphManager mGlyphs;
 
-    std::unordered_map<unsigned long, std::shared_ptr<Glyph>> glyphCache;
-    std::shared_ptr<Glyph> get_glyph(FT_Face f, unsigned long c);
+    wl_egl_window *mEGLWindow;
+    EGLDisplay mEGLDisplay;
+    EGLContext mEGLContext;
+    EGLConfig mEGLConfig;
+    EGLSurface mEGLSurface;
+    GLuint mEGLShaderProgram;
 
+  public:
     std::shared_ptr<TCCClient> client;
     river_window_v1 *id;
     river_node_v1 *node;
-
     bool is_new = false;
     bool closed = false;
-
-    int32_t x = 0;
-    int32_t y = 0;
-    int32_t width = 0;
-    int32_t height = 0;
-    char title[2048];
-
-    Seat *pointer_move_requested = nullptr;
-    Seat *pointer_resize_requested = nullptr;
-    uint32_t pointer_resize_requested_edges = 0;
+    int saved_x = 0, saved_y = 0;
+    int saved_width = 0, saved_height = 0;
 
     bool has_decor;
     struct decor {
@@ -104,26 +94,57 @@ private:
       wl_surface *surface;
     };
 
+    bool center_requested = false;
+
     decor main_decor;
 
-    int decor_width;
-    int decor_height;
+    struct nav_surface {
+      wl_surface *surface = nullptr;
+      wl_subsurface *subsurface = nullptr;
+    };
+    // Indexed by NavButton, NAV_BUTTON_NONE is unused.
+    nav_surface nav_surfaces[NAV_BUTTON_COUNT];
 
-    int known_width = 0, known_height = 0;
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t width = 0;
+    int32_t height = 0;
+    int decor_width = 0;
+    int decor_height = 0;
+    char title[2048];
 
-    wl_egl_window *egl_window;
-    EGLDisplay egl_display;
-    EGLContext egl_context;
-    EGLConfig egl_config;
-    EGLSurface egl_surface;
-    GLuint egl_shader_program;
+    Seat *pointer_move_requested = nullptr;
+    Seat *pointer_resize_requested = nullptr;
+    uint32_t pointer_resize_requested_edges = 0;
+
+    bool maximized = false;
+    bool minimized = false;
+
+    bool close_held = false;
+    bool minimize_held = false;
+    bool maximize_held = false;
+    // Applied during the next manage sequence.
+    uint8_t pending_nav_action = NAV_BUTTON_NONE;
 
     void setup_egl();
     void egl_draw();
-
-    void draw_text(std::string text, int32_t x, int32_t y, bool bold);
   };
 
+  class Output : public std::enable_shared_from_this<Output> {
+  public:
+    std::shared_ptr<TCCClient> client;
+    river_output_v1 *id;
+    bool removed = false;
+    int x = 0;
+    int y = 0;
+    int width = 10;
+    int height = 10;
+    std::unique_ptr<class TCCDesktopClient> desktop_client;
+    std::vector<Window *> windows;
+    std::vector<Window *> minimized_windows;
+  };
+
+private:
   struct XkbBinding {
     std::shared_ptr<TCCClient> client;
     river_xkb_binding_v1 *id;
@@ -147,6 +168,7 @@ private:
     Window *focused = nullptr;
     Window *hovered = nullptr;
     Window *interacted = nullptr;
+    Window *holding = nullptr;
 
     std::vector<std::shared_ptr<XkbBinding>> xkb_bindings;
     std::vector<std::shared_ptr<PointerBinding>> pointer_bindings;
@@ -171,13 +193,21 @@ private:
     wp_cursor_shape_device_v1 *cursor_shape_device = nullptr;
     // Window whose decoration surface currently has wl_pointer focus.
     Window *pointer_window = nullptr;
+    // Nav button surface that currently has wl_pointer focus, and where.
+    uint8_t pointer_nav_button = NAV_BUTTON_NONE;
+    double pointer_nav_x = 0, pointer_nav_y = 0;
+    // Nav button the pointer was pressed on.
+    uint8_t nav_button_pressed = NAV_BUTTON_NONE;
   };
 
   wl_display *mDisplay = nullptr;
   wl_registry *mRegistry = nullptr;
   wl_compositor *mCompositor = nullptr;
+  wl_subcompositor *mSubcompositor = nullptr;
+  wl_shm *mShm = nullptr;
+  // Fully transparent buffer shared by every nav button surface.
+  wl_buffer *mNavButtonBuffer = nullptr;
 
-  std::vector<Window *> mWindows;
   std::vector<Output *> mOutputs;
   std::vector<Seat *> mSeats;
 
@@ -186,12 +216,6 @@ private:
 
   bool mRunning = true;
   bool mStopping = false;
-
-  FT_Library mFTLibrary;
-  FT_Face mFTFaceNormal;
-  FT_Face mFTFaceBold;
-  void *mFTData;
-  int mFTPx;
 
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
@@ -449,6 +473,8 @@ private:
   void window_maybe_destroy(Window *window);
   void window_set_position(Window *window, int32_t x, int32_t y);
   void window_manage(Window *window);
+  void window_maximize(Window *window);
+  void window_minimize(Window *window);
 
   void xkb_binding_create(Seat *seat, uint32_t mods, xkb_keysym_t keysym,
                           Action action);
@@ -469,10 +495,21 @@ private:
   uint32_t get_pointer_edges(Seat *seat, Window *window, int x = -1,
                              int y = -1);
 
+  void nav_button_action(uint8_t action, bool released, Window *window);
+  uint8_t get_pressed_nav_button(Seat *seat, Window *window);
+
   Window *window_from_decor_surface(wl_surface *surface);
+  Window *window_from_nav_surface(wl_surface *surface, uint8_t *button);
+
+  wl_buffer *get_nav_button_buffer();
+  void window_create_nav_surfaces(Window *window);
+  void window_destroy_nav_surfaces(Window *window);
+  void window_position_nav_surfaces(Window *window);
 
 public:
   TCCClient();
   ~TCCClient();
   void run();
+
+  const std::vector<Output *> &outputs() { return mOutputs; };
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../client/client.hpp"
+#include "../utils/glyph.hpp"
 
 #include "../protocol/wlr-layer-shell-unstable-v1-protocol.h"
 #include <memory>
@@ -9,10 +10,13 @@
 #include <GL/gl.h>
 #include <wayland-egl.h>
 
+#define ICON_SIZE 64
+#define ICON_MARGIN ICON_SIZE + 32
+
 /*
  * Client responsible for
  * a.) rendering the desktop
- * b.) rendering the icons of open windows (TODO)
+ * b.) rendering the icons of minimized windows
  */
 
 class TCCDesktopClient {
@@ -35,7 +39,11 @@ class TCCDesktopClient {
 
   GLuint mTexture;
 
+  GlyphManager mGlyphManager;
+
   void setup_egl();
+  void draw_desktop();
+  void draw_icon(int x, int y);
   void egl_draw();
 
   static void registry_global(void *data, struct wl_registry *wl_registry,

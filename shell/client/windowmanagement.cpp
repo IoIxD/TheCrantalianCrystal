@@ -1,14 +1,24 @@
 #include "client.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
 
 #include <linux/input-event-codes.h>
 
 #include "../desktop/desktop.hpp"
+
+// Indexed by NavButton.
+static const int nav_button_x_from_right[] = {
+    0,
+    SSD_NAV_BUTTON_CLOSE_X_FROM_RIGHT,
+    SSD_NAV_BUTTON_MIN_X_FROM_RIGHT,
+    SSD_NAV_BUTTON_MAX_X_FROM_RIGHT,
+};
 
 void TCCClient::river_wm_unavailable(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
@@ -33,16 +43,20 @@ void TCCClient::river_wm_manage_start(
 
     client->output_maybe_destroy(output);
   }
-  for (Window *window : client->mWindows) {
-    client->window_maybe_destroy(window);
+  for (Output *output : client->mOutputs) {
+    for (Window *window : output->windows) {
+      client->window_maybe_destroy(window);
+    }
   }
   for (Seat *seat : client->mSeats) {
     client->seat_maybe_destroy(seat);
   }
 
   // Carry out window management policy
-  for (Window *window : client->mWindows) {
-    client->window_manage(window);
+  for (Output *output : client->mOutputs) {
+    for (Window *window : output->windows) {
+      client->window_manage(window);
+    }
   }
   for (Seat *seat : client->mSeats) {
     client->seat_manage(seat);
@@ -55,11 +69,14 @@ void TCCClient::river_wm_render_start(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   TCCClient *client = (TCCClient *)data;
 
-  for (Window *window : client->mWindows) {
-    if (window->has_decor) {
-      window->egl_draw();
-      river_decoration_v1_sync_next_commit(window->main_decor.decor);
-      wl_surface_commit(window->main_decor.surface);
+  for (Output *output : client->mOutputs) {
+    for (Window *window : output->windows) {
+      if (window->has_decor) {
+        window->egl_draw();
+        client->window_position_nav_surfaces(window);
+        river_decoration_v1_sync_next_commit(window->main_decor.decor);
+        wl_surface_commit(window->main_decor.surface);
+      }
     }
   }
 
@@ -90,7 +107,8 @@ void TCCClient::river_wm_window(
   river_window_v1_add_listener(window->id, &client->mRiverWindowListener,
                                window);
 
-  client->mWindows.push_back(window);
+  /* todo: whatever output the cursor is on. */
+  client->mOutputs[0]->windows.push_back(window);
 }
 
 void TCCClient::river_wm_output(
@@ -168,6 +186,7 @@ void TCCClient::river_window_decoration_hint(void *data,
   x.decor = river_window_v1_get_decoration_below(id, x.surface);
 
     DECOR_CREATE(window->main_decor);
+    window->client->window_create_nav_surfaces(window);
 
     window->decor_width = window->width + SSD_BORDER_SIZE + SSD_BORDER_SIZE;
     window->decor_height = window->height + SSD_BORDER_SIZE_TOTAL;
@@ -265,7 +284,8 @@ void TCCClient::river_seat_window_interaction(void *data,
     seat->interacted->pointer_resize_requested_edges = edges;
   } else {
     int y = seat->pointer_y - seat->interacted->y;
-    if (y < 0) {
+    // Clicking a nav button shouldn't start dragging the window.
+    if (y < 0 && seat->pointer_nav_button == NAV_BUTTON_NONE) {
       seat->interacted->pointer_move_requested = seat;
     }
   }
@@ -334,6 +354,8 @@ void TCCClient::window_maybe_destroy(Window *window) {
     }
     if (seat->pointer_window == window) {
       seat->pointer_window = nullptr;
+      seat->pointer_nav_button = NAV_BUTTON_NONE;
+      seat->nav_button_pressed = NAV_BUTTON_NONE;
     }
     if (seat->op_window == window) {
       river_seat_v1_op_end(seat->id);
@@ -342,8 +364,19 @@ void TCCClient::window_maybe_destroy(Window *window) {
     }
   }
 
+  window_destroy_nav_surfaces(window);
   river_window_v1_destroy(window->id);
-  std::erase(mWindows, window);
+
+  for (auto out : mOutputs) {
+    for (auto win : out->windows) {
+      if (!out->windows.empty()) {
+        if (win == window) {
+          std::erase(out->windows, window);
+          break;
+        };
+      }
+    }
+  }
   delete window;
 }
 
@@ -351,6 +384,53 @@ void TCCClient::window_set_position(Window *window, int32_t x, int32_t y) {
   river_node_v1_set_position(window->node, x, y);
   window->x = x;
   window->y = y;
+}
+
+void TCCClient::window_maximize(Window *window) {
+  for (auto out : mOutputs) {
+    for (auto win : out->windows) {
+      if (win == window) {
+        win->maximized = !win->maximized;
+        if (win->maximized) {
+          win->saved_x = win->x;
+          win->saved_y = win->y;
+          win->saved_width = win->width;
+          win->saved_height = win->height;
+          window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
+          river_window_v1_propose_dimensions(
+              win->id, out->width - (SSD_BORDER_SIZE * 2),
+              out->height - SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE);
+          river_window_v1_inform_maximized(win->id);
+        } else {
+          window_set_position(win, win->saved_x, win->saved_y);
+          river_window_v1_propose_dimensions(win->id, win->saved_width,
+                                             win->saved_height);
+          river_window_v1_inform_unmaximized(win->id);
+        }
+        break;
+      };
+    }
+  }
+}
+
+void TCCClient::window_minimize(Window *window) {
+  for (auto out : mOutputs) {
+    for (auto win : out->windows) {
+      if (win == window) {
+        win->minimized = !win->minimized;
+        if (win->minimized) {
+          std::erase(out->windows, window);
+          out->minimized_windows.push_back(window);
+          river_window_v1_hide(window->id);
+        } else {
+          std::erase(out->minimized_windows, window);
+          out->windows.push_back(window);
+          river_window_v1_show(window->id);
+        }
+        break;
+      }
+    }
+  }
 }
 
 void TCCClient::window_manage(Window *window) {
@@ -361,7 +441,9 @@ void TCCClient::window_manage(Window *window) {
       river_decoration_v1_set_offset(window->main_decor.decor, -SSD_BORDER_SIZE,
                                      -SSD_BORDER_SIZE_TOP);
 
-      window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
+      window->center_requested = true;
+      river_window_v1_hide(window->id); /* hide the window so that we don't see
+                                           it in its initial position */
 
       window->setup_egl();
       window->egl_draw();
@@ -370,6 +452,21 @@ void TCCClient::window_manage(Window *window) {
     }
     river_window_v1_propose_dimensions(window->id, 0, 0);
   }
+  switch (window->pending_nav_action) {
+  case NAV_BUTTON_CLOSE:
+    river_window_v1_close(window->id);
+    break;
+  case NAV_BUTTON_MAX:
+    window_maximize(window);
+    break;
+  case NAV_BUTTON_MIN:
+    window_minimize(window);
+    break;
+  default:
+    break;
+  }
+  window->pending_nav_action = NAV_BUTTON_NONE;
+
   if (window->pointer_move_requested != nullptr) {
     seat_pointer_move(window->pointer_move_requested, window);
     window->pointer_move_requested = nullptr;
@@ -378,6 +475,21 @@ void TCCClient::window_manage(Window *window) {
     seat_pointer_resize(window->pointer_resize_requested, window,
                         window->pointer_resize_requested_edges);
     window->pointer_resize_requested = nullptr;
+  }
+
+  if (window->center_requested && window->width > 0 && window->height > 0) {
+    for (auto out : mOutputs) {
+      for (auto win : out->windows) {
+        if (win == window) {
+          window_set_position(
+              window, ((out->width / 2) - (win->width / 2)) + SSD_BORDER_SIZE,
+              ((out->height / 2) - (win->height / 2)) + SSD_BORDER_SIZE_TOP);
+          break;
+        }
+      }
+    }
+    window->center_requested = false;
+    river_window_v1_show(window->id);
   }
 }
 
@@ -410,8 +522,15 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
 
 void TCCClient::seat_focus(Seat *seat, Window *window) {
   // Focus the top window (if any) when there is no explicit target.
-  if (window == nullptr && !mWindows.empty()) {
-    window = mWindows.back();
+  for (auto out : mOutputs) {
+    for (auto win : out->windows) {
+      if (win == window) {
+        if (!out->windows.empty()) {
+          window = out->windows.back();
+          break;
+        };
+      }
+    }
   }
 
   if (seat->focused == window) {
@@ -421,8 +540,17 @@ void TCCClient::seat_focus(Seat *seat, Window *window) {
   if (window != nullptr) {
     river_seat_v1_focus_window(seat->id, window->id);
     river_node_v1_place_top(window->node);
-    std::erase(mWindows, window);
-    mWindows.push_back(window);
+    for (auto out : mOutputs) {
+      for (auto win : out->windows) {
+        if (win == window) {
+          if (!out->windows.empty()) {
+            std::erase(out->windows, window);
+            out->windows.push_back(window);
+            break;
+          };
+        }
+      }
+    }
   } else {
     river_seat_v1_clear_focus(seat->id);
   }
@@ -473,9 +601,10 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     }
     break;
   case ACTION_FOCUS_NEXT:
-    if (!mWindows.empty()) {
+    /* todo: whatever output the cursor is on. */
+    if (!mOutputs[0]->windows.empty()) {
       // Focus the bottom window
-      seat_focus(seat, mWindows.front());
+      seat_focus(seat, mOutputs[0]->windows.front());
     }
     break;
   case ACTION_MOVE:
@@ -605,3 +734,114 @@ uint32_t TCCClient::get_pointer_edges(Seat *seat, Window *window, int x,
   }
   return edges;
 };
+
+void TCCClient::nav_button_action(uint8_t action, bool released,
+                                  Window *window) {
+  /* close all holds  */
+  window->close_held = window->maximize_held = window->minimize_held = false;
+
+  switch (action) {
+  case TCCClient::NAV_BUTTON_CLOSE:
+    window->close_held = !released;
+    break;
+  case TCCClient::NAV_BUTTON_MAX:
+    window->maximize_held = !released;
+    break;
+  case TCCClient::NAV_BUTTON_MIN:
+    window->minimize_held = !released;
+    break;
+  default:
+    break;
+  }
+
+  // The actual action has to happen in a manage sequence, see window_manage.
+  if (released) {
+    window->pending_nav_action = action;
+  }
+  // Kick off a manage + render sequence so the held state gets redrawn.
+  river_window_manager_v1_manage_dirty(mRiverWindowManager);
+};
+
+uint8_t TCCClient::get_pressed_nav_button(Seat *seat, Window *window) {
+  // Pointer position in decoration surface coordinates.
+  int x = seat->pointer_x - window->x + SSD_BORDER_SIZE;
+  int y = seat->pointer_y - window->y + SSD_BORDER_SIZE_TOP;
+  if (y < SSD_NAV_BUTTON_Y || y >= SSD_NAV_BUTTON_Y + SSD_NAV_BUTTON_HEIGHT) {
+    return NAV_BUTTON_NONE;
+  }
+
+  for (int i = NAV_BUTTON_NONE + 1; i < NAV_BUTTON_COUNT; i++) {
+    int lo = window->decor_width - nav_button_x_from_right[i];
+    if (x >= lo && x < lo + SSD_NAV_BUTTON_WIDTH) {
+      return i;
+    }
+  }
+  return NAV_BUTTON_NONE;
+}
+
+wl_buffer *TCCClient::get_nav_button_buffer() {
+  if (mNavButtonBuffer) {
+    return mNavButtonBuffer;
+  }
+
+  const int stride = SSD_NAV_BUTTON_WIDTH * 4;
+  const int size = stride * SSD_NAV_BUTTON_HEIGHT;
+
+  // ftruncate zero-fills, which is exactly the fully transparent buffer we
+  // want, so there's no need to mmap it.
+  int fd = memfd_create("tcc-nav-button", MFD_CLOEXEC);
+  if (fd < 0 || ftruncate(fd, size) < 0) {
+    perror("nav button buffer");
+    exit(1);
+  }
+
+  wl_shm_pool *pool = wl_shm_create_pool(mShm, fd, size);
+  mNavButtonBuffer = wl_shm_pool_create_buffer(pool, 0, SSD_NAV_BUTTON_WIDTH,
+                                               SSD_NAV_BUTTON_HEIGHT, stride,
+                                               WL_SHM_FORMAT_ARGB8888);
+  wl_shm_pool_destroy(pool);
+  close(fd);
+
+  return mNavButtonBuffer;
+}
+
+void TCCClient::window_create_nav_surfaces(Window *window) {
+  if (!mSubcompositor || !mShm) {
+    fprintf(stderr, "wl_subcompositor or wl_shm not supported, nav buttons "
+                    "won't be clickable\n");
+    return;
+  }
+
+  for (int i = NAV_BUTTON_NONE + 1; i < NAV_BUTTON_COUNT; i++) {
+    auto &nav = window->nav_surfaces[i];
+    nav.surface = wl_compositor_create_surface(mCompositor);
+    nav.subsurface = wl_subcompositor_get_subsurface(
+        mSubcompositor, nav.surface, window->main_decor.surface);
+    // Subsurfaces are synchronized by default, so this (and the position set
+    // in window_position_nav_surfaces) lands with the decoration's commit.
+    wl_surface_attach(nav.surface, get_nav_button_buffer(), 0, 0);
+    wl_surface_commit(nav.surface);
+  }
+}
+
+void TCCClient::window_destroy_nav_surfaces(Window *window) {
+  for (auto &nav : window->nav_surfaces) {
+    if (nav.subsurface) {
+      wl_subsurface_destroy(nav.subsurface);
+    }
+    if (nav.surface) {
+      wl_surface_destroy(nav.surface);
+    }
+    nav = {};
+  }
+}
+
+void TCCClient::window_position_nav_surfaces(Window *window) {
+  for (int i = NAV_BUTTON_NONE + 1; i < NAV_BUTTON_COUNT; i++) {
+    if (window->nav_surfaces[i].subsurface) {
+      wl_subsurface_set_position(
+          window->nav_surfaces[i].subsurface,
+          window->decor_width - nav_button_x_from_right[i], SSD_NAV_BUTTON_Y);
+    }
+  }
+}

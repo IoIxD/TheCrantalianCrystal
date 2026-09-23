@@ -6,8 +6,7 @@
 #include <csignal>
 #include <string>
 
-#include "../utils/texture.hpp"
-#include "font.hpp"
+#include "../utils/glyph.hpp"
 
 TCCClient::TCCClient() {
   mDisplay = wl_display_connect(NULL);
@@ -38,20 +37,10 @@ TCCClient::TCCClient() {
     exit(1);
   }
 
-  /* freetype2 */
-  assert(FT_Init_FreeType(&mFTLibrary) == 0);
-  assert(FT_New_Memory_Face(mFTLibrary, OpenSans_Regular.data(),
-                            OpenSans_Regular.size(), 0, &mFTFaceNormal) == 0);
-  assert(FT_New_Memory_Face(mFTLibrary, OpenSans_Semibold.data(),
-                            OpenSans_Semibold.size(), 0, &mFTFaceBold) == 0);
-  assert(FT_Set_Pixel_Sizes(mFTFaceNormal, 0, 13) == 0);
-  assert(FT_Set_Pixel_Sizes(mFTFaceBold, 0, 13) == 0);
+  GlyphManager::Init();
 }
 
-TCCClient::~TCCClient() {
-  assert(FT_Done_Face(mFTFaceNormal) == 0);
-  assert(FT_Done_FreeType(mFTLibrary) == 0);
-}
+TCCClient::~TCCClient() { GlyphManager::Deinit(); }
 
 void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
                                 uint32_t name, const char *interface,
@@ -65,6 +54,12 @@ void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
     client->mRiverWindowSurface =
         wl_compositor_create_surface(client->mCompositor);
 
+  } else if (inter == wl_subcompositor_interface.name) {
+    client->mSubcompositor = (wl_subcompositor *)wl_registry_bind(
+        client->mRegistry, name, &wl_subcompositor_interface, 1);
+  } else if (inter == wl_shm_interface.name) {
+    client->mShm = (wl_shm *)wl_registry_bind(client->mRegistry, name,
+                                              &wl_shm_interface, 1);
   } else if (inter == river_window_manager_v1_interface.name) {
     assert(version >= 4);
     client->mRiverWindowManager = (river_window_manager_v1 *)wl_registry_bind(
@@ -116,5 +111,3 @@ void TCCClient::run() {
     }
   }
 }
-
-TCCClient::Window::Glyph::~Glyph() { TextureManager::FreeGLTextureID(texture); }
