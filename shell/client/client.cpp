@@ -8,6 +8,8 @@
 
 #include "../utils/glyph.hpp"
 
+#include <dlfcn.h>
+
 TCCClient::TCCClient() {
   mDisplay = wl_display_connect(NULL);
   if (mDisplay == nullptr) {
@@ -38,6 +40,8 @@ TCCClient::TCCClient() {
   }
 
   GlyphManager::Init();
+
+  // g_desktop_app_info_new();
 }
 
 TCCClient::~TCCClient() { GlyphManager::Deinit(); }

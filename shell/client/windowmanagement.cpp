@@ -72,10 +72,10 @@ void TCCClient::river_wm_render_start(
   for (Output *output : client->mOutputs) {
     for (Window *window : output->windows) {
       if (window->has_decor) {
-        window->egl_draw();
+        window->decor_draw();
         client->window_position_nav_surfaces(window);
-        river_decoration_v1_sync_next_commit(window->main_decor.decor);
-        wl_surface_commit(window->main_decor.surface);
+        river_decoration_v1_sync_next_commit(window->decor_decor);
+        wl_surface_commit(window->decor_surface);
       }
     }
   }
@@ -181,16 +181,16 @@ void TCCClient::river_window_decoration_hint(void *data,
 
   if (wants_decor) {
     window->has_decor = true;
-#define DECOR_CREATE(x)                                                        \
-  x.surface = wl_compositor_create_surface(window->client->mCompositor);       \
-  x.decor = river_window_v1_get_decoration_below(id, x.surface);
+    window->decor_surface =
+        wl_compositor_create_surface(window->client->mCompositor);
+    window->decor_decor =
+        river_window_v1_get_decoration_below(id, window->decor_surface);
 
-    DECOR_CREATE(window->main_decor);
     window->client->window_create_nav_surfaces(window);
 
     window->decor_width = window->width + SSD_BORDER_SIZE + SSD_BORDER_SIZE;
     window->decor_height = window->height + SSD_BORDER_SIZE_TOTAL;
-    window->setup_egl();
+    window->setup_decor();
   }
 }
 
@@ -200,12 +200,16 @@ void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
 
   strncpy(window->title, title, sizeof(window->title) - 1);
 }
+void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
+                                    const char *app_id) {
+  Window *window = (Window *)data;
+  strncpy(window->app_id, app_id, sizeof(window->app_id) - 1);
+}
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
     void *data, struct river_window_v1 *id, int32_t min_width,
     int32_t min_height, int32_t max_width, int32_t max_height) {}
-void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
-                                    const char *app_id) {}
+
 void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
                                     struct river_window_v1 *parent) {}
 
@@ -457,15 +461,15 @@ void TCCClient::window_manage(Window *window) {
     window->is_new = false;
     river_window_v1_use_ssd(window->id);
     if (window->has_decor) {
-      river_decoration_v1_set_offset(window->main_decor.decor, -SSD_BORDER_SIZE,
+      river_decoration_v1_set_offset(window->decor_decor, -SSD_BORDER_SIZE,
                                      -SSD_BORDER_SIZE_TOP);
 
       window->center_requested = true;
       river_window_v1_hide(window->id); /* hide the window so that we don't see
                                            it in its initial position */
 
-      window->setup_egl();
-      window->egl_draw();
+      window->setup_decor();
+      window->decor_draw();
     } else {
       window_set_position(window, 0, 0);
     }
@@ -842,7 +846,7 @@ void TCCClient::window_create_nav_surfaces(Window *window) {
     auto &nav = window->nav_surfaces[i];
     nav.surface = wl_compositor_create_surface(mCompositor);
     nav.subsurface = wl_subcompositor_get_subsurface(
-        mSubcompositor, nav.surface, window->main_decor.surface);
+        mSubcompositor, nav.surface, window->decor_surface);
     // Subsurfaces are synchronized by default, so this (and the position set
     // in window_position_nav_surfaces) lands with the decoration's commit.
     wl_surface_attach(nav.surface, get_nav_button_buffer(), 0, 0);

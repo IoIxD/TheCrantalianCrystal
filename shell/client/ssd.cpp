@@ -50,7 +50,7 @@ static GLuint create_shader_program() {
   return program;
 }
 
-void TCCClient::Window::setup_egl() {
+void TCCClient::Window::setup_decor() {
   const char *extensions;
 
   EGLint config_attribs[] = {EGL_SURFACE_TYPE,
@@ -98,8 +98,7 @@ void TCCClient::Window::setup_egl() {
 
   free(configs);
 
-  mEGLWindow =
-      wl_egl_window_create(main_decor.surface, decor_width, decor_height);
+  mEGLWindow = wl_egl_window_create(decor_surface, decor_width, decor_height);
   if (!mEGLWindow) {
     printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
     raise(SIGTRAP);
@@ -126,9 +125,20 @@ void TCCClient::Window::setup_egl() {
   eglSwapInterval(mEGLDisplay, 0);
 
   mEGLShaderProgram = create_shader_program();
+
+  int width = 0, height = 0;
+  unsigned char *pixels = nullptr;
+  client->mIconManager.get_icon(app_id, 16, &width, &height, &pixels);
+
+  if (pixels) {
+    decor_icon_texture = TextureManager::NewGLTextureID(width, height, pixels);
+    printf("width %d height %d\n", width, height);
+    printf("pixels %p\n", pixels);
+    free(pixels);
+  }
 };
 
-void TCCClient::Window::egl_draw() {
+void TCCClient::Window::decor_draw() {
   wl_egl_window_resize(mEGLWindow, decor_width + SSD_BORDER_LEEWAY,
                        decor_height + SSD_BORDER_LEEWAY, 0, 0);
 
@@ -137,6 +147,17 @@ void TCCClient::Window::egl_draw() {
     raise(SIGTRAP);
   };
 
+  decor_draw_backing();
+  decor_draw_icon();
+
+  /* draw text */
+  glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
+  mGlyphs.draw_text(title, 32, 22, decor_width, decor_height, true, false);
+
+  eglSwapBuffers(mEGLDisplay, mEGLSurface);
+};
+
+void TCCClient::Window::decor_draw_backing() {
   glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
 
   glClearColor(0.f, 0.0f, 0.f, 0.f);
@@ -174,8 +195,28 @@ void TCCClient::Window::egl_draw() {
 
   glUseProgram(0);
   glDisable(GL_BLEND);
+}
+void TCCClient::Window::decor_draw_icon() {
+  if (decor_icon_texture != -1) {
+    glViewport(10, decor_height - 20, 16, 16);
 
-  mGlyphs.draw_text(title, 32, 22, decor_width, decor_height, true, false);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  eglSwapBuffers(mEGLDisplay, mEGLSurface);
-};
+    glBindTexture(GL_TEXTURE_2D, decor_icon_texture);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-1, -1, 1); // bottom-left
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f(1, -1, 1);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f(1, 1, 1);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-1, 1, 1); // top-right
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDisable(GL_BLEND);
+  }
+}

@@ -1,8 +1,7 @@
 #pragma once
+#include "../utils/icon.hpp"
 #include <cstdint>
 #include <memory>
-#include <string>
-#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -79,6 +78,8 @@ public:
     EGLSurface mEGLSurface;
     GLuint mEGLShaderProgram;
 
+    std::string mIconPath;
+
   public:
     std::shared_ptr<TCCClient> client;
     river_window_v1 *id;
@@ -89,14 +90,11 @@ public:
     int saved_width = 0, saved_height = 0;
 
     bool has_decor;
-    struct decor {
-      river_decoration_v1 *decor;
-      wl_surface *surface;
-    };
+    river_decoration_v1 *decor_decor;
+    wl_surface *decor_surface;
+    GLuint decor_icon_texture = -1;
 
     bool center_requested = false;
-
-    decor main_decor;
 
     struct nav_surface {
       wl_surface *surface = nullptr;
@@ -112,6 +110,7 @@ public:
     int decor_width = 0;
     int decor_height = 0;
     char title[2048];
+    char app_id[4096];
 
     Seat *pointer_move_requested = nullptr;
     Seat *pointer_resize_requested = nullptr;
@@ -126,8 +125,11 @@ public:
     // Applied during the next manage sequence.
     uint8_t pending_nav_action = NAV_BUTTON_NONE;
 
-    void setup_egl();
-    void egl_draw();
+    void setup_decor();
+    void decor_draw();
+
+    void decor_draw_backing();
+    void decor_draw_icon();
   };
 
   class Output : public std::enable_shared_from_this<Output> {
@@ -199,6 +201,8 @@ private:
     // Nav button the pointer was pressed on.
     uint8_t nav_button_pressed = NAV_BUTTON_NONE;
   };
+
+  IconManager mIconManager;
 
   wl_display *mDisplay = nullptr;
   wl_registry *mRegistry = nullptr;
