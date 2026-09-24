@@ -409,10 +409,16 @@ void TCCClient::window_maximize(Window *window) {
           win->saved_y = win->y;
           win->saved_width = win->width;
           win->saved_height = win->height;
-          window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
-          river_window_v1_propose_dimensions(
-              win->id, out->width - (SSD_BORDER_SIZE * 2),
-              out->height - SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE);
+          if (win->has_decor) {
+            window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
+            river_window_v1_propose_dimensions(
+                win->id, out->width - (SSD_BORDER_SIZE * 2),
+                out->height - SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE);
+          } else {
+            window_set_position(window, 0, 0);
+            river_window_v1_propose_dimensions(win->id, out->width,
+                                               out->height);
+          }
           river_window_v1_inform_maximized(win->id);
         } else {
           window_set_position(win, win->saved_x, win->saved_y);
