@@ -522,6 +522,8 @@ void TCCClient::window_manage(Window *window) {
     }
     window->center_requested = false;
     river_window_v1_show(window->id);
+
+    window->decor_draw();
   }
 }
 
