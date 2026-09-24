@@ -46,7 +46,7 @@ void TCCClient::river_wm_manage_start(
       if (window->queue_minimize) {
         client->window_minimize(window);
         window->queue_minimize = false;
-        river_seat_v1_focus_window(client->mSeats[0]->id, window->id);
+        client->seat_focus(client->mSeats[0], window);
         output->desktop_client->step();
       }
       client->window_maybe_destroy(window);
@@ -75,7 +75,7 @@ void TCCClient::river_wm_render_start(
 
   for (Output *output : client->mOutputs) {
     for (Window *window : output->windows) {
-      if (window->has_decor) {
+      if (window->has_decor && !window->hide_decor) {
         window->decor_draw();
         client->window_position_nav_surfaces(window);
         client->window_position_resize_surfaces(window);
@@ -177,12 +177,15 @@ void TCCClient::river_window_decoration_hint(void *data,
                                              struct river_window_v1 *id,
                                              uint32_t hint) {
   Window *window = (Window *)data;
+  printf("hint %d\n", hint);
 
-  bool wants_decor = hint != RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD;
+  bool wants_decor =
+      hint != RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD &&
+      hint != RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_CSD;
 
-  if (wants_decor == window->has_decor) {
-    return;
-  }
+  // if (wants_decor == window->has_decor) {
+  //   return;
+  // }
 
   if (wants_decor) {
     window->has_decor = true;
@@ -215,10 +218,21 @@ void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
     window->app_id[0] = '\0';
   }
 }
-// Ignored events
 void TCCClient::river_window_dimensions_hint(
     void *data, struct river_window_v1 *id, int32_t min_width,
-    int32_t min_height, int32_t max_width, int32_t max_height) {}
+    int32_t min_height, int32_t max_width, int32_t max_height) {
+  Window *window = (Window *)data;
+
+  window->min_width = min_width;
+  window->min_height = min_height;
+  window->max_width = max_width;
+  window->max_height = max_height;
+
+  printf("%d %d %d %d\n", window->min_width, window->min_height,
+         window->max_width, window->max_height);
+}
+
+// Ignored events
 
 void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
                                     struct river_window_v1 *parent) {}
@@ -236,9 +250,21 @@ void TCCClient::river_window_unmaximize_requested(void *data,
   window->client->window_maximize(window);
 }
 void TCCClient::river_window_fullscreen_requested(
-    void *data, struct river_window_v1 *id, struct river_output_v1 *output) {}
+    void *data, struct river_window_v1 *id, struct river_output_v1 *output) {
+  Window *window = (Window *)data;
+  printf("fullscreen detected\n");
+  window->client->window_maximize(window);
+  window->hide_decor = true;
+
+  window->client->seat_focus(window->client->mSeats[0], window);
+}
 void TCCClient::river_window_exit_fullscreen_requested(
-    void *data, struct river_window_v1 *id) {}
+    void *data, struct river_window_v1 *id) {
+  Window *window = (Window *)data;
+  printf("fullscreen undetected\n");
+  window->hide_decor = false;
+  window->client->window_maximize(window);
+}
 void TCCClient::river_window_minimize_requested(void *data,
                                                 struct river_window_v1 *id) {
   Window *window = (Window *)data;
@@ -422,7 +448,7 @@ void TCCClient::window_maximize(Window *window) {
           win->saved_y = win->y;
           win->saved_width = win->width;
           win->saved_height = win->height;
-          if (win->has_decor) {
+          if (win->has_decor && !window->hide_decor) {
             window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
             river_window_v1_propose_dimensions(
                 win->id, out->width - (SSD_BORDER_SIZE * 2),
@@ -473,10 +499,7 @@ void TCCClient::window_manage(Window *window) {
   if (window->is_new) {
     window->is_new = false;
     river_window_v1_use_ssd(window->id);
-    if (window->has_decor) {
-      river_decoration_v1_set_offset(window->decor_decor, -SSD_BORDER_SIZE,
-                                     -SSD_BORDER_SIZE_TOP);
-
+    if (window->has_decor && !window->hide_decor) {
       window->center_requested = true;
       river_window_v1_hide(window->id); /* hide the window so that we don't see
                                            it in its initial position */
@@ -604,7 +627,7 @@ void TCCClient::seat_focus(Seat *seat, Window *window) {
 }
 
 void TCCClient::seat_pointer_move(Seat *seat, Window *window) {
-  seat_focus(seat, window);
+  // seat_focus(seat, window);
   river_seat_v1_op_start_pointer(seat->id);
   seat->op = SEAT_OP_MOVE;
   seat->op_window = window;
@@ -616,7 +639,7 @@ void TCCClient::seat_pointer_move(Seat *seat, Window *window) {
 
 void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
                                     uint32_t edges) {
-  seat_focus(seat, window);
+  // seat_focus(seat, window);
   river_window_v1_inform_resize_start(window->id);
   river_seat_v1_op_start_pointer(seat->id);
   seat->op = SEAT_OP_RESIZE;
@@ -636,7 +659,7 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     break;
   case ACTION_SPAWN_TERMINAL:
     if (fork() == 0) {
-      execlp("konsole", "konsole", (char *)nullptr);
+      execlp("kitty", "kitty", (char *)nullptr);
       _exit(1);
     }
     break;
@@ -725,10 +748,20 @@ void TCCClient::seat_manage(Seat *seat) {
     if ((seat->op_edges & RIVER_WINDOW_V1_EDGES_BOTTOM) != 0) {
       height += seat->op_dy;
     }
-    river_window_v1_propose_dimensions(
-        seat->op_window->id,
-        (width > SSD_BORDER_SIZE_TOTAL) ? width : SSD_BORDER_SIZE_TOTAL,
-        (height > SSD_BORDER_SIZE_TOTAL) ? height : SSD_BORDER_SIZE_TOTAL);
+    Window *window = seat->op_window;
+    if (window->min_width > 0 && width < window->min_width) {
+      width = window->min_width;
+    }
+    if (window->min_height > 0 && height < window->min_height) {
+      height = window->min_height;
+    }
+    if (window->max_width > 0 && width > window->max_width) {
+      width = window->max_width;
+    }
+    if (window->max_height > 0 && height > window->max_height) {
+      height = window->max_height;
+    }
+    river_window_v1_propose_dimensions(window->id, width, height);
     break;
   }
   }

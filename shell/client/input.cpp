@@ -99,7 +99,8 @@ void TCCClient::river_input_input_device(
 TCCClient::Window *TCCClient::window_from_decor_surface(wl_surface *surface) {
   for (Output *output : mOutputs) {
     for (Window *window : output->windows) {
-      if (window->has_decor && window->decor_surface == surface) {
+      if (window->has_decor && !window->hide_decor &&
+          window->decor_surface == surface) {
         return window;
       }
     }

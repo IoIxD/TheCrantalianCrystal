@@ -105,7 +105,8 @@ public:
     int saved_x = 0, saved_y = 0;
     int saved_width = 0, saved_height = 0;
 
-    bool has_decor;
+    bool hide_decor = false;
+    bool has_decor = false;
     river_decoration_v1 *decor_decor;
     wl_surface *decor_surface;
     GLuint decor_icon_texture = -1;
@@ -134,6 +135,9 @@ public:
     int32_t height = 0;
     int decor_width = 0;
     int decor_height = 0;
+    // From river_window_v1.dimensions_hint, 0 means no preference.
+    int32_t min_width = 0, min_height = 0;
+    int32_t max_width = 0, max_height = 0;
     char title[2048];
     char app_id[4096];
 

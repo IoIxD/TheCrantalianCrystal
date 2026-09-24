@@ -51,6 +51,11 @@ static GLuint create_shader_program() {
 }
 
 void TCCClient::Window::setup_decor() {
+  river_decoration_v1_set_offset(decor_decor, -SSD_BORDER_SIZE,
+                                 -SSD_BORDER_SIZE_TOP);
+  this->client->window_set_position(this, this->x + SSD_BORDER_SIZE,
+                                    this->y + SSD_BORDER_SIZE_TOP);
+
   const char *extensions;
 
   EGLint config_attribs[] = {EGL_SURFACE_TYPE,
