@@ -122,6 +122,10 @@ public:
     bool close_held = false;
     bool minimize_held = false;
     bool maximize_held = false;
+    bool close_hover = false;
+    bool minimize_hover = false;
+    bool maximize_hover = false;
+
     // Applied during the next manage sequence.
     uint8_t pending_nav_action = NAV_BUTTON_NONE;
 
@@ -502,6 +506,7 @@ private:
                              int y = -1);
 
   void nav_button_action(uint8_t action, bool released, Window *window);
+  void nav_button_hover(uint8_t button, Window *window);
   uint8_t get_pressed_nav_button(Seat *seat, Window *window);
 
   Window *window_from_decor_surface(wl_surface *surface);
@@ -518,4 +523,11 @@ public:
   void run();
 
   const std::vector<Output *> &outputs() { return mOutputs; };
+};
+
+static const int nav_button_x_from_right[] = {
+    0,
+    SSD_NAV_BUTTON_CLOSE_X_FROM_RIGHT,
+    SSD_NAV_BUTTON_MIN_X_FROM_RIGHT,
+    SSD_NAV_BUTTON_MAX_X_FROM_RIGHT,
 };

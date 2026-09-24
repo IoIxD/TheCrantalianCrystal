@@ -14,6 +14,9 @@ uniform int ssd_border_size_top;
 uniform bool close_held;
 uniform bool minimize_held;
 uniform bool maximize_held;
+uniform bool close_hover;
+uniform bool minimize_hover;
+uniform bool maximize_hover;
 
 vec3 baseColorBackground = vec3(.416, .196, .576); /* #6a3293 */
 vec3 lowColorBackground = vec3(1.0, .612, .404); /* #ff9c67 */
@@ -49,11 +52,19 @@ void draw_backing_border(float alpha) {
     gl_FragColor = vec4(mixedColorBackground.rgb, alpha);
 }
 
+vec3 blendMultiply(vec3 base, vec3 blend) {
+    return base * blend;
+}
+
+vec3 blendMultiply(vec3 base, vec3 blend, float opacity) {
+    return (blendMultiply(base, blend) * opacity + base * (1.0 - opacity));
+}
+
 void draw_button(int type, vec2 lo, vec2 hi) {
     vec2 half_size = (hi - lo) * 0.5;
-    float radius = min(16.0, min(half_size.x, half_size.y));
+    float radius = min(4.0, min(half_size.x, half_size.y));
     float dist = rounded_box_sdf(frag_coord - (lo + half_size), half_size, radius);
-    float alpha = 1.0 - smoothstep(-0.75, 0.75, dist);
+    float alpha = 1.0 - smoothstep(-0.1, 0.1, dist);
 
     if (alpha < 0.01) {
         draw_backing_border(-1);
@@ -66,35 +77,39 @@ void draw_button(int type, vec2 lo, vec2 hi) {
 
     mixedColorButton = mix(baseColorButton, lowColorButton, fade);
     mixedColorButton = mix(mixedColorButton, mixedColorBackground, 0.3);
-    vec3 finalBackground = mix(mixedColorBackground, mixedColorButton, alpha);
+    vec3 finalBackground = vec3(0, 0, 0);
+    #define INSET(x, by) x = (x) - vec3(by,by,by);
 
-    #define INSET(x, by) x = (vec3(1.0, 1.0, 1.0) - x) - vec3(by,by,by);
+    #define HELDHOVERSWITCH(x) if (!x##_held && !x##_hover) {finalBackground = blendMultiply(mixedColorBackground, mixedColorButton, alpha);}else {finalBackground = mix(mixedColorBackground, mixedColorButton, alpha); if(x##_held) {INSET(finalBackground, 0.5);} else {INSET(finalBackground, 0.4);}}
 
     switch (type) {
         case BUTTON_TYPE_CLOSE:
         {
-            if (close_held) INSET(finalBackground, 0.5);
+            HELDHOVERSWITCH(close);
             vec2 p = frag_coord - (lo + half_size);
             float extent = min(half_size.x, half_size.y) - 5;
             if (abs(p.x) <= extent && abs(p.y) <= extent && abs(abs(p.x) - abs(p.y)) <= 1.5) {
-                INSET(finalBackground, 0.3);
+                finalBackground = vec3(1, 1, 1);
+                // INSET(finalBackground, 0.3);
             }
         }
         break;
         case BUTTON_TYPE_MINIMIZE:
         {
-            if (minimize_held) INSET(finalBackground, 0.5);
+            HELDHOVERSWITCH(minimize);
             if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 9 && frag_coord.y >= lo.y + 9) {
-                INSET(finalBackground, 0.3);
+                finalBackground = vec3(1, 1, 1);
+                // INSET(finalBackground, 0.3);
             }
         }
         break;
         case BUTTON_TYPE_MAXIMIZE:
         {
-            if (maximize_held) INSET(finalBackground, 0.5);
+            HELDHOVERSWITCH(maximize);
             if (frag_coord.x <= hi.x - 5 && frag_coord.x >= lo.x + 5 && frag_coord.y <= hi.y - 5 && frag_coord.y >= lo.y + 5) {
                 if (frag_coord.x <= hi.x - 7 && frag_coord.x >= lo.x + 7 && frag_coord.y <= hi.y - 7 && frag_coord.y >= lo.y + 7) {} else {
-                    INSET(finalBackground, 0.3);
+                    finalBackground = vec3(1, 1, 1);
+                    // INSET(finalBackground, 0.3);
                 }
             }
         }

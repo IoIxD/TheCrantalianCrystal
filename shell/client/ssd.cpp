@@ -182,7 +182,12 @@ void TCCClient::Window::decor_draw_backing() {
               minimize_held);
   glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_held"),
               maximize_held);
-
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "close_hover"),
+              close_hover);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "minimize_hover"),
+              minimize_hover);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_hover"),
+              maximize_hover);
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 1.0f);
   glVertex3f(-1, -1, 1); // bottom-left

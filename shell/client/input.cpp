@@ -159,6 +159,7 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
     seat->pointer_nav_button = nav_button;
     seat->pointer_nav_x = wl_fixed_to_double(surface_x);
     seat->pointer_nav_y = wl_fixed_to_double(surface_y);
+    seat->client->nav_button_hover(nav_button, window);
     wp_cursor_shape_device_v1_set_shape(
         seat->cursor_shape_device, serial,
         WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
@@ -169,6 +170,7 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
   if (!seat->pointer_window) {
     return;
   }
+
   if (seat->pointer_window->maximized) {
     return;
   }
@@ -193,6 +195,9 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
 void TCCClient::wl_pointer_leave(void *data, struct wl_pointer *wl_pointer,
                                  uint32_t serial, struct wl_surface *surface) {
   Seat *seat = (Seat *)data;
+  if (seat->pointer_window && seat->pointer_nav_button != NAV_BUTTON_NONE) {
+    seat->client->nav_button_hover(NAV_BUTTON_NONE, seat->pointer_window);
+  }
   seat->pointer_window = nullptr;
   seat->pointer_nav_button = NAV_BUTTON_NONE;
   wp_cursor_shape_device_v1_set_shape(seat->cursor_shape_device, serial,

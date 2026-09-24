@@ -12,14 +12,6 @@
 
 #include "../desktop/desktop.hpp"
 
-// Indexed by NavButton.
-static const int nav_button_x_from_right[] = {
-    0,
-    SSD_NAV_BUTTON_CLOSE_X_FROM_RIGHT,
-    SSD_NAV_BUTTON_MIN_X_FROM_RIGHT,
-    SSD_NAV_BUTTON_MAX_X_FROM_RIGHT,
-};
-
 void TCCClient::river_wm_unavailable(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   fprintf(stderr, "error: another window manager is already running\n");
@@ -797,6 +789,15 @@ void TCCClient::nav_button_action(uint8_t action, bool released,
   // Kick off a manage + render sequence so the held state gets redrawn.
   river_window_manager_v1_manage_dirty(mRiverWindowManager);
 };
+
+void TCCClient::nav_button_hover(uint8_t button, Window *window) {
+  window->close_hover = button == TCCClient::NAV_BUTTON_CLOSE;
+  window->maximize_hover = button == TCCClient::NAV_BUTTON_MAX;
+  window->minimize_hover = button == TCCClient::NAV_BUTTON_MIN;
+
+  // Kick off a manage + render sequence so the hover state gets redrawn.
+  river_window_manager_v1_manage_dirty(mRiverWindowManager);
+}
 
 uint8_t TCCClient::get_pressed_nav_button(Seat *seat, Window *window) {
   // Pointer position in decoration surface coordinates.
