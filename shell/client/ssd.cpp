@@ -152,7 +152,8 @@ void TCCClient::Window::decor_draw() {
 
   /* draw text */
   glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
-  mGlyphs.draw_text(title, 32, 22, decor_width, decor_height, true, false);
+  mGlyphManager.draw_text(title, 32, 22, decor_width, decor_height, true,
+                          false);
 
   eglSwapBuffers(mEGLDisplay, mEGLSurface);
 };
@@ -218,5 +219,15 @@ void TCCClient::Window::decor_draw_icon() {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glDisable(GL_BLEND);
+  }
+}
+TCCClient::Window::~Window() {
+  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+    raise(SIGTRAP);
+  };
+
+  for (auto glyph : mGlyphManager.glyphs()) {
+    glyph->destroy();
   }
 }

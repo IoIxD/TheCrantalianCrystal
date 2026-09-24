@@ -2,7 +2,9 @@
 #include "../client/font.hpp"
 #include "texture.hpp"
 #include "utf8.hpp"
+#include <EGL/eglext.h>
 #include <assert.h>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 
@@ -26,7 +28,9 @@ void GlyphManager::Deinit() {
   assert(FT_Done_FreeType(FTLibrary) == 0);
 }
 
-GlyphManager::Glyph::~Glyph() { TextureManager::FreeGLTextureID(texture); }
+void GlyphManager::Glyph::destroy() {
+  TextureManager::FreeGLTextureID(texture);
+}
 
 // Loads and caches a glyph's texture the first time it's needed
 std::shared_ptr<GlyphManager::Glyph>

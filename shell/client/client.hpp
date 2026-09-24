@@ -69,7 +69,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
 
 public:
   class Window {
-    GlyphManager mGlyphs;
+    GlyphManager mGlyphManager;
 
     wl_egl_window *mEGLWindow;
     EGLDisplay mEGLDisplay;
@@ -130,6 +130,8 @@ public:
 
     void decor_draw_backing();
     void decor_draw_icon();
+
+    ~Window();
   };
 
   class Output : public std::enable_shared_from_this<Output> {

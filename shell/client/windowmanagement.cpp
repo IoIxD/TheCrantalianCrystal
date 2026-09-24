@@ -203,7 +203,11 @@ void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
 void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
                                     const char *app_id) {
   Window *window = (Window *)data;
-  strncpy(window->app_id, app_id, sizeof(window->app_id) - 1);
+  if (app_id) {
+    strncpy(window->app_id, app_id, sizeof(window->app_id) - 1);
+  } else {
+    window->app_id[0] = '\0';
+  }
 }
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
