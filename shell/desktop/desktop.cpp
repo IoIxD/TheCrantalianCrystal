@@ -271,3 +271,18 @@ void TCCDesktopClient::egl_draw() {
     raise(SIGTRAP);
   };
 }
+
+TCCDesktopClient::~TCCDesktopClient() {
+  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+    raise(SIGTRAP);
+  };
+
+  for (auto glyph : mGlyphManager.glyphs()) {
+    glyph->destroy();
+  }
+
+  wl_egl_window_destroy(mEGLWindow);
+  eglDestroyContext(mEGLDisplay, mEGLContext);
+  eglDestroyContext(mEGLDisplay, mEGLSurface);
+}

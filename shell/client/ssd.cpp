@@ -230,4 +230,8 @@ TCCClient::Window::~Window() {
   for (auto glyph : mGlyphManager.glyphs()) {
     glyph->destroy();
   }
+
+  wl_egl_window_destroy(mEGLWindow);
+  eglDestroyContext(mEGLDisplay, mEGLContext);
+  eglDestroyContext(mEGLDisplay, mEGLSurface);
 }

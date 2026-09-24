@@ -71,4 +71,5 @@ class TCCDesktopClient {
 public:
   TCCDesktopClient(TCCClient::Output *output);
   void step();
+  ~TCCDesktopClient();
 };
