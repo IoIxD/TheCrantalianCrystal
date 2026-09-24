@@ -106,7 +106,8 @@ void TCCClient::Window::setup_decor() {
   mEGLWindow = wl_egl_window_create(decor_surface, decor_width, decor_height);
   if (!mEGLWindow) {
     printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
-    raise(SIGTRAP);
+    has_decor = false;
+    return;
   }
 
   ret = eglBindAPI(EGL_OPENGL_API);
@@ -119,12 +120,15 @@ void TCCClient::Window::setup_decor() {
       eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig, mEGLWindow, NULL);
   if (mEGLSurface == EGL_NO_SURFACE) {
     printf("eglCreatePlatformWindowSurface error: %0X\n", eglGetError());
-    raise(SIGTRAP);
+    has_decor = false;
+    return;
   }
 
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
     printf("eglMakeCurrent error (init) %08X\n", eglGetError());
-    raise(SIGTRAP);
+    has_decor = false;
+    return;
+    // raise(SIGTRAP);
   };
 
   eglSwapInterval(mEGLDisplay, 0);
@@ -147,8 +151,9 @@ void TCCClient::Window::decor_draw() {
   wl_egl_window_resize(mEGLWindow, decor_width, decor_height, 0, 0);
 
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
-    raise(SIGTRAP);
+    printf("eglMakeCurrent error %08X\n", eglGetError());
+    has_decor = false;
+    return;
   };
 
   decor_draw_backing();
@@ -233,8 +238,9 @@ void TCCClient::Window::decor_draw_icon() {
 
 TCCClient::Window::~Window() {
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
-    raise(SIGTRAP);
+    printf("eglMakeCurrent error %08X\n", eglGetError());
+    has_decor = false;
+    return;
   };
 
   for (auto glyph : mGlyphManager.glyphs()) {

@@ -188,6 +188,7 @@ void TCCClient::river_window_decoration_hint(void *data,
   // }
 
   if (wants_decor) {
+    river_window_v1_use_ssd(id);
     window->has_decor = true;
     window->decor_surface =
         wl_compositor_create_surface(window->client->mCompositor);
@@ -498,7 +499,11 @@ void TCCClient::window_minimize(Window *window) {
 void TCCClient::window_manage(Window *window) {
   if (window->is_new) {
     window->is_new = false;
-    river_window_v1_use_ssd(window->id);
+    river_window_v1_set_capabilities(
+        window->id, RIVER_WINDOW_V1_CAPABILITIES_MAXIMIZE |
+                        RIVER_WINDOW_V1_CAPABILITIES_MINIMIZE |
+                        RIVER_WINDOW_V1_CAPABILITIES_FULLSCREEN);
+
     if (window->has_decor && !window->hide_decor) {
       window->center_requested = true;
       river_window_v1_hide(window->id); /* hide the window so that we don't see
