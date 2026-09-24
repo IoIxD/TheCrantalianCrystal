@@ -180,37 +180,51 @@ void TCCDesktopClient::draw_desktop() {
   glEnd();
 }
 
-void TCCDesktopClient::draw_icon(int x, int y) {
+void TCCDesktopClient::draw_icon(TCCClient::Window *win, int x, int y) {
   glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT |
                GL_VIEWPORT_BIT);
   glViewport(x, mOutput->height - y, ICON_SIZE, ICON_SIZE);
-  float scaleX = mOutput->width / ICON_SIZE;
-  float scaleY = mOutput->height / ICON_SIZE;
 
+  if (!mWindowIcons.contains(win)) {
+    IconInf inf;
+    unsigned char *pixels = nullptr;
+    mIconManager.get_icon(win->app_id, ICON_SIZE, &inf.width, &inf.height,
+                          &pixels);
+
+    if (pixels) {
+      inf.id = TextureManager::NewGLTextureID(inf.width, inf.height, pixels);
+      free(pixels);
+    }
+    mWindowIcons.insert_or_assign(win, inf);
+  }
+
+  glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  auto icon = mWindowIcons.at(win);
 
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glColor4f(1, 0, 0, 1);
+  glBindTexture(GL_TEXTURE_2D, icon.id);
+  glColor4f(1, 1, 1, 1);
   glBegin(GL_QUADS);
-  // glTexCoord2f(0.0f, 1.0f);
-  glVertex3f(-scaleX, -scaleY, 1); // bottom-left
-  // glTexCoord2f(1.0f, 1.0f);
-  glVertex3f(scaleX, -scaleY, 1);
-  // glTexCoord2f(1.0f, 0.0f);
-  glVertex3f(scaleX, scaleY, 1);
-  // glTexCoord2f(0.0f, 0.0f);
-  glVertex3f(-scaleX, scaleY, 1); // top-right
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex3f(-1., -1., 1); // bottom-left
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex3f(1., -1., 1);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex3f(1., 1., 1);
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex3f(-1., 1., 1); // top-right
   glEnd();
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   glViewport(x, mOutput->height - y - 20, ICON_SIZE, 16);
 
   glColor4f(0, 0, 0, 0.5);
   glBegin(GL_QUADS);
-  glVertex3f(-scaleX, -scaleY, 1); // bottom-left
-  glVertex3f(scaleX, -scaleY, 1);
-  glVertex3f(scaleX, scaleY, 1);
-  glVertex3f(-scaleX, scaleY, 1); // top-right
+  glVertex3f(-1., -1., 1); // bottom-left
+  glVertex3f(1., -1., 1);
+  glVertex3f(1., 1., 1);
+  glVertex3f(-1., 1., 1); // top-right
   glEnd();
   glColor4f(1, 1, 1, 1);
 
@@ -254,7 +268,7 @@ void TCCDesktopClient::egl_draw() {
       snprintf(titleShortened, TEXT_WIDTH, "%s", title.c_str());
     }
 
-    draw_icon(icon_x, icon_y);
+    draw_icon(win, icon_x, icon_y);
 
     mGlyphManager.draw_text(titleShortened, icon_x, icon_y + 16, mOutput->width,
                             mOutput->height, true, false);

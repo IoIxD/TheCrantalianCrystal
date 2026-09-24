@@ -221,6 +221,7 @@ void TCCClient::Window::decor_draw_icon() {
     glDisable(GL_BLEND);
   }
 }
+
 TCCClient::Window::~Window() {
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
     printf("eglMakeCurrent error (init) %08X\n", eglGetError());

@@ -34,6 +34,14 @@ class TCCDesktopClient {
   EGLConfig mEGLConfig;
   EGLSurface mEGLSurface;
 
+  struct IconInf {
+    int width = 0;
+    int height = 0;
+    GLuint id = 0;
+  };
+  IconManager mIconManager;
+  std::unordered_map<TCCClient::Window *, IconInf> mWindowIcons;
+
   zwlr_layer_shell_v1 *mLayerShell;
   zwlr_layer_surface_v1 *mLayerSurface;
 
@@ -43,7 +51,7 @@ class TCCDesktopClient {
 
   void setup_egl();
   void draw_desktop();
-  void draw_icon(int x, int y);
+  void draw_icon(TCCClient::Window *win, int x, int y);
   void egl_draw();
 
   static void registry_global(void *data, struct wl_registry *wl_registry,
