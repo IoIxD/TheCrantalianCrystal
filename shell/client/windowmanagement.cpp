@@ -198,7 +198,7 @@ void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
                                    const char *title) {
   Window *window = (Window *)data;
 
-  strncpy(window->title, title, sizeof(window->title));
+  strncpy(window->title, title, sizeof(window->title) - 1);
 }
 // Ignored events
 void TCCClient::river_window_dimensions_hint(
@@ -212,15 +212,24 @@ void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
 void TCCClient::river_window_show_window_menu_requested(
     void *data, struct river_window_v1 *id, int32_t x, int32_t y) {}
 void TCCClient::river_window_maximize_requested(void *data,
-                                                struct river_window_v1 *id) {}
+                                                struct river_window_v1 *id) {
+  Window *window = (Window *)data;
+  window->client->window_maximize(window);
+}
 void TCCClient::river_window_unmaximize_requested(void *data,
-                                                  struct river_window_v1 *id) {}
+                                                  struct river_window_v1 *id) {
+  Window *window = (Window *)data;
+  window->client->window_maximize(window);
+}
 void TCCClient::river_window_fullscreen_requested(
     void *data, struct river_window_v1 *id, struct river_output_v1 *output) {}
 void TCCClient::river_window_exit_fullscreen_requested(
     void *data, struct river_window_v1 *id) {}
 void TCCClient::river_window_minimize_requested(void *data,
-                                                struct river_window_v1 *id) {}
+                                                struct river_window_v1 *id) {
+  Window *window = (Window *)data;
+  window->client->window_minimize(window);
+}
 void TCCClient::river_window_unreliable_pid(void *data,
                                             struct river_window_v1 *id,
                                             int32_t unreliable_pid) {}
@@ -276,6 +285,10 @@ void TCCClient::river_seat_window_interaction(void *data,
                                               struct river_window_v1 *window) {
   Seat *seat = (Seat *)data;
   seat->interacted = (Window *)river_window_v1_get_user_data(window);
+
+  if (seat->interacted->maximized) {
+    return;
+  }
 
   uint32_t edges = seat->client->get_pointer_edges(seat, seat->interacted);
 
@@ -468,12 +481,17 @@ void TCCClient::window_manage(Window *window) {
   window->pending_nav_action = NAV_BUTTON_NONE;
 
   if (window->pointer_move_requested != nullptr) {
+    if (window->maximized) {
+      window_maximize(window);
+    }
     seat_pointer_move(window->pointer_move_requested, window);
     window->pointer_move_requested = nullptr;
   }
   if (window->pointer_resize_requested != nullptr) {
-    seat_pointer_resize(window->pointer_resize_requested, window,
-                        window->pointer_resize_requested_edges);
+    if (!window->maximized) {
+      seat_pointer_resize(window->pointer_resize_requested, window,
+                          window->pointer_resize_requested_edges);
+    }
     window->pointer_resize_requested = nullptr;
   }
 
@@ -522,13 +540,15 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
 
 void TCCClient::seat_focus(Seat *seat, Window *window) {
   // Focus the top window (if any) when there is no explicit target.
-  for (auto out : mOutputs) {
-    for (auto win : out->windows) {
-      if (win == window) {
-        if (!out->windows.empty()) {
-          window = out->windows.back();
-          break;
-        };
+  if (!window) {
+    for (auto out : mOutputs) {
+      for (auto win : out->windows) {
+        if (win == window) {
+          if (!out->windows.empty()) {
+            window = out->windows.back();
+            break;
+          };
+        }
       }
     }
   }

@@ -169,6 +169,10 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
   if (!seat->pointer_window) {
     return;
   }
+  if (seat->pointer_window->maximized) {
+    return;
+  }
+
   uint32_t edges = seat->client->get_pointer_edges(
       seat, seat->pointer_window, wl_fixed_to_double(surface_x),
       wl_fixed_to_double(surface_y));
