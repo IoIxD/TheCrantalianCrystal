@@ -122,6 +122,44 @@ TCCClient::Window *TCCClient::window_from_nav_surface(wl_surface *surface,
   return nullptr;
 }
 
+TCCClient::Window *TCCClient::window_from_resize_surface(wl_surface *surface,
+                                                         uint32_t *edges) {
+  for (Output *output : mOutputs) {
+    for (Window *window : output->windows) {
+      for (int i = 0; i < RESIZE_SURFACE_COUNT; i++) {
+        if (window->resize_surfaces[i].surface == surface) {
+          *edges = resize_surface_edges[i];
+          return window;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+static uint32_t cursor_shape_from_edges(uint32_t edges) {
+  switch (edges) {
+  case RIVER_WINDOW_V1_EDGES_TOP:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_N_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_BOTTOM:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_LEFT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_W_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_RIGHT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_TOP | RIVER_WINDOW_V1_EDGES_LEFT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NW_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_TOP | RIVER_WINDOW_V1_EDGES_RIGHT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NE_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_BOTTOM | RIVER_WINDOW_V1_EDGES_LEFT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SW_RESIZE;
+  case RIVER_WINDOW_V1_EDGES_BOTTOM | RIVER_WINDOW_V1_EDGES_RIGHT:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE;
+  default:
+    return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
+  }
+}
+
 void TCCClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
                                      uint32_t capabilities) {
   Seat *seat = (Seat *)data;
@@ -151,8 +189,10 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
                                  uint32_t serial, struct wl_surface *surface,
                                  wl_fixed_t surface_x, wl_fixed_t surface_y) {
   Seat *seat = (Seat *)data;
+  uint32_t cursor_shape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
 
   uint8_t nav_button = NAV_BUTTON_NONE;
+  uint32_t edges = 0;
   if (Window *window =
           seat->client->window_from_nav_surface(surface, &nav_button)) {
     seat->pointer_window = window;
@@ -160,36 +200,19 @@ void TCCClient::wl_pointer_enter(void *data, struct wl_pointer *wl_pointer,
     seat->pointer_nav_x = wl_fixed_to_double(surface_x);
     seat->pointer_nav_y = wl_fixed_to_double(surface_y);
     seat->client->nav_button_hover(nav_button, window);
-    wp_cursor_shape_device_v1_set_shape(
-        seat->cursor_shape_device, serial,
-        WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
-    return;
+  } else if (Window *window =
+                 seat->client->window_from_resize_surface(surface, &edges)) {
+    seat->pointer_window = window;
+    seat->pointer_resize_edges = edges;
+    cursor_shape = cursor_shape_from_edges(edges);
+  } else {
+    seat->pointer_window = seat->client->window_from_decor_surface(surface);
   }
 
-  seat->pointer_window = seat->client->window_from_decor_surface(surface);
-  if (!seat->pointer_window) {
-    return;
+  if (seat->cursor_shape_device) {
+    wp_cursor_shape_device_v1_set_shape(seat->cursor_shape_device, serial,
+                                        cursor_shape);
   }
-
-  if (seat->pointer_window->maximized) {
-    return;
-  }
-
-  uint32_t edges = seat->client->get_pointer_edges(
-      seat, seat->pointer_window, wl_fixed_to_double(surface_x),
-      wl_fixed_to_double(surface_y));
-
-  uint32_t cursor_shape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
-  if (edges) {
-    if (edges == RIVER_WINDOW_V1_EDGES_RIGHT)
-      cursor_shape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE;
-    if (edges == (RIVER_WINDOW_V1_EDGES_BOTTOM))
-      cursor_shape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE;
-    if (edges == (RIVER_WINDOW_V1_EDGES_BOTTOM | RIVER_WINDOW_V1_EDGES_RIGHT))
-      cursor_shape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE;
-  }
-  wp_cursor_shape_device_v1_set_shape(seat->cursor_shape_device, serial,
-                                      cursor_shape);
 }
 
 void TCCClient::wl_pointer_leave(void *data, struct wl_pointer *wl_pointer,
@@ -200,8 +223,9 @@ void TCCClient::wl_pointer_leave(void *data, struct wl_pointer *wl_pointer,
   }
   seat->pointer_window = nullptr;
   seat->pointer_nav_button = NAV_BUTTON_NONE;
-  wp_cursor_shape_device_v1_set_shape(seat->cursor_shape_device, serial,
-                                      WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+  seat->pointer_resize_edges = 0;
+  // wp_cursor_shape_device_v1_set_shape(seat->cursor_shape_device, serial,
+  // WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
 }
 
 void TCCClient::wl_pointer_motion(void *data, struct wl_pointer *wl_pointer,

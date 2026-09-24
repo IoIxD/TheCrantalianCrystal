@@ -58,6 +58,10 @@ void TCCDesktopClient::registry_global(void *data,
     client->mSeat = (wl_seat *)wl_registry_bind(client->mRegistry, name,
                                                 &wl_seat_interface, 1);
     wl_seat_add_listener(client->mSeat, &client->mWlSeatListener, client);
+  } else if (inter == wp_cursor_shape_manager_v1_interface.name) {
+    client->mCursorShapeManager =
+        (wp_cursor_shape_manager_v1 *)wl_registry_bind(
+            client->mRegistry, name, &wp_cursor_shape_manager_v1_interface, 1);
   }
 };
 void TCCDesktopClient::global_remove(void *data,
@@ -81,6 +85,10 @@ void TCCDesktopClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
     wl_pointer_add_listener(client->mPointer, &client->mWlPointerListener,
                             client);
   } else if (!has_pointer && client->mPointer) {
+    if (client->mCursorShapeDevice) {
+      wp_cursor_shape_device_v1_destroy(client->mCursorShapeDevice);
+      client->mCursorShapeDevice = nullptr;
+    }
     release_pointer(client->mPointer);
     client->mPointer = nullptr;
   }
@@ -88,7 +96,19 @@ void TCCDesktopClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
 
 void TCCDesktopClient::wl_pointer_enter(
     void *data, struct wl_pointer *wl_pointer, uint32_t serial,
-    struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {}
+    struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+  TCCDesktopClient *self = (TCCDesktopClient *)data;
+
+  if (!self->mCursorShapeDevice && self->mCursorShapeManager) {
+    self->mCursorShapeDevice = wp_cursor_shape_manager_v1_get_pointer(
+        self->mCursorShapeManager, wl_pointer);
+  }
+  if (self->mCursorShapeDevice) {
+    wp_cursor_shape_device_v1_set_shape(
+        self->mCursorShapeDevice, serial,
+        WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+  }
+}
 void TCCDesktopClient::wl_pointer_leave(void *data,
                                         struct wl_pointer *wl_pointer,
                                         uint32_t serial,
@@ -360,6 +380,12 @@ TCCDesktopClient::~TCCDesktopClient() {
     glyph->destroy();
   }
 
+  if (mCursorShapeDevice) {
+    wp_cursor_shape_device_v1_destroy(mCursorShapeDevice);
+  }
+  if (mCursorShapeManager) {
+    wp_cursor_shape_manager_v1_destroy(mCursorShapeManager);
+  }
   if (mPointer) {
     release_pointer(mPointer);
   }

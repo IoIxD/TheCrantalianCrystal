@@ -139,8 +139,7 @@ void TCCClient::Window::setup_decor() {
 };
 
 void TCCClient::Window::decor_draw() {
-  wl_egl_window_resize(mEGLWindow, decor_width + SSD_BORDER_LEEWAY,
-                       decor_height + SSD_BORDER_LEEWAY, 0, 0);
+  wl_egl_window_resize(mEGLWindow, decor_width, decor_height, 0, 0);
 
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
     printf("eglMakeCurrent error (init) %08X\n", eglGetError());
@@ -151,7 +150,7 @@ void TCCClient::Window::decor_draw() {
   decor_draw_icon();
 
   /* draw text */
-  glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
+  glViewport(0, 0, decor_width, decor_height);
   mGlyphManager.draw_text(title, 32, 22, decor_width, decor_height, true,
                           false);
 
@@ -159,7 +158,7 @@ void TCCClient::Window::decor_draw() {
 };
 
 void TCCClient::Window::decor_draw_backing() {
-  glViewport(0, SSD_BORDER_LEEWAY, decor_width, decor_height);
+  glViewport(0, 0, decor_width, decor_height);
 
   glClearColor(0.f, 0.0f, 0.f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -204,7 +203,7 @@ void TCCClient::Window::decor_draw_backing() {
 }
 void TCCClient::Window::decor_draw_icon() {
   if (decor_icon_texture != -1) {
-    glViewport(10, decor_height - 20, 16, 16);
+    glViewport(10, decor_height - 20 - SSD_BORDER_LEEWAY, 16, 16);
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);

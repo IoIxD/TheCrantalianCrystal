@@ -31,6 +31,9 @@
 #define SSD_BORDER_SIZE_TOP 32
 #define SSD_BORDER_SIZE_TOTAL SSD_BORDER_SIZE_TOP + SSD_BORDER_SIZE
 
+// Resize surfaces cover the border and extend SSD_BORDER_LEEWAY past it.
+#define SSD_RESIZE_THICKNESS (SSD_BORDER_SIZE + SSD_BORDER_LEEWAY)
+
 // Nav button hitboxes, in decoration surface coordinates. These mirror the
 // button rects drawn in ssd.frag.
 #define SSD_NAV_BUTTON_WIDTH 22
@@ -65,6 +68,19 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     NAV_BUTTON_MIN,
     NAV_BUTTON_MAX,
     NAV_BUTTON_COUNT,
+  };
+
+  enum ResizeSurface {
+    RESIZE_SURFACE_TOP,
+    RESIZE_SURFACE_BOTTOM,
+    RESIZE_SURFACE_LEFT,
+    RESIZE_SURFACE_RIGHT,
+    // Corners come last so they're stacked above the edges.
+    RESIZE_SURFACE_TOP_LEFT,
+    RESIZE_SURFACE_TOP_RIGHT,
+    RESIZE_SURFACE_BOTTOM_LEFT,
+    RESIZE_SURFACE_BOTTOM_RIGHT,
+    RESIZE_SURFACE_COUNT,
   };
 
 public:
@@ -102,6 +118,15 @@ public:
     };
     // Indexed by NavButton, NAV_BUTTON_NONE is unused.
     nav_surface nav_surfaces[NAV_BUTTON_COUNT];
+
+    struct resize_surface {
+      wl_surface *surface = nullptr;
+      wl_subsurface *subsurface = nullptr;
+      // Size of the currently attached buffer, 0 if unmapped.
+      int width = 0, height = 0;
+    };
+    // Indexed by ResizeSurface.
+    resize_surface resize_surfaces[RESIZE_SURFACE_COUNT];
 
     int32_t x = 0;
     int32_t y = 0;
@@ -206,6 +231,8 @@ private:
     // Nav button surface that currently has wl_pointer focus, and where.
     uint8_t pointer_nav_button = NAV_BUTTON_NONE;
     double pointer_nav_x = 0, pointer_nav_y = 0;
+    // Edges of the resize surface that currently has wl_pointer focus.
+    uint32_t pointer_resize_edges = 0;
     // Nav button the pointer was pressed on.
     uint8_t nav_button_pressed = NAV_BUTTON_NONE;
   };
@@ -219,6 +246,10 @@ private:
   wl_shm *mShm = nullptr;
   // Fully transparent buffer shared by every nav button surface.
   wl_buffer *mNavButtonBuffer = nullptr;
+  // Zero-filled shm pool backing every transparent buffer. Only ever grows.
+  int mTransparentPoolFd = -1;
+  int mTransparentPoolSize = 0;
+  wl_shm_pool *mTransparentPool = nullptr;
 
   std::vector<Output *> mOutputs;
   std::vector<Seat *> mSeats;
@@ -486,20 +517,22 @@ private:
   void seat_manage(Seat *seat);
   void seat_render(Seat *seat);
 
-  uint32_t get_pointer_edges(Seat *seat, Window *window, int x = -1,
-                             int y = -1);
-
   void nav_button_action(uint8_t action, bool released, Window *window);
   void nav_button_hover(uint8_t button, Window *window);
   uint8_t get_pressed_nav_button(Seat *seat, Window *window);
 
   Window *window_from_decor_surface(wl_surface *surface);
   Window *window_from_nav_surface(wl_surface *surface, uint8_t *button);
+  Window *window_from_resize_surface(wl_surface *surface, uint32_t *edges);
 
+  wl_buffer *create_transparent_buffer(int width, int height);
   wl_buffer *get_nav_button_buffer();
   void window_create_nav_surfaces(Window *window);
   void window_destroy_nav_surfaces(Window *window);
   void window_position_nav_surfaces(Window *window);
+  void window_create_resize_surfaces(Window *window);
+  void window_destroy_resize_surfaces(Window *window);
+  void window_position_resize_surfaces(Window *window);
 
 public:
   TCCClient();
@@ -518,4 +551,16 @@ static const int nav_button_x_from_right[] = {
     SSD_NAV_BUTTON_CLOSE_X_FROM_RIGHT,
     SSD_NAV_BUTTON_MIN_X_FROM_RIGHT,
     SSD_NAV_BUTTON_MAX_X_FROM_RIGHT,
+};
+
+// Indexed by TCCClient::ResizeSurface.
+static const uint32_t resize_surface_edges[] = {
+    RIVER_WINDOW_V1_EDGES_TOP,
+    RIVER_WINDOW_V1_EDGES_BOTTOM,
+    RIVER_WINDOW_V1_EDGES_LEFT,
+    RIVER_WINDOW_V1_EDGES_RIGHT,
+    RIVER_WINDOW_V1_EDGES_TOP | RIVER_WINDOW_V1_EDGES_LEFT,
+    RIVER_WINDOW_V1_EDGES_TOP | RIVER_WINDOW_V1_EDGES_RIGHT,
+    RIVER_WINDOW_V1_EDGES_BOTTOM | RIVER_WINDOW_V1_EDGES_LEFT,
+    RIVER_WINDOW_V1_EDGES_BOTTOM | RIVER_WINDOW_V1_EDGES_RIGHT,
 };

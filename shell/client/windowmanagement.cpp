@@ -78,6 +78,7 @@ void TCCClient::river_wm_render_start(
       if (window->has_decor) {
         window->decor_draw();
         client->window_position_nav_surfaces(window);
+        client->window_position_resize_surfaces(window);
         river_decoration_v1_sync_next_commit(window->decor_decor);
         wl_surface_commit(window->decor_surface);
       }
@@ -191,6 +192,7 @@ void TCCClient::river_window_decoration_hint(void *data,
         river_window_v1_get_decoration_below(id, window->decor_surface);
 
     window->client->window_create_nav_surfaces(window);
+    window->client->window_create_resize_surfaces(window);
 
     window->decor_width = window->width + SSD_BORDER_SIZE + SSD_BORDER_SIZE;
     window->decor_height = window->height + SSD_BORDER_SIZE_TOTAL;
@@ -302,11 +304,10 @@ void TCCClient::river_seat_window_interaction(void *data,
     return;
   }
 
-  uint32_t edges = seat->client->get_pointer_edges(seat, seat->interacted);
-
-  if (edges) {
+  if (seat->pointer_resize_edges && seat->pointer_window == seat->interacted) {
     seat->interacted->pointer_resize_requested = seat;
-    seat->interacted->pointer_resize_requested_edges = edges;
+    seat->interacted->pointer_resize_requested_edges =
+        seat->pointer_resize_edges;
   } else {
     int y = seat->pointer_y - seat->interacted->y;
     // Clicking a nav button shouldn't start dragging the window.
@@ -378,6 +379,7 @@ void TCCClient::window_maybe_destroy(Window *window) {
       seat->pointer_window = nullptr;
       seat->pointer_nav_button = NAV_BUTTON_NONE;
       seat->nav_button_pressed = NAV_BUTTON_NONE;
+      seat->pointer_resize_edges = 0;
     }
     if (seat->op_window == window) {
       river_seat_v1_op_end(seat->id);
@@ -387,6 +389,7 @@ void TCCClient::window_maybe_destroy(Window *window) {
   }
 
   window_destroy_nav_surfaces(window);
+  window_destroy_resize_surfaces(window);
   river_window_v1_destroy(window->id);
 
   for (auto out : mOutputs) {
@@ -670,10 +673,11 @@ void TCCClient::seat_action(Seat *seat, Action action) {
 void TCCClient::seat_manage(Seat *seat) {
   if (seat->is_new) {
     seat->is_new = false;
+    const uint32_t alt = RIVER_SEAT_V1_MODIFIERS_MOD1;
     const uint32_t super = RIVER_SEAT_V1_MODIFIERS_MOD4;
     xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_TERMINAL);
     xkb_binding_create(seat, super, XKB_KEY_q, ACTION_CLOSE);
-    xkb_binding_create(seat, super, XKB_KEY_n, ACTION_FOCUS_NEXT);
+    xkb_binding_create(seat, alt, XKB_KEY_Tab, ACTION_FOCUS_NEXT);
     xkb_binding_create(seat, super, XKB_KEY_Escape, ACTION_EXIT);
     pointer_binding_create(seat, super, BTN_LEFT, ACTION_MOVE);
     pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
@@ -755,28 +759,6 @@ void TCCClient::seat_render(Seat *seat) {
   }
 }
 
-uint32_t TCCClient::get_pointer_edges(Seat *seat, Window *window, int x,
-                                      int y) {
-  uint32_t edges = 0;
-
-  if (x == -1)
-    x = seat->pointer_x - window->x;
-  if (y == -1)
-    y = seat->pointer_y - window->y;
-
-#define Y_LIMIT -(SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE)
-
-  auto x_check = x > window->width;
-  auto y_check = y > window->height;
-  if (x_check || y_check) {
-    if (x > window->width - SSD_BORDER_LEEWAY)
-      edges |= RIVER_WINDOW_V1_EDGES_RIGHT;
-    if (y > window->height - SSD_BORDER_LEEWAY)
-      edges |= RIVER_WINDOW_V1_EDGES_BOTTOM;
-  }
-  return edges;
-};
-
 void TCCClient::nav_button_action(uint8_t action, bool released,
                                   Window *window) {
   /* close all holds  */
@@ -830,29 +812,39 @@ uint8_t TCCClient::get_pressed_nav_button(Seat *seat, Window *window) {
   return NAV_BUTTON_NONE;
 }
 
+wl_buffer *TCCClient::create_transparent_buffer(int width, int height) {
+  const int stride = width * 4;
+  const int size = stride * height;
+
+  // Every buffer starts at offset 0 of the same pool. ftruncate zero-fills,
+  // which is exactly the fully transparent contents we want, and nothing ever
+  // writes to it, so there's no need to mmap it.
+  if (size > mTransparentPoolSize) {
+    if (mTransparentPoolFd < 0) {
+      mTransparentPoolFd = memfd_create("tcc-transparent", MFD_CLOEXEC);
+    }
+    if (mTransparentPoolFd < 0 || ftruncate(mTransparentPoolFd, size) < 0) {
+      perror("transparent buffer");
+      raise(SIGTRAP);
+    }
+
+    if (mTransparentPool) {
+      wl_shm_pool_resize(mTransparentPool, size);
+    } else {
+      mTransparentPool = wl_shm_create_pool(mShm, mTransparentPoolFd, size);
+    }
+    mTransparentPoolSize = size;
+  }
+
+  return wl_shm_pool_create_buffer(mTransparentPool, 0, width, height, stride,
+                                   WL_SHM_FORMAT_ARGB8888);
+}
+
 wl_buffer *TCCClient::get_nav_button_buffer() {
-  if (mNavButtonBuffer) {
-    return mNavButtonBuffer;
+  if (!mNavButtonBuffer) {
+    mNavButtonBuffer =
+        create_transparent_buffer(SSD_NAV_BUTTON_WIDTH, SSD_NAV_BUTTON_HEIGHT);
   }
-
-  const int stride = SSD_NAV_BUTTON_WIDTH * 4;
-  const int size = stride * SSD_NAV_BUTTON_HEIGHT;
-
-  // ftruncate zero-fills, which is exactly the fully transparent buffer we
-  // want, so there's no need to mmap it.
-  int fd = memfd_create("tcc-nav-button", MFD_CLOEXEC);
-  if (fd < 0 || ftruncate(fd, size) < 0) {
-    perror("nav button buffer");
-    raise(SIGTRAP);
-  }
-
-  wl_shm_pool *pool = wl_shm_create_pool(mShm, fd, size);
-  mNavButtonBuffer = wl_shm_pool_create_buffer(pool, 0, SSD_NAV_BUTTON_WIDTH,
-                                               SSD_NAV_BUTTON_HEIGHT, stride,
-                                               WL_SHM_FORMAT_ARGB8888);
-  wl_shm_pool_destroy(pool);
-  close(fd);
-
   return mNavButtonBuffer;
 }
 
@@ -894,5 +886,94 @@ void TCCClient::window_position_nav_surfaces(Window *window) {
           window->nav_surfaces[i].subsurface,
           window->decor_width - nav_button_x_from_right[i], SSD_NAV_BUTTON_Y);
     }
+  }
+}
+
+// Resize surface buffers change size along with the window, so each one is
+// only used for a single attach and gets destroyed once the compositor is done
+// with it.
+static void resize_buffer_release(void *data, wl_buffer *buffer) {
+  wl_buffer_destroy(buffer);
+}
+static const wl_buffer_listener resize_buffer_listener = {
+    .release = resize_buffer_release,
+};
+
+void TCCClient::window_create_resize_surfaces(Window *window) {
+  if (!mSubcompositor || !mShm) {
+    fprintf(stderr, "wl_subcompositor or wl_shm not supported, windows "
+                    "won't be resizable from their borders\n");
+    return;
+  }
+
+  // Created in ResizeSurface order, so the corners end up stacked on top.
+  for (auto &resize : window->resize_surfaces) {
+    resize.surface = wl_compositor_create_surface(mCompositor);
+    resize.subsurface = wl_subcompositor_get_subsurface(
+        mSubcompositor, resize.surface, window->decor_surface);
+  }
+  // Buffers are attached in window_position_resize_surfaces, once we know the
+  // decoration's size.
+}
+
+void TCCClient::window_destroy_resize_surfaces(Window *window) {
+  for (auto &resize : window->resize_surfaces) {
+    if (resize.subsurface) {
+      wl_subsurface_destroy(resize.subsurface);
+    }
+    if (resize.surface) {
+      wl_surface_destroy(resize.surface);
+    }
+    resize = {};
+  }
+}
+
+void TCCClient::window_position_resize_surfaces(Window *window) {
+  // In decoration surface coordinates. Each surface covers the border and
+  // sticks SSD_BORDER_LEEWAY out past it.
+  const int t = SSD_RESIZE_THICKNESS;
+  const int outer = -SSD_BORDER_LEEWAY;
+  const int right = window->decor_width - SSD_BORDER_SIZE;
+  const int bottom = window->decor_height - SSD_BORDER_SIZE;
+  const int long_w = window->decor_width + SSD_BORDER_LEEWAY * 2;
+  const int long_h = window->decor_height + SSD_BORDER_LEEWAY * 2;
+
+  struct {
+    int x, y, width, height;
+  } rects[RESIZE_SURFACE_COUNT] = {
+      // Same order as ResizeSurface.
+      {outer, outer, long_w, t}, {outer, bottom, long_w, t},
+      {outer, outer, t, long_h}, {right, outer, t, long_h},
+      {outer, outer, t, t},      {right, outer, t, t},
+      {outer, bottom, t, t},     {right, bottom, t, t},
+  };
+
+  for (int i = 0; i < RESIZE_SURFACE_COUNT; i++) {
+    auto &resize = window->resize_surfaces[i];
+    if (!resize.subsurface) {
+      continue;
+    }
+
+    // Maximized windows can't be resized, so unmap the surfaces entirely.
+    int width = window->maximized ? 0 : rects[i].width;
+    int height = window->maximized ? 0 : rects[i].height;
+
+    // Like the nav surfaces, these are synchronized, so the new size and
+    // position land with the decoration's commit.
+    wl_subsurface_set_position(resize.subsurface, rects[i].x, rects[i].y);
+    if (width == resize.width && height == resize.height) {
+      continue;
+    }
+
+    wl_buffer *buffer = nullptr;
+    if (width > 0 && height > 0) {
+      buffer = create_transparent_buffer(width, height);
+      wl_buffer_add_listener(buffer, &resize_buffer_listener, nullptr);
+    }
+    wl_surface_attach(resize.surface, buffer, 0, 0);
+    wl_surface_damage(resize.surface, 0, 0, INT32_MAX, INT32_MAX);
+    wl_surface_commit(resize.surface);
+    resize.width = width;
+    resize.height = height;
   }
 }

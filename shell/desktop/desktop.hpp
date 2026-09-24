@@ -31,6 +31,9 @@ class TCCDesktopClient {
 
   wl_seat *mSeat = nullptr;
   wl_pointer *mPointer = nullptr;
+  // Only set if the compositor supports wp_cursor_shape_manager_v1.
+  wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
+  wp_cursor_shape_device_v1 *mCursorShapeDevice = nullptr;
 
   wl_egl_window *mEGLWindow;
   EGLDisplay mEGLDisplay;

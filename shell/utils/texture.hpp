@@ -9,6 +9,7 @@
  */
 class TextureManager {
 public:
-  static int NewGLTextureID(int w, int h, const GLvoid *rgba);
+  static int NewGLTextureID(int w, int h, const GLvoid *rgba,
+                            bool antialiased = true);
   static void FreeGLTextureID(GLuint id);
 };
