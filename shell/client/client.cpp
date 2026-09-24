@@ -3,9 +3,12 @@
 #include <cstdlib>
 
 #include <assert.h>
+#include <cerrno>
 #include <csignal>
+#include <poll.h>
 #include <string>
 
+#include "../desktop/desktop.hpp"
 #include "../utils/glyph.hpp"
 
 #include <dlfcn.h>
@@ -14,7 +17,7 @@ TCCClient::TCCClient() {
   mDisplay = wl_display_connect(NULL);
   if (mDisplay == nullptr) {
     fprintf(stderr, "failed to connect to Wayland server\n");
-    exit(1);
+    raise(SIGTRAP);
   }
 
   // Avoid passing WAYLAND_DEBUG on to our children.
@@ -36,7 +39,7 @@ TCCClient::TCCClient() {
   if (mRiverWindowManager == nullptr || mRiverXKBBinding == nullptr) {
     fprintf(stderr, "river_window_manager_v1 or river_xkb_bindings_v1 "
                     "not supported by the Wayland server\n");
-    exit(1);
+    raise(SIGTRAP);
   }
 
   GlyphManager::Init();
@@ -105,13 +108,60 @@ void TCCClient::run() {
   if (!mRiverWindowManager || !mRiverXKBBinding) {
     fprintf(stderr, "river_window_manager_v1 or river_xkb_bindings_v1 "
                     "not supported by the Wayland server\n");
-    exit(1);
+    raise(SIGTRAP);
   }
 
   while (mRunning) {
-    if (wl_display_dispatch(mDisplay) < 0) {
-      fprintf(stderr, "dispatch failed\n");
-      exit(1);
+    std::vector<pollfd> fds;
+    std::vector<wl_display *> displays = {mDisplay};
+
+    for (Output *output : mOutputs) {
+      if (output->desktop_client) {
+        // output->desktop_client->step();
+        displays.push_back(output->desktop_client->display());
+      }
+    }
+
+    for (wl_display *display : displays) {
+      while (wl_display_prepare_read(display) != 0) {
+        if (wl_display_dispatch_pending(display) < 0) {
+          fprintf(stderr, "dispatch failed\n");
+          raise(SIGTRAP);
+        }
+      }
+      wl_display_flush(display);
+      fds.push_back({wl_display_get_fd(display), POLLIN, 0});
+    }
+
+    if (poll(fds.data(), fds.size(), -1) < 0) {
+      if (errno != EINTR) {
+        perror("poll");
+        raise(SIGTRAP);
+      }
+      for (pollfd &fd : fds) {
+        fd.revents = 0;
+      }
+    }
+
+    for (size_t i = displays.size(); i-- > 0;) {
+      wl_display *display = displays[i];
+      if (fds[i].revents & (POLLERR | POLLHUP)) {
+        wl_display_cancel_read(display);
+        fprintf(stderr, "wayland connection lost\n");
+        raise(SIGTRAP);
+      }
+      if (fds[i].revents & POLLIN) {
+        if (wl_display_read_events(display) < 0) {
+          fprintf(stderr, "read events failed\n");
+          raise(SIGTRAP);
+        }
+      } else {
+        wl_display_cancel_read(display);
+      }
+      if (wl_display_dispatch_pending(display) < 0) {
+        fprintf(stderr, "dispatch failed: %d\n", wl_display_get_error(display));
+        raise(SIGTRAP);
+      }
     }
   }
 }

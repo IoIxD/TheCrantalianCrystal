@@ -1,5 +1,6 @@
 #include "desktop.hpp"
 #include <GL/gl.h>
+#include <algorithm>
 #include <assert.h>
 #include <csignal>
 
@@ -52,14 +53,86 @@ void TCCDesktopClient::registry_global(void *data,
                                        &client->mLayerSurfaceListener, client);
 
     wl_surface_commit(client->mSurface);
-    // wl_display_roundtrip(client->mDisplay);
-
     client->setup_egl();
+  } else if (inter == wl_seat_interface.name && !client->mSeat) {
+    client->mSeat = (wl_seat *)wl_registry_bind(client->mRegistry, name,
+                                                &wl_seat_interface, 1);
+    wl_seat_add_listener(client->mSeat, &client->mWlSeatListener, client);
   }
 };
 void TCCDesktopClient::global_remove(void *data,
                                      struct wl_registry *wl_registry,
                                      uint32_t name) {};
+
+static void release_pointer(wl_pointer *pointer) {
+  if (wl_pointer_get_version(pointer) >= WL_POINTER_RELEASE_SINCE_VERSION)
+    wl_pointer_release(pointer);
+  else
+    wl_pointer_destroy(pointer);
+}
+
+void TCCDesktopClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
+                                            uint32_t capabilities) {
+  TCCDesktopClient *client = (TCCDesktopClient *)data;
+  bool has_pointer = capabilities & WL_SEAT_CAPABILITY_POINTER;
+
+  if (has_pointer && !client->mPointer) {
+    client->mPointer = wl_seat_get_pointer(wl_seat);
+    wl_pointer_add_listener(client->mPointer, &client->mWlPointerListener,
+                            client);
+  } else if (!has_pointer && client->mPointer) {
+    release_pointer(client->mPointer);
+    client->mPointer = nullptr;
+  }
+}
+
+void TCCDesktopClient::wl_pointer_enter(
+    void *data, struct wl_pointer *wl_pointer, uint32_t serial,
+    struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {}
+void TCCDesktopClient::wl_pointer_leave(void *data,
+                                        struct wl_pointer *wl_pointer,
+                                        uint32_t serial,
+                                        struct wl_surface *surface) {}
+void TCCDesktopClient::wl_pointer_motion(void *data,
+                                         struct wl_pointer *wl_pointer,
+                                         uint32_t time, wl_fixed_t surface_x,
+                                         wl_fixed_t surface_y) {
+  TCCDesktopClient *self = (TCCDesktopClient *)data;
+
+  self->mPointerX = wl_fixed_to_double(surface_x);
+  self->mPointerY = wl_fixed_to_double(surface_y);
+}
+void TCCDesktopClient::wl_pointer_button(void *data,
+                                         struct wl_pointer *wl_pointer,
+                                         uint32_t serial, uint32_t time,
+                                         uint32_t button, uint32_t state) {
+  TCCDesktopClient *self = (TCCDesktopClient *)data;
+
+  if (state == WL_POINTER_BUTTON_STATE_RELEASED) {
+    bool clicked = false;
+
+    self->for_each_minimized([&](TCCClient::Window *win, int _x, int _y) {
+      if (clicked) {
+        return;
+      }
+      int x = _x + ICON_SIZE;
+      int y = _y;
+      if (x >= self->mPointerX && self->mPointerX <= x + ICON_SIZE &&
+          y >= self->mPointerY && self->mPointerY <= y + ICON_SIZE) {
+        win->queue_minimize = true;
+        clicked = true;
+        win->client->dirty();
+      }
+    });
+  }
+}
+
+void TCCDesktopClient::wl_seat_name(void *data, struct wl_seat *wl_seat,
+                                    const char *name) {}
+void TCCDesktopClient::wl_pointer_axis(void *data,
+                                       struct wl_pointer *wl_pointer,
+                                       uint32_t time, uint32_t axis,
+                                       wl_fixed_t value) {}
 
 TCCDesktopClient::TCCDesktopClient(TCCClient::Output *output)
     : mOutput(output) {
@@ -74,8 +147,8 @@ TCCDesktopClient::TCCDesktopClient(TCCClient::Output *output)
 }
 void TCCDesktopClient::step() {
   if (wl_display_dispatch_pending(mDisplay) < 0) {
-    fprintf(stderr, "dispatch failed\n");
-    exit(1);
+    fprintf(stderr, "3 dispatch failed\n");
+    raise(SIGTRAP);
   }
 
   egl_draw();
@@ -253,10 +326,7 @@ void TCCDesktopClient::egl_draw() {
 
   draw_desktop();
 
-  int icon_x = 25;
-  int icon_y = 25 + ICON_SIZE;
-
-  for (auto win : mOutput->minimized_windows) {
+  this->for_each_minimized([&](TCCClient::Window *win, int x, int y) {
 #define TEXT_WIDTH 13
     char titleShortened[TEXT_WIDTH + 1] = {0};
     std::string title = win->title;
@@ -268,17 +338,11 @@ void TCCDesktopClient::egl_draw() {
       snprintf(titleShortened, TEXT_WIDTH, "%s", title.c_str());
     }
 
-    draw_icon(win, icon_x, icon_y);
+    draw_icon(win, x, y);
 
-    mGlyphManager.draw_text(titleShortened, icon_x, icon_y + 16, mOutput->width,
+    mGlyphManager.draw_text(titleShortened, x, y + 16, mOutput->width,
                             mOutput->height, true, false);
-
-    icon_y += ICON_MARGIN;
-    if (icon_y >= mOutput->height - ICON_MARGIN) {
-      icon_x += ICON_MARGIN;
-      icon_y = 25 + ICON_SIZE;
-    }
-  }
+  });
 
   if (eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
     printf("eglSwapBuffers error %08X\n", eglGetError());
@@ -296,7 +360,33 @@ TCCDesktopClient::~TCCDesktopClient() {
     glyph->destroy();
   }
 
+  if (mPointer) {
+    release_pointer(mPointer);
+  }
+  if (mSeat) {
+    if (wl_seat_get_version(mSeat) >= WL_SEAT_RELEASE_SINCE_VERSION)
+      wl_seat_release(mSeat);
+    else
+      wl_seat_destroy(mSeat);
+  }
+
   wl_egl_window_destroy(mEGLWindow);
   eglDestroyContext(mEGLDisplay, mEGLContext);
   eglDestroyContext(mEGLDisplay, mEGLSurface);
 }
+
+void TCCDesktopClient::for_each_minimized(
+    std::function<void(TCCClient::Window *, int x, int y)> func) {
+  int icon_x = 25;
+  int icon_y = 25 + ICON_SIZE;
+
+  for (auto win : mOutput->minimized_windows) {
+    func(win, icon_x, icon_y);
+
+    icon_y += ICON_MARGIN;
+    if (icon_y >= mOutput->height - ICON_MARGIN) {
+      icon_x += ICON_MARGIN;
+      icon_y = 25 + ICON_SIZE;
+    }
+  }
+};

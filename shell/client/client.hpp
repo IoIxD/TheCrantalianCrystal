@@ -126,6 +126,8 @@ public:
     bool minimize_hover = false;
     bool maximize_hover = false;
 
+    bool queue_minimize = false;
+
     // Applied during the next manage sequence.
     uint8_t pending_nav_action = NAV_BUTTON_NONE;
 
@@ -309,11 +311,6 @@ private:
       .motion = wl_pointer_motion,
       .button = wl_pointer_button,
       .axis = wl_pointer_axis,
-      .frame = wl_pointer_frame,
-      .axis_source = wl_pointer_axis_source,
-      .axis_stop = wl_pointer_axis_stop,
-      .axis_discrete = wl_pointer_axis_discrete,
-      .axis_value120 = wl_pointer_axis_value120,
   };
 
   const river_xkb_binding_v1_listener mRiverXkbBindingListener = {
@@ -444,17 +441,6 @@ private:
                                 uint32_t state);
   static void wl_pointer_axis(void *data, struct wl_pointer *wl_pointer,
                               uint32_t time, uint32_t axis, wl_fixed_t value);
-  static void wl_pointer_frame(void *data, struct wl_pointer *wl_pointer);
-  static void wl_pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
-                                     uint32_t axis_source);
-  static void wl_pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
-                                   uint32_t time, uint32_t axis);
-  static void wl_pointer_axis_discrete(void *data,
-                                       struct wl_pointer *wl_pointer,
-                                       uint32_t axis, int32_t discrete);
-  static void wl_pointer_axis_value120(void *data,
-                                       struct wl_pointer *wl_pointer,
-                                       uint32_t axis, int32_t value120);
 
   static void
   river_xkb_binding_pressed(void *data,
@@ -483,8 +469,6 @@ private:
   void window_maybe_destroy(Window *window);
   void window_set_position(Window *window, int32_t x, int32_t y);
   void window_manage(Window *window);
-  void window_maximize(Window *window);
-  void window_minimize(Window *window);
 
   void xkb_binding_create(Seat *seat, uint32_t mods, xkb_keysym_t keysym,
                           Action action);
@@ -521,6 +505,10 @@ public:
   TCCClient();
   ~TCCClient();
   void run();
+  void window_maximize(Window *window);
+  void window_minimize(Window *window);
+
+  void dirty() { river_window_manager_v1_manage_dirty(mRiverWindowManager); }
 
   const std::vector<Output *> &outputs() { return mOutputs; };
 };

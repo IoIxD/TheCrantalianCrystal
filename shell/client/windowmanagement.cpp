@@ -15,13 +15,13 @@
 void TCCClient::river_wm_unavailable(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   fprintf(stderr, "error: another window manager is already running\n");
-  exit(1);
+  raise(SIGTRAP);
 }
 
 void TCCClient::river_wm_finished(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
   fprintf(stderr, "wm finished\n");
-  exit(0);
+  raise(SIGTRAP);
 }
 
 void TCCClient::river_wm_manage_start(
@@ -36,7 +36,19 @@ void TCCClient::river_wm_manage_start(
     client->output_maybe_destroy(output);
   }
   for (Output *output : client->mOutputs) {
-    for (Window *window : output->windows) {
+    std::vector<Window *> windows;
+    windows.insert(windows.end(), output->windows.begin(),
+                   output->windows.end());
+    windows.insert(windows.end(), output->minimized_windows.begin(),
+                   output->minimized_windows.end());
+
+    for (Window *window : windows) {
+      if (window->queue_minimize) {
+        client->window_minimize(window);
+        window->queue_minimize = false;
+        river_seat_v1_focus_window(client->mSeats[0]->id, window->id);
+        output->desktop_client->step();
+      }
       client->window_maybe_destroy(window);
     }
   }
@@ -336,11 +348,8 @@ void TCCClient::river_seat_wl_seat(void *data, struct river_seat_v1 *id,
     return;
   }
 
-  // Our wl_pointer_listener only implements events up to axis_value120.
-  uint32_t version =
-      std::min<uint32_t>(it->second, WL_POINTER_AXIS_VALUE120_SINCE_VERSION);
   seat->wl_seat_id = (wl_seat *)wl_registry_bind(client->mRegistry, seat_id,
-                                                 &wl_seat_interface, version);
+                                                 &wl_seat_interface, 1);
   wl_seat_add_listener(seat->wl_seat_id, &client->mWlSeatListener, seat);
 }
 void TCCClient::river_seat_shell_surface_interaction(
@@ -385,6 +394,7 @@ void TCCClient::window_maybe_destroy(Window *window) {
       if (!out->windows.empty()) {
         if (win == window) {
           std::erase(out->windows, window);
+          std::erase(out->minimized_windows, window);
           break;
         };
       }
@@ -434,7 +444,11 @@ void TCCClient::window_maximize(Window *window) {
 
 void TCCClient::window_minimize(Window *window) {
   for (auto out : mOutputs) {
-    for (auto win : out->windows) {
+    std::vector<Window *> windows;
+    windows.insert(windows.end(), out->windows.begin(), out->windows.end());
+    windows.insert(windows.end(), out->minimized_windows.begin(),
+                   out->minimized_windows.end());
+    for (auto win : windows) {
       if (win == window) {
         win->minimized = !win->minimized;
         if (win->minimized) {
@@ -829,7 +843,7 @@ wl_buffer *TCCClient::get_nav_button_buffer() {
   int fd = memfd_create("tcc-nav-button", MFD_CLOEXEC);
   if (fd < 0 || ftruncate(fd, size) < 0) {
     perror("nav button buffer");
-    exit(1);
+    raise(SIGTRAP);
   }
 
   wl_shm_pool *pool = wl_shm_create_pool(mShm, fd, size);
