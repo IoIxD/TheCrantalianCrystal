@@ -54,6 +54,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     ACTION_MOVE,
     ACTION_RESIZE,
     ACTION_EXIT,
+    ACTION_SPAWN_SIGSEGV,
   };
 
   enum SeatOp {

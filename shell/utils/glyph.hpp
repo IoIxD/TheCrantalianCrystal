@@ -46,6 +46,9 @@ private:
   std::unordered_map<uint32_t, std::shared_ptr<Glyph>> mGlyphCacheBoldBlack;
 
 public:
+  /* set text size */
+  void set_text_size(size_t size);
+
   /* Return every glyph in the glyph manager */
   std::vector<std::shared_ptr<Glyph>> glyphs() {
     std::vector<std::shared_ptr<Glyph>> g;

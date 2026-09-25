@@ -177,7 +177,6 @@ void TCCClient::river_window_decoration_hint(void *data,
                                              struct river_window_v1 *id,
                                              uint32_t hint) {
   Window *window = (Window *)data;
-  printf("hint %d\n", hint);
 
   bool wants_decor =
       hint != RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD &&
@@ -228,9 +227,6 @@ void TCCClient::river_window_dimensions_hint(
   window->min_height = min_height;
   window->max_width = max_width;
   window->max_height = max_height;
-
-  printf("%d %d %d %d\n", window->min_width, window->min_height,
-         window->max_width, window->max_height);
 }
 
 // Ignored events
@@ -695,6 +691,11 @@ void TCCClient::seat_action(Seat *seat, Action action) {
   case ACTION_EXIT:
     river_window_manager_v1_exit_session(mRiverWindowManager);
     break;
+  case ACTION_SPAWN_SIGSEGV: {
+    void (*func)() = nullptr;
+    func();
+    break;
+  }
   }
 }
 
@@ -709,6 +710,17 @@ void TCCClient::seat_manage(Seat *seat) {
     xkb_binding_create(seat, super, XKB_KEY_Escape, ACTION_EXIT);
     pointer_binding_create(seat, super, BTN_LEFT, ACTION_MOVE);
     pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
+    xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_TERMINAL);
+
+    /*
+     * binding for testing what the window manager does when it segfaults.
+     * should be a combination that NOBODY would reasonably hit.
+     */
+    xkb_binding_create(
+        seat,
+        RIVER_SEAT_V1_MODIFIERS_SHIFT | RIVER_SEAT_V1_MODIFIERS_CTRL |
+            RIVER_SEAT_V1_MODIFIERS_MOD1 | RIVER_SEAT_V1_MODIFIERS_MOD4,
+        XKB_KEY_F2, ACTION_SPAWN_SIGSEGV);
   }
 
   // If no window was interacted with in the current manage sequence,

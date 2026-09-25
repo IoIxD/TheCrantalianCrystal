@@ -124,3 +124,7 @@ void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
 
   glPopAttrib();
 }
+void GlyphManager::set_text_size(size_t size) {
+  assert(FT_Set_Pixel_Sizes(FTFaceNormal, 0, size) == 0);
+  assert(FT_Set_Pixel_Sizes(FTFaceBold, 0, size) == 0);
+};
