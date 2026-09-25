@@ -882,6 +882,17 @@ void TCCClient::nav_button_hover(uint8_t button, Window *window) {
   river_window_manager_v1_manage_dirty(mRiverWindowManager);
 }
 
+bool TCCClient::Window::nav_button_visible(int button) const {
+  return button != NAV_BUTTON_MAX || show_maximize;
+}
+
+int TCCClient::Window::nav_button_x_from_right(int button) const {
+  if (button == NAV_BUTTON_MIN && !show_maximize) {
+    return SSD_NAV_BUTTON_MAX_X_FROM_RIGHT;
+  }
+  return ::nav_button_x_from_right[button];
+}
+
 uint8_t TCCClient::get_pressed_nav_button(Seat *seat, Window *window) {
   // Pointer position in decoration surface coordinates.
   int x = seat->pointer_x - window->x + SSD_BORDER_SIZE;
@@ -891,7 +902,10 @@ uint8_t TCCClient::get_pressed_nav_button(Seat *seat, Window *window) {
   }
 
   for (int i = NAV_BUTTON_NONE + 1; i < NAV_BUTTON_COUNT; i++) {
-    int lo = window->decor_width - nav_button_x_from_right[i];
+    if (!window->nav_button_visible(i)) {
+      continue;
+    }
+    int lo = window->decor_width - window->nav_button_x_from_right(i);
     if (x >= lo && x < lo + SSD_NAV_BUTTON_WIDTH) {
       return i;
     }
@@ -951,6 +965,7 @@ void TCCClient::window_create_nav_surfaces(Window *window) {
     // in window_position_nav_surfaces) lands with the decoration's commit.
     wl_surface_attach(nav.surface, get_nav_button_buffer(), 0, 0);
     wl_surface_commit(nav.surface);
+    nav.mapped = true;
   }
 }
 
@@ -968,11 +983,23 @@ void TCCClient::window_destroy_nav_surfaces(Window *window) {
 
 void TCCClient::window_position_nav_surfaces(Window *window) {
   for (int i = NAV_BUTTON_NONE + 1; i < NAV_BUTTON_COUNT; i++) {
-    if (window->nav_surfaces[i].subsurface) {
-      wl_subsurface_set_position(
-          window->nav_surfaces[i].subsurface,
-          window->decor_width - nav_button_x_from_right[n], SSD_NAV_BUTTON_Y);
+    auto &nav = window->nav_surfaces[i];
+    if (!nav.subsurface) {
+      continue;
     }
+    // Unmap hidden buttons so they don't eat input meant for whatever took
+    // their slot.
+    bool visible = window->nav_button_visible(i);
+    if (visible != nav.mapped) {
+      wl_surface_attach(nav.surface, visible ? get_nav_button_buffer() : nullptr,
+                        0, 0);
+      wl_surface_commit(nav.surface);
+      nav.mapped = visible;
+    }
+    wl_subsurface_set_position(
+        nav.subsurface,
+        window->decor_width - window->nav_button_x_from_right(i),
+        SSD_NAV_BUTTON_Y);
   }
 }
 

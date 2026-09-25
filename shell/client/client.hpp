@@ -118,6 +118,8 @@ public:
     struct nav_surface {
       wl_surface *surface = nullptr;
       wl_subsurface *subsurface = nullptr;
+      // Whether the transparent buffer is attached, i.e. it takes input.
+      bool mapped = false;
     };
     // Indexed by NavButton, NAV_BUTTON_NONE is unused.
     nav_surface nav_surfaces[NAV_BUTTON_COUNT];
@@ -157,6 +159,11 @@ public:
     bool minimize_hover = false;
     bool maximize_hover = false;
     bool show_maximize = true;
+
+    // With the maximize button hidden, minimize moves over into its slot
+    // (matching ssd.frag).
+    bool nav_button_visible(int button) const;
+    int nav_button_x_from_right(int button) const;
 
     bool queue_minimize = false;
 
