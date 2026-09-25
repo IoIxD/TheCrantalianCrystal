@@ -4,12 +4,18 @@
 #include <gtk/gtk.h>
 
 int main() {
+  /* Until we fix subwindows in the wayland backend for milsko, just launch the
+   * program under x11 */
+  setenv("MW_BACKEND", "x11", 1);
+
   gtk_init();
   MwLibraryInit();
 
-  ProgmanWindow window;
+  auto win = ProgmanWindow();
 
-  window.run();
+  win.setup();
+
+  win.run();
 
   return 0;
 }
