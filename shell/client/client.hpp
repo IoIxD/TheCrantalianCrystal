@@ -155,6 +155,7 @@ public:
     bool close_hover = false;
     bool minimize_hover = false;
     bool maximize_hover = false;
+    bool show_maxmin = true;
 
     bool queue_minimize = false;
 

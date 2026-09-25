@@ -227,6 +227,12 @@ void TCCClient::river_window_dimensions_hint(
   window->min_height = min_height;
   window->max_width = max_width;
   window->max_height = max_height;
+
+  if (min_width == max_width && min_height == max_height) {
+    window->show_maxmin = false;
+  } else {
+    window->show_maxmin = true;
+  }
 }
 
 // Ignored events
