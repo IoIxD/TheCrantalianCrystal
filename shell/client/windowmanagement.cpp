@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
@@ -64,6 +65,11 @@ void TCCClient::river_wm_manage_start(
   }
   for (Seat *seat : client->mSeats) {
     client->seat_manage(seat);
+  }
+
+  if (client->mDoProgmanLaunch) {
+    client->launch_progman();
+    client->mDoProgmanLaunch = false;
   }
 
   river_window_manager_v1_manage_finish(client->mRiverWindowManager);
@@ -207,7 +213,9 @@ void TCCClient::river_window_title(void *data, struct river_window_v1 *id,
                                    const char *title) {
   Window *window = (Window *)data;
 
-  strncpy(window->title, title, sizeof(window->title) - 1);
+  if (title) {
+    strncpy(window->title, title, sizeof(window->title) - 1);
+  }
 }
 void TCCClient::river_window_app_id(void *data, struct river_window_v1 *id,
                                     const char *app_id) {
@@ -229,9 +237,9 @@ void TCCClient::river_window_dimensions_hint(
   window->max_height = max_height;
 
   if (min_width == max_width && min_height == max_height) {
-    window->show_maxmin = false;
+    window->show_maximize = false;
   } else {
-    window->show_maxmin = true;
+    window->show_maximize = true;
   }
 }
 
@@ -660,6 +668,25 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
   seat->op_dy = 0;
 }
 
+void TCCClient::launch_progman() {
+  if (fork() == 0) {
+    char dest[PATH_MAX];
+    memset(dest, 0, sizeof(dest));
+    if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
+      perror("readlink");
+    }
+    std::filesystem::path fs = dest;
+
+    std::filesystem::path progman = fs.parent_path() / "tcc_progman";
+
+    printf("%s\n", progman.string().c_str());
+
+    // execlp("konsole", "konsole", (char *)nullptr);
+    const char *args[] = {progman.c_str(), NULL};
+    execve(progman.c_str(), (char **)args, environ);
+    _exit(1);
+  }
+}
 void TCCClient::seat_action(Seat *seat, Action action) {
   switch (action) {
   case ACTION_NONE:
@@ -697,6 +724,10 @@ void TCCClient::seat_action(Seat *seat, Action action) {
   case ACTION_EXIT:
     river_window_manager_v1_exit_session(mRiverWindowManager);
     break;
+  case ACTION_SPAWN_PROGMAN: {
+    launch_progman();
+    break;
+  }
   case ACTION_SPAWN_SIGSEGV: {
     void (*func)() = nullptr;
     func();
@@ -940,7 +971,7 @@ void TCCClient::window_position_nav_surfaces(Window *window) {
     if (window->nav_surfaces[i].subsurface) {
       wl_subsurface_set_position(
           window->nav_surfaces[i].subsurface,
-          window->decor_width - nav_button_x_from_right[i], SSD_NAV_BUTTON_Y);
+          window->decor_width - nav_button_x_from_right[n], SSD_NAV_BUTTON_Y);
     }
   }
 }

@@ -1,6 +1,7 @@
 #include "bluescreen/bluescreen.hpp"
 #include "client/client.hpp"
 #include <execinfo.h>
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <sys/ptrace.h>
@@ -56,15 +57,17 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
 }
 
 int main() {
-  char *p;
-  char a;
-  int pagesize;
-  struct sigaction sa;
+  if (!getenv("TCC_BYPASS_BLUESCREEN")) {
+    char *p;
+    char a;
+    int pagesize;
+    struct sigaction sa;
 
-  sa.sa_flags = SA_SIGINFO;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_sigaction = sigsegv_handler;
-  sigaction(SIGSEGV, &sa, NULL);
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = sigsegv_handler;
+    sigaction(SIGSEGV, &sa, NULL);
+  }
 
   client = std::make_shared<TCCClient>();
 

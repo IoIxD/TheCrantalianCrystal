@@ -54,6 +54,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     ACTION_MOVE,
     ACTION_RESIZE,
     ACTION_EXIT,
+    ACTION_SPAWN_PROGMAN,
     ACTION_SPAWN_SIGSEGV,
   };
 
@@ -155,7 +156,7 @@ public:
     bool close_hover = false;
     bool minimize_hover = false;
     bool maximize_hover = false;
-    bool show_maxmin = true;
+    bool show_maximize = true;
 
     bool queue_minimize = false;
 
@@ -262,6 +263,8 @@ private:
 
   // wl_seat global name -> advertised version
   std::unordered_map<uint32_t, uint32_t> mWlSeatVersions;
+
+  bool mDoProgmanLaunch = true;
 
   bool mRunning = true;
   bool mStopping = false;
@@ -519,6 +522,7 @@ private:
   void seat_focus(Seat *seat, Window *window);
   void seat_pointer_move(Seat *seat, Window *window);
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
+  void launch_progman();
   void seat_action(Seat *seat, Action action);
   void seat_manage(Seat *seat);
   void seat_render(Seat *seat);

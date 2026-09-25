@@ -17,7 +17,7 @@ uniform bool maximize_held;
 uniform bool close_hover;
 uniform bool minimize_hover;
 uniform bool maximize_hover;
-uniform bool show_maxmin;
+uniform bool show_maximize;
 
 vec3 baseColorBackground = vec3(.416, .196, .576); /* #6a3293 */
 vec3 lowColorBackground = vec3(1.0, .612, .404); /* #ff9c67 */
@@ -134,7 +134,7 @@ void main() {
     if (frag_coord.y <= button_hi_y && frag_coord.y >= button_lo_y) {
         if (frag_coord.x <= resolution.x - 10 && frag_coord.x >= resolution.x - 32) {
             draw_button(BUTTON_TYPE_CLOSE, vec2(resolution.x - 32, button_lo_y), vec2(resolution.x - 10, button_hi_y));
-        } else if (show_maxmin) {
+        } else if (show_maximize) {
             if (frag_coord.x <= resolution.x - 35 && frag_coord.x >= resolution.x - 57) {
                 draw_button(BUTTON_TYPE_MAXIMIZE, vec2(resolution.x - 57, button_lo_y), vec2(resolution.x - 35, button_hi_y));
             } else if (frag_coord.x <= resolution.x - 60 && frag_coord.x >= resolution.x - 82) {
@@ -142,6 +142,8 @@ void main() {
             } else {
                 draw_backing_border(-1.0);
             }
+        } else if (frag_coord.x <= resolution.x - 35 && frag_coord.x >= resolution.x - 57) {
+            draw_button(BUTTON_TYPE_MINIMIZE, vec2(resolution.x - 57, button_lo_y), vec2(resolution.x - 35, button_hi_y));
         } else {
             draw_backing_border(-1.0);
         }
