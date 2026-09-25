@@ -182,9 +182,9 @@ void TCCClient::river_window_decoration_hint(void *data,
       hint != RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD &&
       hint != RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_CSD;
 
-  // if (wants_decor == window->has_decor) {
-  //   return;
-  // }
+  if (wants_decor == window->has_decor) {
+    return;
+  }
 
   if (wants_decor) {
     river_window_v1_use_ssd(id);
@@ -660,7 +660,7 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     break;
   case ACTION_SPAWN_TERMINAL:
     if (fork() == 0) {
-      execlp("kitty", "kitty", (char *)nullptr);
+      execlp("konsole", "konsole", (char *)nullptr);
       _exit(1);
     }
     break;
