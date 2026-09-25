@@ -1,0 +1,3 @@
+[submodule "submodules/milsko"]
+	path = submodules/milsko
+	url = git@github.com:pyrite-dev/milsko.git
