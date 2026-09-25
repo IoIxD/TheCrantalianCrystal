@@ -548,6 +548,14 @@ public:
 
   void dirty() { river_window_manager_v1_manage_dirty(mRiverWindowManager); }
 
+  void terminate() {
+    printf("%p\n", mRiverWindowManager);
+    if (mRiverWindowManager)
+      river_window_manager_v1_exit_session(mRiverWindowManager);
+    mRunning = false;
+    wl_display_flush(mDisplay);
+  }
+
   const std::vector<Output *> &outputs() { return mOutputs; };
 };
 

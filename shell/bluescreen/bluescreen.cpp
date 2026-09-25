@@ -79,7 +79,7 @@ TCCBluescreenClient::TCCBluescreenClient(
   mGlyphManager.set_text_size(24);
 }
 void TCCBluescreenClient::run() {
-  while (seconds() < 15) {
+  while (seconds() < WAIT_AMOUNT) {
     if (wl_display_dispatch_pending(mDisplay) < 0) {
       fprintf(stderr, "dispatch failed\n");
       raise(SIGTRAP);
@@ -87,7 +87,6 @@ void TCCBluescreenClient::run() {
 
     egl_draw();
   }
-  exit(EXIT_FAILURE);
 }
 
 void TCCBluescreenClient::setup_egl() {
@@ -177,9 +176,9 @@ void TCCBluescreenClient::draw_text() {
   mGlyphManager.draw_text("(the window manager crashed)", x, y, mOutput->width,
                           mOutput->height, true, false);
   y += 32;
-  mGlyphManager.draw_text(
-      std::format("(message disappears in {} seconds)", 15 - seconds()), x, y,
-      mOutput->width, mOutput->height, true, false);
+  mGlyphManager.draw_text(std::format("(message disappears in {} seconds)",
+                                      WAIT_AMOUNT - seconds()),
+                          x, y, mOutput->width, mOutput->height, true, false);
   y += 64;
 
   mGlyphManager.set_text_size(24);

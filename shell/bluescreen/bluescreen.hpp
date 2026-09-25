@@ -10,6 +10,8 @@
 #include <GL/gl.h>
 #include <wayland-egl.h>
 
+#define WAIT_AMOUNT 15
+
 class TCCBluescreenClient {
   TCCClient::Output *mOutput;
   std::vector<std::string> mStacktrace;

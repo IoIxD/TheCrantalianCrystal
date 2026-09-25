@@ -50,7 +50,9 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
 
   bluescreen->run();
 
-  exit(EXIT_FAILURE);
+  client->terminate();
+
+  client->run();
 }
 
 int main() {
