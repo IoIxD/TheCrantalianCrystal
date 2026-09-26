@@ -218,10 +218,10 @@ void MWAPI ProgmanWindow::FolderPair::icon_dbl_click(MwWidget handle,
       pair->subwin->doubleClickTimer = 10;
     } else {
       /* we've double clicked */
-      if (fork() != 0) {
+      if (fork() == 0) {
         printf("%s\n", pair->cmdline.c_str());
         system(pair->cmdline.c_str());
-        exit(0);
+        _exit(0);
       }
     }
   }
