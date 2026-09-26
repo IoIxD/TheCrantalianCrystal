@@ -218,11 +218,11 @@ void MWAPI ProgmanWindow::FolderPair::icon_dbl_click(MwWidget handle,
       pair->subwin->doubleClickTimer = 10;
     } else {
       /* we've double clicked */
-      if (fork() == 0) {
-        printf("%s\n", pair->cmdline.c_str());
-        system(pair->cmdline.c_str());
-        _exit(0);
-      }
+      GError *error;
+      GAppLaunchContext *context =
+          (GAppLaunchContext *)gdk_display_get_app_launch_context(
+              gdk_display_get_default());
+      g_app_info_launch(pair->info, NULL, context, &error);
     }
   }
 }
@@ -271,14 +271,7 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
                                  ICON_SIZE, NULL);
 
     auto name = g_app_info_get_name(item);
-    auto exec_name = g_app_info_get_executable(item);
-    auto cmdline = g_app_info_get_commandline(item);
-    if (exec_name) {
-      f->exec_name = exec_name;
-    }
-    if (cmdline) {
-      f->cmdline = cmdline;
-    }
+    f->info = item;
 
     GtkIconPaintable *icon = gtk_icon_theme_lookup_by_gicon(
         theme, g_app_info_get_icon((GAppInfo *)item), 32, 1, GTK_TEXT_DIR_NONE,

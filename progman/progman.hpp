@@ -30,8 +30,7 @@ public:
     bool selected = false;
     ProgmanWindow *win = nullptr;
     Subwindow *subwin = nullptr;
-    std::string exec_name;
-    std::string cmdline;
+    GAppInfo *info = nullptr;
     static void MWAPI icon_dbl_click(MwWidget handle, void *user, void *client);
     ~FolderPair() {
       MwDestroyWidget(folder_name);
