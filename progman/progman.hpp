@@ -24,7 +24,7 @@ public:
 
   struct FolderPair {
     MwWidget holder = nullptr;
-    MwLLPixmap folder_pixmap = nullptr;
+    MwPixmap folder_pixmap = nullptr;
     MwWidget folder_icon = nullptr;
     MwWidget folder_name = nullptr;
     bool selected = false;
@@ -37,7 +37,7 @@ public:
       if (folder_icon)
         MwDestroyWidget(folder_icon);
       if (folder_pixmap)
-        MwLLDestroyPixmap(folder_pixmap);
+        MwDestroyPixmap(folder_pixmap);
       MwDestroyWidget(holder);
     };
   };
@@ -48,7 +48,9 @@ public:
     MwWidget items = nullptr;
     MwWidget create_icon_table(std::vector<GAppInfo *> items);
     static void MWAPI remove(MwWidget handle, void *user, void *client);
+    static void MWAPI resize(MwWidget handle, void *user, void *client);
     std::vector<FolderPair *> folderPairs;
+    std::vector<GAppInfo *> appinfos;
     int doubleClickTimer = 0;
   };
 

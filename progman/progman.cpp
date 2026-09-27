@@ -202,7 +202,7 @@ void MWAPI ProgmanWindow::FolderPair::icon_dbl_click(MwWidget handle,
       pair->win->doubleClickTimer = 10;
     } else {
       /* we've double clicked */
-      pair->win->create_subwindow(MwGetText(pair->folder_name, MwNtext));
+      pair->win->create_subwindow(MwGetString(pair->folder_name, MwNtext));
     }
   } else if (pair->subwin) {
     for (auto p : pair->subwin->folderPairs) {
@@ -234,6 +234,7 @@ void ProgmanWindow::create_subwindow(std::string catName) {
                                    MwSubWindowGetFrame(sub->subwindow), 5, 5,
                                    320 - 15, 200 - 35, NULL);
   MwAddUserHandler(sub->subwindow, MwNcloseHandler, Subwindow::remove, sub);
+  MwAddUserHandler(sub->subwindow, MwNresizeHandler, Subwindow::resize, sub);
 
   sub->win = this;
 
@@ -247,7 +248,10 @@ void ProgmanWindow::remove_subwindow(Subwindow *sub) {
 
 MwWidget
 ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
+  this->appinfos = items;
+
   MwWidget table = nullptr;
+  auto folder_width = (items.size() / 6) * ICON_SIZE;
   auto folder_height = (items.size() / 5) * ICON_SIZE;
   if (folder_height < 160) {
     folder_height = 160;
@@ -322,15 +326,30 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
 void MWAPI ProgmanWindow::Subwindow::remove(MwWidget handle, void *user,
                                             void *client) {
   Subwindow *sub = (Subwindow *)user;
-  for (auto f : sub->folderPairs) {
-    delete f;
-  }
+  //   for (auto f : sub->folderPairs) {
+  //     delete f;
+  //   }
   sub->folderPairs.clear();
-
   sub->win->remove_subwindow(sub);
   MwShow(sub->subwindow, MwFALSE);
 
   MwDestroyWidget(sub->viewport);
   MwDestroyWidget(sub->items);
   MwDestroyWidget(sub->subwindow);
+};
+void MWAPI ProgmanWindow::Subwindow::resize(MwWidget handle, void *user,
+                                            void *client) {
+  Subwindow *sub = (Subwindow *)user;
+
+  auto width = MwGetInteger(handle, MwNwidth) - 15;
+  auto height = MwGetInteger(handle, MwNheight) - 35;
+  auto folder_width = (sub->appinfos.size() / 6) * ICON_SIZE;
+  auto folder_height = (sub->appinfos.size() / 5) * ICON_SIZE;
+  if (folder_height < 160) {
+    folder_height = 160;
+  }
+  printf("%ld\n", folder_height);
+  MwVaApply(sub->viewport, MwNwidth, width, MwNheight, height, NULL);
+  MwViewportSetSize(sub->viewport, folder_width, folder_height);
+  MwViewportSetSize(sub->items, folder_width, folder_height);
 };
