@@ -1,6 +1,15 @@
 #include "systray.hpp"
 #ifdef TCC_SYSTRAY_DBUS
 #include "dbus/sni_watcher.hpp"
+#include "othericons/bluez_bluetooth.hpp"
+#include "othericons/network_manager.hpp"
+#include "othericons/upower_battery.hpp"
+#endif
+#ifdef TCC_SYSTRAY_PULSE
+#include "othericons/pulse_volume.hpp"
+#endif
+#ifdef TCC_SYSTRAY_RIVER
+#include "othericons/river_keyboard_layout.hpp"
 #endif
 
 #include <algorithm>
@@ -14,6 +23,16 @@ TCCSystrayClient::TCCSystrayClient() {
 
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
+  addProtocol(std::make_unique<BluezBluetooth>());
+  addProtocol(std::make_unique<NetworkManagerIcon>());
+  addProtocol(std::make_unique<UPowerBattery>());
+#endif
+#ifdef TCC_SYSTRAY_PULSE
+  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
+  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Output));
+#endif
+#ifdef TCC_SYSTRAY_RIVER
+  addProtocol(std::make_unique<RiverKeyboardLayout>());
 #endif
 
   if (mProtocols.empty())
@@ -55,6 +74,13 @@ unsigned char *TCCSystrayClient::loadIcon(const SystrayIcon &icon, int size,
   if (!icon.name.empty())
     mIcons.get_icon_by_name(icon.name.c_str(), icon.themePath.c_str(), size,
                             width, height, &pixels);
+  for (const auto &name : icon.fallbackNames) {
+    if (pixels)
+      break;
+    if (!name.empty())
+      mIcons.get_icon_by_name(name.c_str(), icon.themePath.c_str(), size,
+                              width, height, &pixels);
+  }
   if (!pixels && !icon.pixels.empty())
     mIcons.get_icon_from_pixels(icon.pixels.data(), icon.width, icon.height,
                                 size, width, height, &pixels);
@@ -108,7 +134,8 @@ void TCCSystrayClient::relayout() {
 
   for (auto &widget : mIconWidgets) {
     MwDestroyWidget(widget->image);
-    mOldPixmaps.push_back(widget->pixmap);
+    if (widget->pixmap)
+      mOldPixmaps.push_back(widget->pixmap);
   }
   mIconWidgets.clear();
 
@@ -117,6 +144,21 @@ void TCCSystrayClient::relayout() {
     for (const auto &item : protocol->items()) {
       if (item.status == SystrayItem::Status::Passive)
         continue;
+
+      if (!item.currentIcon().text.empty()) {
+        MwWidget label = MwVaCreateWidget(
+            MwLabelClass, NULL, mWindow, x, (32 - ICON_SIZE) / 2, ICON_SIZE,
+            ICON_SIZE, MwNtext, item.currentIcon().text.c_str(), MwNalignment,
+            MwALIGNMENT_CENTER, NULL);
+        auto widget = std::make_unique<IconWidget>(
+            IconWidget{this, label, nullptr, protocol.get(), item.id});
+        MwAddUserHandler(label, MwNmouseDownHandler, iconMouseDown,
+                         widget.get());
+        MwAddUserHandler(label, MwNmouseUpHandler, iconMouseUp, widget.get());
+        mIconWidgets.push_back(std::move(widget));
+        x += ICON_SIZE + ICON_SPACING;
+        continue;
+      }
 
       int width, height;
       unsigned char *pixels =

@@ -9,13 +9,20 @@
 struct SystrayIcon {
   // Icon theme name, or an absolute path to an image file.
   std::string name;
+  // Names to try in order if the theme doesn't have name.
+  std::vector<std::string> fallbackNames;
   // Extra directory to look for name in before the icon theme.
   std::string themePath;
   // Tightly packed 8-bit RGBA.
   int width = 0, height = 0;
   std::vector<unsigned char> pixels;
+  // A few characters to show instead of an image, e.g. a keyboard layout's
+  // short name. Takes precedence over the rest.
+  std::string text;
 
-  bool empty() const { return name.empty() && pixels.empty(); }
+  bool empty() const {
+    return name.empty() && pixels.empty() && text.empty();
+  }
   bool operator==(const SystrayIcon &) const = default;
 };
 
@@ -104,8 +111,7 @@ public:
   void setItemsChangedCallback(ItemsChangedCallback cb) {
     mItemsChanged = std::move(cb);
   }
-  void setShowMenuCallback(ShowMenuCallback cb) { mShowMenu = std::move(cb); }
-  // Size icons will be drawn at, used to pick between pixmaps of several
+  void setShowMenuCallback(ShowMenuCallback cb) { mShowMenu = std::move(cb); }  // Size icons will be drawn at, used to pick between pixmaps of several
   // sizes.
   void setIconSize(int size) { mIconSize = size; }
 

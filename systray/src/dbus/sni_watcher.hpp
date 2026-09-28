@@ -2,7 +2,7 @@
 #pragma once
 
 #include "../systray_protocol.hpp"
-#include "dbus_loader.hpp"
+#include "../lib/dbus_loader.hpp"
 
 #include <functional>
 #include <map>

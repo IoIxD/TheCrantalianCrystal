@@ -17,7 +17,9 @@ class TCCSystrayClient {
 
   struct IconWidget {
     TCCSystrayClient *client;
+    // An MwImage, or an MwLabel for text icons.
     MwWidget image;
+    // Null for text icons.
     MwPixmap pixmap;
     // The item it shows.
     SystrayProtocol *protocol;
