@@ -1,5 +1,5 @@
 #include "mixer_window.hpp"
-#include "systray.hpp"
+#include "../systray.hpp"
 
 #include <algorithm>
 

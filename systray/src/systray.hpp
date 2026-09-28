@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mixer_window.hpp"
 #include "systray_protocol.hpp"
+#include "windows/mixer_window.hpp"
 
 #include <iconlib.hpp>
 
@@ -15,10 +15,12 @@
 class TCCSystrayClient {
   static constexpr int ICON_SIZE = 22;
   static constexpr int ICON_SPACING = 4;
+  static constexpr int BUTTON_SIZE = 32;
+  static constexpr int NOTCH_WIDTH = 14;
 
   struct IconWidget {
     TCCSystrayClient *client;
-    // An MwImage, or an MwLabel for text icons.
+    // The MwButton showing the icon (or its text).
     MwWidget image;
     // Null for text icons.
     MwPixmap pixmap;
@@ -29,6 +31,8 @@ class TCCSystrayClient {
 
   MwRect mBounds;
   MwWidget mWindow;
+  // An MwFrame after the last icon, drawn by drawNotch.
+  MwWidget mNotch;
   IconManager mIcons;
   std::vector<std::unique_ptr<SystrayProtocol>> mProtocols;
   // Pointers, since the widgets' mouse handlers hold on to them.
@@ -37,6 +41,7 @@ class TCCSystrayClient {
   // widgets on the next step.
   std::vector<MwPixmap> mOldPixmaps;
   bool mNeedsRelayout = false;
+  bool mCollapsed = false;
 
   // The item menu being shown, if any.
   struct OpenMenu {
@@ -70,14 +75,17 @@ class TCCSystrayClient {
   unsigned char *loadIcon(const SystrayIcon &icon, int size, int *width,
                           int *height);
   // Draws the item's overlay icon over the bottom right corner of pixels.
-  void drawOverlay(const SystrayIcon &overlay, unsigned char *pixels,
-                   int width, int height);
+  void drawOverlay(const SystrayIcon &overlay, unsigned char *pixels, int width,
+                   int height);
 
   static void MWAPI iconMouseDown(MwWidget handle, void *user, void *call);
   static void MWAPI iconMouseUp(MwWidget handle, void *user, void *call);
   // Screen position of a point in an icon widget.
   void screenPosition(IconWidget &icon, const MwMouse &mouse, int *x, int *y);
   static void MWAPI windowMouseUp(MwWidget handle, void *user, void *call);
+  static void MWAPI drawNotch(MwWidget handle, void *user, void *call);
+  // Clicking the notch collapses the bar to just the notch, or expands it.
+  static void MWAPI notchMouseUp(MwWidget handle, void *user, void *call);
 
   void showMenu(SystrayProtocol &protocol, const std::string &id,
                 const std::vector<SystrayMenuEntry> &entries);

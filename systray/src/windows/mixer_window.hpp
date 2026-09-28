@@ -1,6 +1,6 @@
 #pragma once
 
-#include "systray_protocol.hpp"
+#include "../systray_protocol.hpp"
 
 #include <Mw/Milsko.h>
 

@@ -21,6 +21,12 @@ TCCSystrayClient::TCCSystrayClient() {
   // Clicking the bar outside of the icons dismisses an open menu.
   MwAddUserHandler(mWindow, MwNmouseUpHandler, windowMouseUp, this);
 
+  // Moved to the end of the icons by relayout().
+  mNotch = MwVaCreateWidget(MwFrameClass, "notch", mWindow, ICON_SPACING, 0,
+                            NOTCH_WIDTH, 32, NULL);
+  MwAddUserHandler(mNotch, MwNdrawHandler, drawNotch, this);
+  MwAddUserHandler(mNotch, MwNmouseUpHandler, notchMouseUp, this);
+
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
   addProtocol(std::make_unique<BluezBluetooth>());
@@ -46,11 +52,9 @@ void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {
              const std::vector<SystrayMenuEntry> &entries) {
         showMenu(protocol, id, entries);
       });
-  protocol->setShowMixerCallback([this](SystrayProtocol &protocol,
-                                        const std::string &id,
-                                        const SystrayMixer &mixer) {
-    showMixer(protocol, id, mixer);
-  });
+  protocol->setShowMixerCallback(
+      [this](SystrayProtocol &protocol, const std::string &id,
+             const SystrayMixer &mixer) { showMixer(protocol, id, mixer); });
   protocol->setItemsChangedCallback(
       [this](SystrayProtocol &protocol, const std::vector<SystrayItem> &items) {
         itemsChanged(protocol, items);
@@ -83,8 +87,8 @@ unsigned char *TCCSystrayClient::loadIcon(const SystrayIcon &icon, int size,
     if (pixels)
       break;
     if (!name.empty())
-      mIcons.get_icon_by_name(name.c_str(), icon.themePath.c_str(), size,
-                              width, height, &pixels);
+      mIcons.get_icon_by_name(name.c_str(), icon.themePath.c_str(), size, width,
+                              height, &pixels);
   }
   if (!pixels && !icon.pixels.empty())
     mIcons.get_icon_from_pixels(icon.pixels.data(), icon.width, icon.height,
@@ -101,8 +105,8 @@ void TCCSystrayClient::drawOverlay(const SystrayIcon &overlay,
   // Half the size of the icon, like other trays draw emblems.
   int overlayWidth, overlayHeight;
   unsigned char *src =
-      loadIcon(overlay, std::max(1, std::min(width, height) / 2),
-               &overlayWidth, &overlayHeight);
+      loadIcon(overlay, std::max(1, std::min(width, height) / 2), &overlayWidth,
+               &overlayHeight);
   if (!src)
     return;
 
@@ -148,53 +152,108 @@ void TCCSystrayClient::relayout() {
 
   int x = ICON_SPACING;
   for (auto &protocol : mProtocols) {
+    // Collapsed down to just the notch.
+    if (mCollapsed)
+      break;
     for (const auto &item : protocol->items()) {
       if (item.status == SystrayItem::Status::Passive)
         continue;
 
-      if (!item.currentIcon().text.empty()) {
-        MwWidget label = MwVaCreateWidget(
-            MwLabelClass, NULL, mWindow, x, (32 - ICON_SIZE) / 2, ICON_SIZE,
-            ICON_SIZE, MwNtext, item.currentIcon().text.c_str(), MwNalignment,
-            MwALIGNMENT_CENTER, NULL);
-        auto widget = std::make_unique<IconWidget>(
-            IconWidget{this, label, nullptr, protocol.get(), item.id});
-        MwAddUserHandler(label, MwNmouseDownHandler, iconMouseDown,
-                         widget.get());
-        MwAddUserHandler(label, MwNmouseUpHandler, iconMouseUp, widget.get());
-        mIconWidgets.push_back(std::move(widget));
-        x += ICON_SIZE + ICON_SPACING;
-        continue;
+      // A text icon, or an image drawn at its own size rather than stretched
+      // to fill the button.
+      MwPixmap pixmap = nullptr;
+      if (item.currentIcon().text.empty()) {
+        int width, height;
+        unsigned char *pixels =
+            loadIcon(item.currentIcon(), ICON_SIZE, &width, &height);
+        if (!pixels)
+          mIcons.get_icon_by_name("application-x-executable", ICON_SIZE, &width,
+                                  &height, &pixels);
+        if (!pixels)
+          continue;
+        drawOverlay(item.overlayIcon, pixels, width, height);
+        pixmap = MwLoadRaw(mWindow, pixels, width, height);
+        free(pixels);
       }
 
-      int width, height;
-      unsigned char *pixels =
-          loadIcon(item.currentIcon(), ICON_SIZE, &width, &height);
-      if (!pixels)
-        mIcons.get_icon_by_name("application-x-executable", ICON_SIZE, &width,
-                                &height, &pixels);
-      if (!pixels)
-        continue;
-      drawOverlay(item.overlayIcon, pixels, width, height);
+      MwWidget button = MwVaCreateWidget(MwButtonClass, NULL, mWindow, x,
+                                         (32 - BUTTON_SIZE) / 2, BUTTON_SIZE,
+                                         BUTTON_SIZE, MwNfillArea, 0, NULL);
+      if (pixmap)
+        MwVaApply(button, MwNpixmap, pixmap, NULL);
+      else
+        MwVaApply(button, MwNtext, item.currentIcon().text.c_str(), NULL);
 
-      MwPixmap pixmap = MwLoadRaw(mWindow, pixels, width, height);
-      free(pixels);
-
-      MwWidget image = MwVaCreateWidget(
-          MwImageClass, NULL, mWindow, x + (ICON_SIZE - width) / 2,
-          (32 - height) / 2, width, height, MwNpixmap, pixmap, NULL);
       auto widget = std::make_unique<IconWidget>(
-          IconWidget{this, image, pixmap, protocol.get(), item.id});
-      MwAddUserHandler(image, MwNmouseDownHandler, iconMouseDown, widget.get());
-      MwAddUserHandler(image, MwNmouseUpHandler, iconMouseUp, widget.get());
+          IconWidget{this, button, pixmap, protocol.get(), item.id});
+      MwAddUserHandler(button, MwNmouseDownHandler, iconMouseDown,
+                       widget.get());
+      MwAddUserHandler(button, MwNmouseUpHandler, iconMouseUp, widget.get());
       mIconWidgets.push_back(std::move(widget));
-      x += ICON_SIZE + ICON_SPACING;
+      x += BUTTON_SIZE;
     }
   }
 
+  MwVaApply(mNotch, MwNx, x, NULL);
   MwVaApply(mWindow, MwNwidth,
-            (mIconWidgets.size() * ICON_SIZE) + (ICON_SPACING * ICON_SIZE),
+            (mIconWidgets.size() * BUTTON_SIZE) + ICON_SPACING + NOTCH_WIDTH,
             MwNheight, 32, NULL);
+}
+
+// Draws the notch over the frame's plain background: a rounded tab with a
+// gradient like a button's, and a grip of vertical ridges, like the end of
+// Mac OS 9's control strip.
+void MWAPI TCCSystrayClient::drawNotch(MwWidget handle, void *user,
+                                       void *call) {
+  (void)user;
+  (void)call;
+  int w = MwGetInteger(handle, MwNwidth);
+  int h = MwGetInteger(handle, MwNheight);
+
+  MwColor base = MwParseColor(handle, MwGetString(handle, MwNbackground));
+  MwColor light = MwLightenColor(handle, base, 64, 64, 64);
+  MwColor dark = MwLightenColor(handle, base, -96, -96, -96);
+
+  auto rect = [&](int x, int y, int width, int height, MwColor color) {
+    MwRect r = {x, y, width, height};
+    MwDrawRect(handle, &r, color);
+  };
+
+  MwRect body = {0, 0, w, h};
+  MwDrawRectFading(handle, &body, base);
+
+  // Bevelled like a raised button: lit from the top left.
+  rect(0, 0, w, 1, light);
+  rect(0, 0, 1, h, light);
+  rect(0, h - 1, w, 1, dark);
+  rect(w - 1, 0, 1, h, dark);
+
+  // The grip: three ridges, each a shadow with a highlight beside it.
+  int gripTop = 8;
+  int gripHeight = h - gripTop * 2;
+  int gripLeft = (w - 8) / 2;
+  for (int i = 0; i < 3; i++) {
+    rect(gripLeft + i * 3, gripTop, 1, gripHeight, dark);
+    rect(gripLeft + i * 3 + 1, gripTop, 1, gripHeight, light);
+  }
+
+  MwFreeColor(dark);
+  MwFreeColor(light);
+  MwFreeColor(base);
+}
+
+void MWAPI TCCSystrayClient::notchMouseUp(MwWidget handle, void *user,
+                                          void *call) {
+  (void)handle;
+  auto *client = static_cast<TCCSystrayClient *>(user);
+  if (static_cast<MwMouse *>(call)->button != MwMOUSE_LEFT)
+    return;
+
+  // Popups belong to icons that are about to go away.
+  client->closePopups(nullptr, {});
+  client->mCollapsed = !client->mCollapsed;
+  // Not right away, we're inside one of Milsko's handlers.
+  client->mNeedsRelayout = true;
 }
 
 void TCCSystrayClient::screenPosition(IconWidget &icon, const MwMouse &mouse,
@@ -320,9 +379,8 @@ void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
 
   // Sits on the top edge of the bar, above the icons (which start lower), so
   // it never takes their clicks.
-  mMenu->holder =
-      MwCreateWidget(MwFrameClass, "menuholder", mWindow,
-                     MwGetInteger((*icon)->image, MwNx), 0, 1, 1);
+  mMenu->holder = MwCreateWidget(MwFrameClass, "menuholder", mWindow,
+                                 MwGetInteger((*icon)->image, MwNx), 0, 1, 1);
   MwShow(mMenu->holder, 0);
   mMenu->menubar =
       MwCreateWidget(MwMenuClass, "menubar", mMenu->holder, 0, 0, 0, 0);
@@ -334,8 +392,8 @@ void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
   MwMenu top = MwMenuAdd(mMenu->menubar, NULL, "");
   addMenuEntries(top, entries);
 
-  MwWidget popup = MwCreateWidget(MwSubMenuClass, "submenu", mMenu->menubar,
-                                  0, 0, 0, 0);
+  MwWidget popup =
+      MwCreateWidget(MwSubMenuClass, "submenu", mMenu->menubar, 0, 0, 0, 0);
   // Opens upwards from the bar.
   MwPoint point = {0, 0};
   MwSubMenuAppear(popup, top, &point, 1);
@@ -394,6 +452,7 @@ void TCCSystrayClient::run() {
     for (auto &protocol : mProtocols)
       protocol->poll();
 
+    bool relaidOut = mNeedsRelayout;
     if (mNeedsRelayout) {
       mNeedsRelayout = false;
       relayout();
@@ -404,5 +463,11 @@ void TCCSystrayClient::run() {
     MwStep(mWindow);
     for (auto pixmap : oldPixmaps)
       MwDestroyPixmap(pixmap);
+
+    // Removed icons are only gone once that step has freed them, and nothing
+    // repaints where they were otherwise (e.g. what collapsing leaves under
+    // the notch).
+    if (relaidOut)
+      MwForceRender(mWindow);
   };
 }
