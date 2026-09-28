@@ -1,6 +1,7 @@
 #include "client.hpp"
 
 #include <algorithm>
+#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -67,9 +68,9 @@ void TCCClient::river_wm_manage_start(
     client->seat_manage(seat);
   }
 
-  if (client->mDoProgmanLaunch) {
-    client->launch_progman();
-    client->mDoProgmanLaunch = false;
+  if (client->mDoInitialLaunch) {
+    client->launch_initial_components();
+    client->mDoInitialLaunch = false;
   }
 
   river_window_manager_v1_manage_finish(client->mRiverWindowManager);
@@ -668,8 +669,16 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
   seat->op_dy = 0;
 }
 
-void TCCClient::launch_progman() {
+void TCCClient::launch_initial_components() {
+  launch_component("tcc_progman");
+  // launch_component("tcc_taskbar");
+}
+
+void TCCClient::launch_component(std::string name) {
   if (fork() == 0) {
+    // we ignore SIGCHLD to auto-reap, but that disposition survives execve and
+    // breaks children that wait on their own subprocesses (e.g. glycin's bwrap)
+    signal(SIGCHLD, SIG_DFL);
     char dest[PATH_MAX];
     memset(dest, 0, sizeof(dest));
     if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
@@ -677,13 +686,12 @@ void TCCClient::launch_progman() {
     }
     std::filesystem::path fs = dest;
 
-    std::filesystem::path progman = fs.parent_path() / "tcc_progman";
+    std::filesystem::path path = fs.parent_path() / name;
 
-    printf("%s\n", progman.string().c_str());
+    printf("%s\n", path.string().c_str());
 
-    // execlp("konsole", "konsole", (char *)nullptr);
-    const char *args[] = {progman.c_str(), NULL};
-    execve(progman.c_str(), (char **)args, environ);
+    const char *args[] = {path.c_str(), NULL};
+    execve(path.c_str(), (char **)args, environ);
     _exit(1);
   }
 }
@@ -693,6 +701,7 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     break;
   case ACTION_SPAWN_TERMINAL:
     if (fork() == 0) {
+      signal(SIGCHLD, SIG_DFL);
       execlp("konsole", "konsole", (char *)nullptr);
       _exit(1);
     }
@@ -724,10 +733,6 @@ void TCCClient::seat_action(Seat *seat, Action action) {
   case ACTION_EXIT:
     river_window_manager_v1_exit_session(mRiverWindowManager);
     break;
-  case ACTION_SPAWN_PROGMAN: {
-    launch_progman();
-    break;
-  }
   case ACTION_SPAWN_SIGSEGV: {
     void (*func)() = nullptr;
     func();
@@ -991,15 +996,15 @@ void TCCClient::window_position_nav_surfaces(Window *window) {
     // their slot.
     bool visible = window->nav_button_visible(i);
     if (visible != nav.mapped) {
-      wl_surface_attach(nav.surface, visible ? get_nav_button_buffer() : nullptr,
-                        0, 0);
+      wl_surface_attach(nav.surface,
+                        visible ? get_nav_button_buffer() : nullptr, 0, 0);
       wl_surface_commit(nav.surface);
       nav.mapped = visible;
     }
-    wl_subsurface_set_position(
-        nav.subsurface,
-        window->decor_width - window->nav_button_x_from_right(i),
-        SSD_NAV_BUTTON_Y);
+    wl_subsurface_set_position(nav.subsurface,
+                               window->decor_width -
+                                   window->nav_button_x_from_right(i),
+                               SSD_NAV_BUTTON_Y);
   }
 }
 

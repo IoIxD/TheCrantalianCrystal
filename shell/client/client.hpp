@@ -2,6 +2,7 @@
 #include "../utils/icon.hpp"
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -271,7 +272,7 @@ private:
   // wl_seat global name -> advertised version
   std::unordered_map<uint32_t, uint32_t> mWlSeatVersions;
 
-  bool mDoProgmanLaunch = true;
+  bool mDoInitialLaunch = true;
 
   bool mRunning = true;
   bool mStopping = false;
@@ -529,7 +530,8 @@ private:
   void seat_focus(Seat *seat, Window *window);
   void seat_pointer_move(Seat *seat, Window *window);
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
-  void launch_progman();
+  void launch_initial_components();
+  void launch_component(std::string name);
   void seat_action(Seat *seat, Action action);
   void seat_manage(Seat *seat);
   void seat_render(Seat *seat);

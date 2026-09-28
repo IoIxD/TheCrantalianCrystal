@@ -1,3 +1,4 @@
 [submodule "submodules/milsko"]
 	path = submodules/milsko
-	url = https://github.com/pyrite-dev/milsko.git
+	url = ssh://git@forgejo.nishi.boats:2222/pyrite-dev/milsko.git
+	branch = v2.0b

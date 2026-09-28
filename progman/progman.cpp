@@ -68,21 +68,19 @@ void ProgmanWindow::setup() { mFolders = create_icon_table(mItems); }
 
 void ProgmanWindow::run() {
   long tick = MwTimeGetTick();
-  long wait = MwGetInteger(mWindow, MwNwaitMS);
   long over = 0;
-  if (wait == MwDEFAULT)
-    wait = MwWaitMS;
+
   while (!MwWindowShouldClose(mWindow)) {
     int v = 0;
     long t, t2;
     long more;
-    while (MwPending(mWindow)) {
+    if (MwPending(mWindow)) {
       if ((v = MwStep(mWindow)) != 0)
         break;
     }
 
     for (auto sub : subwindows) {
-      while (MwPending(sub->subwindow)) {
+      if (MwPending(sub->subwindow)) {
         if ((v = MwStep(sub->subwindow)) != 0)
           break;
       }
