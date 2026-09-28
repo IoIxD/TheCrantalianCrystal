@@ -42,12 +42,32 @@ struct SystrayItem {
   bool operator==(const SystrayItem &) const = default;
 };
 
+// One entry of an item's menu.
+struct SystrayMenuEntry {
+  enum class Type { Normal, Separator };
+  enum class Toggle { None, Checkmark, Radio };
+
+  // Identifies the entry to menuEntryActivated().
+  int id = 0;
+  Type type = Type::Normal;
+  std::string label;
+  bool enabled = true;
+  Toggle toggle = Toggle::None;
+  bool toggled = false;
+  // Non-empty for entries that open a submenu.
+  std::vector<SystrayMenuEntry> children;
+};
+
 // A source of systray items, e.g. StatusNotifierItem over D-Bus or the X11
 // XEmbed system tray protocol.
 class SystrayProtocol {
 public:
   using ItemsChangedCallback = std::function<void(
       SystrayProtocol &protocol, const std::vector<SystrayItem> &items)>;
+  // Asks the client to show a menu for an item, e.g. after contextMenu().
+  using ShowMenuCallback = std::function<void(
+      SystrayProtocol &protocol, const std::string &id,
+      const std::vector<SystrayMenuEntry> &entries)>;
 
   SystrayProtocol() = default;
   virtual ~SystrayProtocol() = default;
@@ -74,10 +94,17 @@ public:
   // delta is in wheel steps, positive is up or right.
   virtual void scroll(const std::string &id, int delta, bool horizontal) {}
 
+  // An entry of a menu shown through the ShowMenuCallback was chosen.
+  virtual void menuEntryActivated(const std::string &id, int entryId) {}
+  // A menu shown through the ShowMenuCallback went away, whether or not an
+  // entry was chosen.
+  virtual void menuClosed(const std::string &id) {}
+
   const std::vector<SystrayItem> &items() const { return mItems; }
   void setItemsChangedCallback(ItemsChangedCallback cb) {
     mItemsChanged = std::move(cb);
   }
+  void setShowMenuCallback(ShowMenuCallback cb) { mShowMenu = std::move(cb); }
   // Size icons will be drawn at, used to pick between pixmaps of several
   // sizes.
   void setIconSize(int size) { mIconSize = size; }
@@ -91,7 +118,13 @@ protected:
     if (mItemsChanged)
       mItemsChanged(*this, mItems);
   }
+  void showMenu(const std::string &id,
+                const std::vector<SystrayMenuEntry> &entries) {
+    if (mShowMenu)
+      mShowMenu(*this, id, entries);
+  }
 
 private:
   ItemsChangedCallback mItemsChanged;
+  ShowMenuCallback mShowMenu;
 };

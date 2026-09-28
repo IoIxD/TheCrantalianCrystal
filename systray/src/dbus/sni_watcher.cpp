@@ -11,6 +11,7 @@ constexpr const char *WATCHER_NAME = "org.kde.StatusNotifierWatcher";
 constexpr const char *WATCHER_IFACE = "org.kde.StatusNotifierWatcher";
 constexpr const char *WATCHER_PATH = "/StatusNotifierWatcher";
 constexpr const char *ITEM_IFACE = "org.kde.StatusNotifierItem";
+constexpr const char *MENU_IFACE = "com.canonical.dbusmenu";
 constexpr const char *HOST_NAME_PREFIX = "org.kde.StatusNotifierHost-";
 constexpr const char *ITEM_DEFAULT_PATH = "/StatusNotifierItem";
 constexpr const char *PROPS_IFACE = "org.freedesktop.DBus.Properties";
@@ -706,6 +707,14 @@ void StatusNotifierWatcher::propertiesReply(const std::string &id,
       d->dbus_message_iter_get_basic(&entry, &prop);
       d->dbus_message_iter_next(&entry);
       d->dbus_message_iter_recurse(&entry, &value);
+      if (eq(prop, "Menu") &&
+          d->dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_OBJECT_PATH) {
+        const char *path;
+        d->dbus_message_iter_get_basic(&value, &path);
+        // Some items use these to say they have no menu.
+        mItemConns[id].menuPath =
+            eq(path, "/") || eq(path, "/NO_DBUSMENU") ? "" : path;
+      }
       readItemProperty(updated, prop, &value);
       d->dbus_message_iter_next(&dict);
     }
@@ -845,8 +854,37 @@ bool StatusNotifierWatcher::handleItemSignal(DBusMessage *msg) {
 
 struct StatusNotifierWatcher::ItemCall {
   StatusNotifierWatcher *self;
-  std::function<void()> onError;
+  std::function<void(DBusMessage *reply)> onReply;
 };
+
+void StatusNotifierWatcher::callAsync(
+    DBusMessage *msg, std::function<void(DBusMessage *reply)> onReply) {
+  DBusLib *d = mLib;
+  DBusPendingCall *pending = nullptr;
+  if (d->dbus_connection_send_with_reply(mConn, msg, &pending, 5000) &&
+      pending) {
+    mItemCalls.push_back(pending);
+    d->dbus_pending_call_set_notify(
+        pending, itemCallReplyThunk, new ItemCall{this, std::move(onReply)},
+        [](void *data) { delete static_cast<ItemCall *>(data); });
+  }
+}
+
+void StatusNotifierWatcher::itemCallReplyThunk(DBusPendingCall *pending,
+                                               void *data) {
+  // Copied out, since releasing the pending call frees data.
+  ItemCall call = *static_cast<ItemCall *>(data);
+  StatusNotifierWatcher *self = call.self;
+  DBusLib *d = self->mLib;
+
+  DBusMessage *reply = d->dbus_pending_call_steal_reply(pending);
+  std::erase(self->mItemCalls, pending);
+  d->dbus_pending_call_unref(pending);
+
+  call.onReply(reply);
+  if (reply)
+    d->dbus_message_unref(reply);
+}
 
 void StatusNotifierWatcher::callItemMethod(const std::string &id,
                                            const char *method, int x, int y,
@@ -865,37 +903,16 @@ void StatusNotifierWatcher::callItemMethod(const std::string &id,
   d->dbus_message_append_args(msg, DBUS_TYPE_INT32, &dx, DBUS_TYPE_INT32, &dy,
                               DBUS_TYPE_INVALID);
 
-  DBusPendingCall *pending = nullptr;
   if (!onError) {
     d->dbus_message_set_no_reply(msg, true);
     d->dbus_connection_send(mConn, msg, nullptr);
-  } else if (d->dbus_connection_send_with_reply(mConn, msg, &pending, 5000) &&
-             pending) {
-    mItemCalls.push_back(pending);
-    d->dbus_pending_call_set_notify(
-        pending, itemCallReplyThunk, new ItemCall{this, std::move(onError)},
-        [](void *data) { delete static_cast<ItemCall *>(data); });
+  } else {
+    callAsync(msg, [d, onError](DBusMessage *reply) {
+      if (!reply || d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR)
+        onError();
+    });
   }
   d->dbus_message_unref(msg);
-}
-
-void StatusNotifierWatcher::itemCallReplyThunk(DBusPendingCall *pending,
-                                               void *data) {
-  // Copied out, since releasing the pending call frees data.
-  ItemCall call = *static_cast<ItemCall *>(data);
-  StatusNotifierWatcher *self = call.self;
-  DBusLib *d = self->mLib;
-
-  DBusMessage *reply = d->dbus_pending_call_steal_reply(pending);
-  std::erase(self->mItemCalls, pending);
-  d->dbus_pending_call_unref(pending);
-
-  bool failed = !reply ||
-                d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR;
-  if (reply)
-    d->dbus_message_unref(reply);
-  if (failed)
-    call.onError();
 }
 
 void StatusNotifierWatcher::activate(const std::string &id, int x, int y) {
@@ -919,11 +936,190 @@ void StatusNotifierWatcher::secondaryActivate(const std::string &id, int x,
 }
 
 void StatusNotifierWatcher::contextMenu(const std::string &id, int x, int y) {
+  auto conn = mItemConns.find(id);
+  if (conn == mItemConns.end())
+    return;
+
+  // Like Plasma, show the item's dbusmenu ourselves when it has one, and only
+  // otherwise ask the item to show its own menu.
+  if (!conn->second.menuPath.empty()) {
+    fetchMenu(id);
+    return;
+  }
   callItemMethod(id, "ContextMenu", x, y, [id] {
-    // Such items export their menu over com.canonical.dbusmenu instead (the
-    // Menu property), which we can't show yet.
-    fprintf(stderr, "tcc_systray: %s has no ContextMenu method\n", id.c_str());
+    fprintf(stderr, "tcc_systray: %s has no menu\n", id.c_str());
   });
+}
+
+void StatusNotifierWatcher::fetchMenu(const std::string &id) {
+  DBusLib *d;
+  if ((d = mLib) == nullptr || !mConn)
+    return;
+  const ItemConn &conn = mItemConns.at(id);
+
+  // Lets the item update the menu before we fetch it.
+  DBusMessage *msg = d->dbus_message_new_method_call(
+      conn.service.c_str(), conn.menuPath.c_str(), MENU_IFACE, "AboutToShow");
+  dbus_int32_t root = 0;
+  d->dbus_message_append_args(msg, DBUS_TYPE_INT32, &root, DBUS_TYPE_INVALID);
+  d->dbus_message_set_no_reply(msg, true);
+  d->dbus_connection_send(mConn, msg, nullptr);
+  d->dbus_message_unref(msg);
+
+  // GetLayout(parentId, recursionDepth, propertyNames): the whole tree, with
+  // all properties.
+  msg = d->dbus_message_new_method_call(
+      conn.service.c_str(), conn.menuPath.c_str(), MENU_IFACE, "GetLayout");
+  dbus_int32_t depth = -1;
+  DBusMessageIter iter, props;
+  d->dbus_message_iter_init_append(msg, &iter);
+  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &root);
+  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &depth);
+  d->dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "s", &props);
+  d->dbus_message_iter_close_container(&iter, &props);
+
+  callAsync(msg, [this, d, id](DBusMessage *reply) {
+    if (!reply || d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
+      fprintf(stderr, "tcc_systray: could not get the menu of %s\n",
+              id.c_str());
+      return;
+    }
+    if (!findItem(id))
+      return;
+
+    // (u revision, (ia{sv}av) layout)
+    DBusMessageIter iter;
+    SystrayMenuEntry root;
+    bool visible;
+    if (!d->dbus_message_iter_init(reply, &iter) ||
+        d->dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_UINT32)
+      return;
+    d->dbus_message_iter_next(&iter);
+    if (d->dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRUCT)
+      return;
+    readMenuLayout(&iter, root, &visible);
+    if (root.children.empty())
+      return;
+
+    sendMenuEvent(id, 0, "opened");
+    showMenu(id, root.children);
+  });
+  d->dbus_message_unref(msg);
+}
+
+// Reads one (ia{sv}av) node of a dbusmenu layout, and its children.
+void StatusNotifierWatcher::readMenuLayout(DBusMessageIter *layout,
+                                           SystrayMenuEntry &entry,
+                                           bool *visible) {
+  DBusLib *d = mLib;
+  DBusMessageIter strct, props, prop, value, children, child;
+  dbus_int32_t id = 0;
+  *visible = true;
+
+  d->dbus_message_iter_recurse(layout, &strct);
+  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
+    return;
+  d->dbus_message_iter_get_basic(&strct, &id);
+  entry.id = id;
+  d->dbus_message_iter_next(&strct);
+
+  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
+    return;
+  d->dbus_message_iter_recurse(&strct, &props);
+  while (d->dbus_message_iter_get_arg_type(&props) == DBUS_TYPE_DICT_ENTRY) {
+    const char *name;
+    d->dbus_message_iter_recurse(&props, &prop);
+    d->dbus_message_iter_get_basic(&prop, &name);
+    d->dbus_message_iter_next(&prop);
+    d->dbus_message_iter_recurse(&prop, &value);
+    int type = d->dbus_message_iter_get_arg_type(&value);
+
+    if (type == DBUS_TYPE_STRING) {
+      const char *str;
+      d->dbus_message_iter_get_basic(&value, &str);
+      if (eq(name, "type") && eq(str, "separator")) {
+        entry.type = SystrayMenuEntry::Type::Separator;
+      } else if (eq(name, "label")) {
+        // Drop mnemonic underscores, "__" is a literal underscore.
+        for (const char *c = str; *c; c++) {
+          if (*c == '_' && c[1] == '_')
+            entry.label += *++c;
+          else if (*c != '_')
+            entry.label += *c;
+        }
+      } else if (eq(name, "toggle-type")) {
+        entry.toggle = eq(str, "checkmark") ? SystrayMenuEntry::Toggle::Checkmark
+                       : eq(str, "radio")   ? SystrayMenuEntry::Toggle::Radio
+                                            : SystrayMenuEntry::Toggle::None;
+      }
+    } else if (type == DBUS_TYPE_BOOLEAN) {
+      dbus_bool_t b;
+      d->dbus_message_iter_get_basic(&value, &b);
+      if (eq(name, "enabled"))
+        entry.enabled = b;
+      else if (eq(name, "visible"))
+        *visible = b;
+    } else if (type == DBUS_TYPE_INT32) {
+      dbus_int32_t i;
+      d->dbus_message_iter_get_basic(&value, &i);
+      if (eq(name, "toggle-state"))
+        entry.toggled = i == 1;
+    }
+    d->dbus_message_iter_next(&props);
+  }
+  d->dbus_message_iter_next(&strct);
+
+  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
+    return;
+  d->dbus_message_iter_recurse(&strct, &children);
+  while (d->dbus_message_iter_get_arg_type(&children) == DBUS_TYPE_VARIANT) {
+    d->dbus_message_iter_recurse(&children, &child);
+    if (d->dbus_message_iter_get_arg_type(&child) == DBUS_TYPE_STRUCT) {
+      SystrayMenuEntry sub;
+      bool subVisible;
+      readMenuLayout(&child, sub, &subVisible);
+      if (subVisible)
+        entry.children.push_back(std::move(sub));
+    }
+    d->dbus_message_iter_next(&children);
+  }
+}
+
+// Event(id, eventId, data, timestamp)
+void StatusNotifierWatcher::sendMenuEvent(const std::string &id, int entryId,
+                                          const char *event) {
+  DBusLib *d;
+  if ((d = mLib) == nullptr || !mConn)
+    return;
+  auto conn = mItemConns.find(id);
+  if (conn == mItemConns.end() || conn->second.menuPath.empty())
+    return;
+
+  DBusMessage *msg = d->dbus_message_new_method_call(
+      conn->second.service.c_str(), conn->second.menuPath.c_str(), MENU_IFACE,
+      "Event");
+  DBusMessageIter iter, variant;
+  dbus_int32_t did = entryId, data = 0;
+  dbus_uint32_t timestamp = 0;
+  d->dbus_message_iter_init_append(msg, &iter);
+  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &did);
+  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &event);
+  d->dbus_message_iter_open_container(&iter, DBUS_TYPE_VARIANT, "i", &variant);
+  d->dbus_message_iter_append_basic(&variant, DBUS_TYPE_INT32, &data);
+  d->dbus_message_iter_close_container(&iter, &variant);
+  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &timestamp);
+  d->dbus_message_set_no_reply(msg, true);
+  d->dbus_connection_send(mConn, msg, nullptr);
+  d->dbus_message_unref(msg);
+}
+
+void StatusNotifierWatcher::menuEntryActivated(const std::string &id,
+                                               int entryId) {
+  sendMenuEvent(id, entryId, "clicked");
+}
+
+void StatusNotifierWatcher::menuClosed(const std::string &id) {
+  sendMenuEvent(id, 0, "closed");
 }
 
 void StatusNotifierWatcher::scroll(const std::string &id, int delta,

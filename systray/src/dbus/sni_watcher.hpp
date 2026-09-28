@@ -40,6 +40,8 @@ public:
   void secondaryActivate(const std::string &id, int x, int y) override;
   void contextMenu(const std::string &id, int x, int y) override;
   void scroll(const std::string &id, int delta, bool horizontal) override;
+  void menuEntryActivated(const std::string &id, int entryId) override;
+  void menuClosed(const std::string &id) override;
 
   Mode mode() const { return mMode; }
 
@@ -61,6 +63,8 @@ private:
     std::string owner;
     // Outstanding property fetch, if any.
     DBusPendingCall *pending = nullptr;
+    // Object path of the item's com.canonical.dbusmenu menu, if it has one.
+    std::string menuPath;
   };
   std::map<std::string, ItemConn> mItemConns;
 
@@ -92,11 +96,21 @@ private:
   void readPixmaps(SystrayIcon &icon, DBusMessageIter *value);
   bool handleItemSignal(DBusMessage *msg);
 
+  // Sends msg without blocking, then runs onReply with the reply. The reply is
+  // an error message if the call failed, or null if it timed out.
+  void callAsync(DBusMessage *msg,
+                 std::function<void(DBusMessage *reply)> onReply);
+  static void itemCallReplyThunk(DBusPendingCall *pending, void *data);
   // Calls an (x, y) method such as Activate on an item. onError, if given, is
   // run if the call fails (e.g. the item doesn't implement it).
   void callItemMethod(const std::string &id, const char *method, int x, int y,
                       std::function<void()> onError = nullptr);
-  static void itemCallReplyThunk(DBusPendingCall *pending, void *data);
+
+  // com.canonical.dbusmenu menus.
+  void fetchMenu(const std::string &id);
+  void readMenuLayout(DBusMessageIter *layout, SystrayMenuEntry &entry,
+                      bool *visible);
+  void sendMenuEvent(const std::string &id, int entryId, const char *event);
 
   void handleNameOwnerChanged(const char *name, const char *oldOwner,
                               const char *newOwner);

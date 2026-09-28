@@ -6,6 +6,7 @@
 
 #include <Mw/Milsko.h>
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,6 +35,21 @@ class TCCSystrayClient {
   std::vector<MwPixmap> mOldPixmaps;
   bool mNeedsRelayout = false;
 
+  // The item menu being shown, if any.
+  struct OpenMenu {
+    SystrayProtocol *protocol;
+    // The item it belongs to.
+    std::string id;
+    // Hidden, 1x1 widget above the item's icon that the menu opens from.
+    MwWidget holder;
+    // Hidden menu bar inside holder, used to build the MwMenu tree that the
+    // popup (an MwSubMenu) shows. Destroying it frees the tree.
+    MwWidget menubar;
+    // Protocol entry ids of the entries that can be chosen.
+    std::map<MwMenu, int> entryIds;
+  };
+  std::unique_ptr<OpenMenu> mMenu;
+
   void addProtocol(std::unique_ptr<SystrayProtocol> protocol);
   void itemsChanged(SystrayProtocol &protocol,
                     const std::vector<SystrayItem> &items);
@@ -49,6 +65,14 @@ class TCCSystrayClient {
   static void MWAPI iconMouseUp(MwWidget handle, void *user, void *call);
   // Screen position of a point in an icon widget.
   void screenPosition(IconWidget &icon, const MwMouse &mouse, int *x, int *y);
+  static void MWAPI windowMouseUp(MwWidget handle, void *user, void *call);
+
+  void showMenu(SystrayProtocol &protocol, const std::string &id,
+                const std::vector<SystrayMenuEntry> &entries);
+  void addMenuEntries(MwMenu parent,
+                      const std::vector<SystrayMenuEntry> &entries);
+  void closeMenu();
+  static void MWAPI menuChosen(MwWidget handle, void *user, void *call);
 
 public:
   TCCSystrayClient();

@@ -9,6 +9,8 @@
 
 TCCSystrayClient::TCCSystrayClient() {
   mWindow = window_setup(&mBounds);
+  // Clicking the bar outside of the icons dismisses an open menu.
+  MwAddUserHandler(mWindow, MwNmouseUpHandler, windowMouseUp, this);
 
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
@@ -20,6 +22,11 @@ TCCSystrayClient::TCCSystrayClient() {
 
 void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {
   protocol->setIconSize(ICON_SIZE);
+  protocol->setShowMenuCallback(
+      [this](SystrayProtocol &protocol, const std::string &id,
+             const std::vector<SystrayMenuEntry> &entries) {
+        showMenu(protocol, id, entries);
+      });
   protocol->setItemsChangedCallback(
       [this](SystrayProtocol &protocol, const std::vector<SystrayItem> &items) {
         itemsChanged(protocol, items);
@@ -90,6 +97,15 @@ void TCCSystrayClient::drawOverlay(const SystrayIcon &overlay,
 }
 
 void TCCSystrayClient::relayout() {
+  // Don't leave a menu open for an item that went away.
+  if (mMenu) {
+    const auto &items = mMenu->protocol->items();
+    if (std::none_of(items.begin(), items.end(), [&](const SystrayItem &item) {
+          return item.id == mMenu->id;
+        }))
+      closeMenu();
+  }
+
   for (auto &widget : mIconWidgets) {
     MwDestroyWidget(widget->image);
     mOldPixmaps.push_back(widget->pixmap);
@@ -159,8 +175,20 @@ void MWAPI TCCSystrayClient::iconMouseUp(MwWidget handle, void *user,
   auto &icon = *static_cast<IconWidget *>(user);
   auto &mouse = *static_cast<MwMouse *>(call);
 
+  TCCSystrayClient *client = icon.client;
+
+  // Any click on the tray dismisses an open menu, and clicking the item whose
+  // menu is open toggles it off rather than opening it again.
+  if (client->mMenu) {
+    bool sameItem = client->mMenu->protocol == icon.protocol &&
+                    client->mMenu->id == icon.id;
+    client->closeMenu();
+    if (sameItem && mouse.button != MwMOUSE_MIDDLE)
+      return;
+  }
+
   int x, y;
-  icon.client->screenPosition(icon, mouse, &x, &y);
+  client->screenPosition(icon, mouse, &x, &y);
   switch (mouse.button) {
   case MwMOUSE_LEFT:
     icon.protocol->activate(icon.id, x, y);
@@ -172,6 +200,100 @@ void MWAPI TCCSystrayClient::iconMouseUp(MwWidget handle, void *user,
     icon.protocol->contextMenu(icon.id, x, y);
     break;
   }
+}
+
+void MWAPI TCCSystrayClient::windowMouseUp(MwWidget handle, void *user,
+                                           void *call) {
+  (void)handle;
+  (void)call;
+  static_cast<TCCSystrayClient *>(user)->closeMenu();
+}
+
+void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
+                                const std::string &id,
+                                const std::vector<SystrayMenuEntry> &entries) {
+  closeMenu();
+
+  auto icon = std::find_if(
+      mIconWidgets.begin(), mIconWidgets.end(), [&](const auto &widget) {
+        return widget->protocol == &protocol && widget->id == id;
+      });
+  if (icon == mIconWidgets.end())
+    return;
+
+  mMenu = std::make_unique<OpenMenu>();
+  mMenu->protocol = &protocol;
+  mMenu->id = id;
+
+  // Sits on the top edge of the bar, above the icons (which start lower), so
+  // it never takes their clicks.
+  mMenu->holder =
+      MwCreateWidget(MwFrameClass, "menuholder", mWindow,
+                     MwGetInteger((*icon)->image, MwNx), 0, 1, 1);
+  MwShow(mMenu->holder, 0);
+  mMenu->menubar =
+      MwCreateWidget(MwMenuClass, "menubar", mMenu->holder, 0, 0, 0, 0);
+  MwShow(mMenu->menubar, 0);
+  // Chosen entries are reported to the menu bar the popup belongs to.
+  MwAddUserHandler(mMenu->menubar, MwNmenuHandler, menuChosen, this);
+
+  // The popup shows the entries of a single top level menu.
+  MwMenu top = MwMenuAdd(mMenu->menubar, NULL, "");
+  addMenuEntries(top, entries);
+
+  MwWidget popup = MwCreateWidget(MwSubMenuClass, "submenu", mMenu->menubar,
+                                  0, 0, 0, 0);
+  // Opens upwards from the bar.
+  MwPoint point = {0, 0};
+  MwSubMenuAppear(popup, top, &point, 1);
+}
+
+void TCCSystrayClient::addMenuEntries(
+    MwMenu parent, const std::vector<SystrayMenuEntry> &entries) {
+  for (const auto &entry : entries) {
+    if (entry.type == SystrayMenuEntry::Type::Separator) {
+      // How MwSubMenu spells a separator.
+      MwMenuAdd(mMenu->menubar, parent, "----");
+      continue;
+    }
+
+    std::string label;
+    if (entry.toggle == SystrayMenuEntry::Toggle::Checkmark)
+      label = entry.toggled ? "[x] " : "[ ] ";
+    else if (entry.toggle == SystrayMenuEntry::Toggle::Radio)
+      label = entry.toggled ? "(*) " : "( ) ";
+    label += entry.label;
+
+    MwMenu menu = MwMenuAdd(mMenu->menubar, parent, label.c_str());
+    if (!entry.children.empty())
+      addMenuEntries(menu, entry.children);
+    else if (entry.enabled)
+      mMenu->entryIds[menu] = entry.id;
+  }
+}
+
+void TCCSystrayClient::closeMenu() {
+  if (!mMenu)
+    return;
+  // Takes the menu bar, its MwMenu tree and any open popups with it.
+  MwDestroyWidget(mMenu->holder);
+  mMenu->protocol->menuClosed(mMenu->id);
+  mMenu.reset();
+}
+
+void MWAPI TCCSystrayClient::menuChosen(MwWidget handle, void *user,
+                                        void *call) {
+  (void)handle;
+  auto *client = static_cast<TCCSystrayClient *>(user);
+  if (!client->mMenu)
+    return;
+
+  // The popup has already closed itself.
+  auto entry = client->mMenu->entryIds.find(static_cast<MwMenu>(call));
+  if (entry != client->mMenu->entryIds.end())
+    client->mMenu->protocol->menuEntryActivated(client->mMenu->id,
+                                                entry->second);
+  client->closeMenu();
 }
 
 void TCCSystrayClient::run() {
