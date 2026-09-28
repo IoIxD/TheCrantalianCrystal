@@ -98,49 +98,36 @@ MwWidget ProgmanWindow::create_icon_table(
     MwViewportSetSize(mViewport, 630, folder_height);
   }
 
-  /* set them up */
-  GtkIconTheme *theme =
-      gtk_icon_theme_get_for_display(gdk_display_get_default());
-
   table = MwVaCreateWidget(MwTableClass, NULL, MwViewportGetViewport(mViewport),
                            0, 0, 640 - 25, folder_height, MwNcolumns, 7,
                            MwNmargin, 16, MwNrowSpan, 1, NULL);
 
   for (auto items : items) {
-    GError *err = nullptr;
     FolderPair *f = new FolderPair();
     int width = ICON_SIZE;
     int height = ICON_SIZE;
     f->holder = MwVaCreateWidget(MwFrameClass, NULL, table, 0, 0, ICON_SIZE,
                                  ICON_SIZE, NULL);
 
-    GtkIconPaintable *icon = gtk_icon_theme_lookup_icon(
-        theme, gMainCategories.at(items.first).c_str(), NULL, 32, 1,
-        GTK_TEXT_DIR_NONE, GTK_ICON_LOOKUP_NONE);
-    if (icon) {
-      auto pixbuf = gdk_pixbuf_new_from_file(
-          g_file_get_parse_name(gtk_icon_paintable_get_file(icon)), &err);
+    unsigned char *px = nullptr;
+    mIcons.get_icon_by_name(gMainCategories.at(items.first).c_str(), 32, &width,
+                            &height, &px);
+    if (px) {
+      f->folder_pixmap = MwLoadRaw(mWindow, px, width, height);
+      free(px);
 
-      if (pixbuf) {
-        width = gdk_pixbuf_get_width(pixbuf);
-        height = gdk_pixbuf_get_height(pixbuf);
-        auto px = gdk_pixbuf_get_pixels(pixbuf);
-        auto size = gdk_pixbuf_get_byte_length(pixbuf);
-        f->folder_pixmap = MwLoadRaw(mWindow, px, width, height);
+      if (width > ICON_SIZE)
+        width = ICON_SIZE;
+      if (height > ICON_SIZE)
+        height = ICON_SIZE;
 
-        if (width > ICON_SIZE)
-          width = ICON_SIZE;
-        if (height > ICON_SIZE)
-          height = ICON_SIZE;
-
-        f->folder_icon = MwVaCreateWidget(
-            MwImageClass, NULL, f->holder, (ICON_SIZE / 2) - width / 2,
-            height / 2, width, height, MwNpixmap, f->folder_pixmap, NULL);
-
-        g_object_unref(pixbuf);
-      }
-      g_object_unref(icon);
-    };
+      f->folder_icon = MwVaCreateWidget(
+          MwImageClass, NULL, f->holder, (ICON_SIZE / 2) - width / 2,
+          height / 2, width, height, MwNpixmap, f->folder_pixmap, NULL);
+    } else {
+      width = ICON_SIZE;
+      height = ICON_SIZE;
+    }
     f->folder_name = MwVaCreateWidget(MwLabelClass, NULL, f->holder, 0,
                                       height + (height / 2), ICON_SIZE, 16,
                                       MwNtext, items.first.c_str(), NULL);
@@ -257,15 +244,11 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
     MwViewportSetSize(viewport, 630, folder_height);
   }
 
-  GtkIconTheme *theme =
-      gtk_icon_theme_get_for_display(gdk_display_get_default());
-
   table = MwVaCreateWidget(MwTableClass, NULL, MwViewportGetViewport(viewport),
                            0, 0, 640 - 25, folder_height, MwNcolumns, 7,
                            MwNmargin, 16, MwNrowSpan, 1, NULL);
 
   for (auto item : items) {
-    GError *err = nullptr;
     FolderPair *f = new FolderPair();
     int width = ICON_SIZE;
     int height = ICON_SIZE;
@@ -275,33 +258,25 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
     auto name = g_app_info_get_name(item);
     f->info = item;
 
-    GtkIconPaintable *icon = gtk_icon_theme_lookup_by_gicon(
-        theme, g_app_info_get_icon((GAppInfo *)item), 32, 1, GTK_TEXT_DIR_NONE,
-        GTK_ICON_LOOKUP_NONE);
-    if (icon) {
-      auto pixbuf = gdk_pixbuf_new_from_file(
-          g_file_get_parse_name(gtk_icon_paintable_get_file(icon)), &err);
+    unsigned char *px = nullptr;
+    win->mIcons.get_icon_from_gicon(g_app_info_get_icon(item), 32, &width,
+                                    &height, &px);
+    if (px) {
+      f->folder_pixmap = MwLoadRaw(subwindow, px, width, height);
+      free(px);
 
-      if (pixbuf) {
-        width = gdk_pixbuf_get_width(pixbuf);
-        height = gdk_pixbuf_get_height(pixbuf);
-        auto px = gdk_pixbuf_get_pixels(pixbuf);
-        auto size = gdk_pixbuf_get_byte_length(pixbuf);
-        f->folder_pixmap = MwLoadRaw(subwindow, px, width, height);
+      if (width > 32)
+        width = 32;
+      if (height > 32)
+        height = 32;
 
-        if (width > 32)
-          width = 32;
-        if (height > 32)
-          height = 32;
-
-        f->folder_icon = MwVaCreateWidget(
-            MwImageClass, NULL, f->holder, (ICON_SIZE / 2) - width / 2,
-            height / 2, width, height, MwNpixmap, f->folder_pixmap, NULL);
-
-        g_object_unref(pixbuf);
-      }
-      g_object_unref(icon);
-    };
+      f->folder_icon = MwVaCreateWidget(
+          MwImageClass, NULL, f->holder, (ICON_SIZE / 2) - width / 2,
+          height / 2, width, height, MwNpixmap, f->folder_pixmap, NULL);
+    } else {
+      width = ICON_SIZE;
+      height = ICON_SIZE;
+    }
     f->folder_name = MwVaCreateWidget(MwLabelClass, NULL, f->holder, 0,
                                       height + (height / 2), ICON_SIZE, 16,
                                       MwNtext, name, NULL);

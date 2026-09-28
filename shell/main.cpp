@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <format>
 #include <memory>
+#include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
 #include <ucontext.h>

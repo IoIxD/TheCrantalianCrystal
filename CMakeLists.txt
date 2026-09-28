@@ -8,6 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 add_subdirectory(submodules/milsko)
+add_subdirectory(iconlib)
 add_subdirectory(shell)
 add_subdirectory(progman)
-add_subdirectory(taskbar)
+add_subdirectory(systray)

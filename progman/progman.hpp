@@ -1,6 +1,8 @@
 #pragma once
 #include <Mw/Milsko.h>
 
+#include "iconlib.hpp"
+
 #include <gio-unix-2.0/gio/gdesktopappinfo.h>
 #include <glib-2.0/glib.h>
 
@@ -10,6 +12,7 @@
 #include <vector>
 
 class ProgmanWindow {
+  IconManager mIcons;
   MwWidget mWindow = nullptr;
 
   MwWidget mViewport = nullptr;

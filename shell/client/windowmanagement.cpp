@@ -671,7 +671,7 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
 
 void TCCClient::launch_initial_components() {
   launch_component("tcc_progman");
-  launch_component("tcc_taskbar");
+  launch_component("tcc_systray");
 }
 
 void TCCClient::launch_component(std::string name) {
