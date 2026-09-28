@@ -24,8 +24,14 @@ TCCClient::TCCClient() {
   // It only matters if it's set when the display is created.
   unsetenv("WAYLAND_DEBUG");
 
-  // Ensure children (spawned terminals, etc.) are automatically reaped.
-  signal(SIGCHLD, SIG_IGN);
+  // Children we spawn are reaped in run(). SIGCHLD isn't ignored for that
+  // since it would break anything else in this process that waits on its own
+  // subprocesses (e.g. gdk-pixbuf's glycin loaders); the no-op handler just
+  // interrupts poll() so exited children get reaped promptly.
+  struct sigaction sa = {};
+  sa.sa_handler = [](int) {};
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGCHLD, &sa, nullptr);
 
   mRegistry = wl_display_get_registry(mDisplay);
 
@@ -112,6 +118,8 @@ void TCCClient::run() {
   }
 
   while (mRunning) {
+    reap_children();
+
     std::vector<pollfd> fds;
     std::vector<wl_display *> displays = {mDisplay};
 

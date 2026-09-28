@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <sys/mman.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 
@@ -675,37 +676,50 @@ void TCCClient::launch_initial_components() {
 }
 
 void TCCClient::launch_component(std::string name) {
-  if (fork() == 0) {
-    // we ignore SIGCHLD to auto-reap, but that disposition survives execve and
-    // breaks children that wait on their own subprocesses (e.g. glycin's bwrap)
-    signal(SIGCHLD, SIG_DFL);
-    char dest[PATH_MAX];
-    memset(dest, 0, sizeof(dest));
-    if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
-      perror("readlink");
-    }
-    std::filesystem::path fs = dest;
+  char dest[PATH_MAX];
+  memset(dest, 0, sizeof(dest));
+  if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
+    perror("readlink");
+  }
+  std::filesystem::path fs = dest;
 
-    std::filesystem::path path = fs.parent_path() / name;
+  std::filesystem::path path = fs.parent_path() / name;
 
-    printf("%s\n", path.string().c_str());
+  printf("%s\n", path.string().c_str());
 
-    const char *args[] = {path.c_str(), NULL};
-    execve(path.c_str(), (char **)args, environ);
+  const char *args[] = {path.c_str(), NULL};
+  spawn(path.c_str(), args);
+}
+
+void TCCClient::spawn(const char *path, const char *const argv[]) {
+  pid_t pid = fork();
+  if (pid == 0) {
+    // execvp resets our SIGCHLD handler to the default
+    execvp(path, (char **)argv);
     _exit(1);
   }
+  if (pid > 0)
+    mChildren.push_back(pid);
+  else
+    perror("fork");
+}
+
+void TCCClient::reap_children() {
+  // only wait on our own children, others (e.g. glycin's) belong to whoever
+  // spawned them
+  std::erase_if(mChildren, [](pid_t pid) {
+    return waitpid(pid, nullptr, WNOHANG) != 0;
+  });
 }
 void TCCClient::seat_action(Seat *seat, Action action) {
   switch (action) {
   case ACTION_NONE:
     break;
-  case ACTION_SPAWN_TERMINAL:
-    if (fork() == 0) {
-      signal(SIGCHLD, SIG_DFL);
-      execlp("konsole", "konsole", (char *)nullptr);
-      _exit(1);
-    }
+  case ACTION_SPAWN_TERMINAL: {
+    const char *args[] = {"konsole", nullptr};
+    spawn("konsole", args);
     break;
+  }
   case ACTION_CLOSE:
     if (seat->focused != nullptr) {
       river_window_v1_close(seat->focused->id);

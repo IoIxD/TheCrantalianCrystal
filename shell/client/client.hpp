@@ -277,6 +277,9 @@ private:
   bool mRunning = true;
   bool mStopping = false;
 
+  // Processes we spawned that haven't been reaped yet.
+  std::vector<pid_t> mChildren;
+
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
       .global_remove = global_remove,
@@ -532,6 +535,8 @@ private:
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
   void launch_initial_components();
   void launch_component(std::string name);
+  void spawn(const char *path, const char *const argv[]);
+  void reap_children();
   void seat_action(Seat *seat, Action action);
   void seat_manage(Seat *seat);
   void seat_render(Seat *seat);

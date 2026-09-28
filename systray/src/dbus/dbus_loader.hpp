@@ -46,7 +46,13 @@
   X(dbus_message_iter_get_arg_type)                                            \
   X(dbus_message_iter_recurse)                                                 \
   X(dbus_message_iter_get_basic)                                               \
-  X(dbus_message_iter_next)
+  X(dbus_message_iter_next)                                                     \
+  X(dbus_message_iter_get_fixed_array)                                         \
+  X(dbus_connection_send_with_reply)                                           \
+  X(dbus_pending_call_set_notify)                                              \
+  X(dbus_pending_call_steal_reply)                                             \
+  X(dbus_pending_call_cancel)                                                  \
+  X(dbus_pending_call_unref)
 
 // Function table for a dynamically loaded libdbus-1. Each member has the same
 // name and signature as the libdbus function it points to.

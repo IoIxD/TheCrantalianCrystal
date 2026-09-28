@@ -4,6 +4,8 @@
 #include "../systray_protocol.hpp"
 #include "dbus_loader.hpp"
 
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -16,6 +18,8 @@
 //
 // Items are identified the same way the KDE watcher does it: the bus name of
 // the item followed by its object path, e.g. ":1.42/StatusNotifierItem".
+// Their title, status and icons are fetched from the item itself, and fetched
+// again whenever the item signals that they changed.
 class StatusNotifierWatcher : public SystrayProtocol {
 public:
   enum class Mode { Disconnected, Watcher, Host };
@@ -32,6 +36,11 @@ public:
   // File descriptor of the bus connection.
   int fd() const override;
 
+  void activate(const std::string &id, int x, int y) override;
+  void secondaryActivate(const std::string &id, int x, int y) override;
+  void contextMenu(const std::string &id, int x, int y) override;
+  void scroll(const std::string &id, int delta, bool horizontal) override;
+
   Mode mode() const { return mMode; }
 
 private:
@@ -44,6 +53,21 @@ private:
   bool mNeedsRefresh = false;
   DBusError mDBusErr;
 
+  // The D-Bus side of each item in mItems, keyed by item id.
+  struct ItemConn {
+    std::string service;
+    std::string path;
+    // Unique name of the item's connection, which its signals come from.
+    std::string owner;
+    // Outstanding property fetch, if any.
+    DBusPendingCall *pending = nullptr;
+  };
+  std::map<std::string, ItemConn> mItemConns;
+
+  // Outstanding method calls on items, cancelled on disconnect.
+  struct ItemCall;
+  std::vector<DBusPendingCall *> mItemCalls;
+
   static DBusHandlerResult filterThunk(DBusConnection *, DBusMessage *msg,
                                        void *self);
   DBusHandlerResult filter(DBusMessage *msg);
@@ -52,6 +76,27 @@ private:
   void becomeWatcher();
   void becomeHost();
   void refreshFromWatcher();
+
+  SystrayItem *findItem(const std::string &id);
+  // These don't call itemsChanged(); addItem() calls it once the item's
+  // properties arrive.
+  void addItem(const std::string &id);
+  void removeItem(const std::string &id);
+  void clearItems();
+
+  void fetchItemProperties(const std::string &id);
+  static void propertiesReplyThunk(DBusPendingCall *pending, void *data);
+  void propertiesReply(const std::string &id, DBusMessage *reply);
+  void readItemProperty(SystrayItem &item, const char *prop,
+                        DBusMessageIter *value);
+  void readPixmaps(SystrayIcon &icon, DBusMessageIter *value);
+  bool handleItemSignal(DBusMessage *msg);
+
+  // Calls an (x, y) method such as Activate on an item. onError, if given, is
+  // run if the call fails (e.g. the item doesn't implement it).
+  void callItemMethod(const std::string &id, const char *method, int x, int y,
+                      std::function<void()> onError = nullptr);
+  static void itemCallReplyThunk(DBusPendingCall *pending, void *data);
 
   void handleNameOwnerChanged(const char *name, const char *oldOwner,
                               const char *newOwner);

@@ -21,8 +21,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/client/ssd_shader.h.in "${CMAKE_CURRE
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS client/ssd.frag)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS client/ssd.vert)
 
-# pkg_check_modules(deps REQUIRED IMPORTED_TARGET glib-2.0 gtk4)
-# target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::deps)
-
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/iconlib)
 target_link_libraries(${PROJECT_NAME} PRIVATE tcc_iconlib)
