@@ -12,8 +12,9 @@
 // PipeWire also serves). There is no item while there is no sound server or
 // device, and for the microphone, while nothing is recording.
 //
-// Middle click mutes, scrolling changes the volume, and clicking shows a menu
-// with mute, a few volume levels and the devices to choose from.
+// Clicking shows a mixer with the device's volume, which for outputs expands
+// to each application's too. Middle click mutes, scrolling changes the volume,
+// and the menu has mute and the devices to choose from.
 class PulseVolume : public SystrayProtocol {
 public:
   enum class Direction { Output, Input };
@@ -35,6 +36,11 @@ public:
   void contextMenu(const std::string &id, int x, int y) override;
   void scroll(const std::string &id, int delta, bool horizontal) override;
   void menuEntryActivated(const std::string &id, int entryId) override;
+  void mixerVolumeChanged(const std::string &id, int channel,
+                          int volume) override;
+  void mixerMuteChanged(const std::string &id, int channel,
+                        bool muted) override;
+  void mixerClosed(const std::string &id) override;
 
 private:
   // A sink (output) or source (input).
@@ -42,6 +48,13 @@ private:
     uint32_t index = PA_INVALID_INDEX;
     std::string name;
     std::string description;
+    pa_cvolume volume;
+    bool muted = false;
+  };
+  // An application's playback stream (a sink input).
+  struct Stream {
+    uint32_t index = PA_INVALID_INDEX;
+    std::string label;
     pa_cvolume volume;
     bool muted = false;
   };
@@ -68,6 +81,12 @@ private:
   // refresh still being collected.
   bool mRecording = false;
   bool mNewRecording = false;
+  // For outputs: applications' streams, and the same for the refresh still
+  // being collected.
+  std::vector<Stream> mStreams;
+  std::vector<Stream> mNewStreams;
+  // Whether the client is showing our mixer, which is kept up to date.
+  bool mMixerOpen = false;
 
   void createContext();
   void destroyContext();
@@ -79,9 +98,13 @@ private:
   void update();
 
   const Device *defaultDevice() const;
-  int percent(const Device &device) const;
+  int percent(const pa_cvolume &volume) const;
+  int percent(const Device &device) const { return percent(device.volume); }
+  // Scales a volume to percent, keeping the balance between its channels.
+  pa_cvolume scaled(pa_cvolume volume, int percent) const;
   void setMuted(bool muted);
   void setPercent(int percent);
+  SystrayMixer mixer() const;
   void setDefault(const std::string &name);
   void finish(pa_operation *op);
 
@@ -99,5 +122,8 @@ private:
   static void sourceOutputInfoCallback(pa_context *context,
                                        const pa_source_output_info *info,
                                        int eol, void *self);
+  static void sinkInputInfoCallback(pa_context *context,
+                                    const pa_sink_input_info *info, int eol,
+                                    void *self);
 };
 #endif

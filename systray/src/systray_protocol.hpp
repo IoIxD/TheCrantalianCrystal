@@ -65,6 +65,30 @@ struct SystrayMenuEntry {
   std::vector<SystrayMenuEntry> children;
 };
 
+// One volume control of a mixer.
+struct SystrayMixerChannel {
+  // Identifies the channel to the protocol's mixer callbacks.
+  int id = 0;
+  std::string label;
+  // In percent, may be over 100.
+  int volume = 0;
+  bool muted = false;
+
+  bool operator==(const SystrayMixerChannel &) const = default;
+};
+
+// A mixer window some items show when clicked, instead of a menu: a master
+// volume control, and more (e.g. one per application) when expanded.
+struct SystrayMixer {
+  SystrayMixerChannel master;
+  std::vector<SystrayMixerChannel> others;
+  // Whether there can be other channels at all, so the mixer can be
+  // expanded even while there are none (e.g. no application is playing).
+  bool expandable = false;
+
+  bool operator==(const SystrayMixer &) const = default;
+};
+
 // A source of systray items, e.g. StatusNotifierItem over D-Bus or the X11
 // XEmbed system tray protocol.
 class SystrayProtocol {
@@ -75,6 +99,11 @@ public:
   using ShowMenuCallback = std::function<void(
       SystrayProtocol &protocol, const std::string &id,
       const std::vector<SystrayMenuEntry> &entries)>;
+  // Asks the client to show a mixer for an item, or to update the one it is
+  // already showing for that item.
+  using ShowMixerCallback =
+      std::function<void(SystrayProtocol &protocol, const std::string &id,
+                         const SystrayMixer &mixer)>;
 
   SystrayProtocol() = default;
   virtual ~SystrayProtocol() = default;
@@ -107,11 +136,23 @@ public:
   // entry was chosen.
   virtual void menuClosed(const std::string &id) {}
 
+  // A channel of a mixer shown through the ShowMixerCallback was changed.
+  virtual void mixerVolumeChanged(const std::string &id, int channel,
+                                  int volume) {}
+  virtual void mixerMuteChanged(const std::string &id, int channel,
+                                bool muted) {}
+  // A mixer shown through the ShowMixerCallback went away.
+  virtual void mixerClosed(const std::string &id) {}
+
   const std::vector<SystrayItem> &items() const { return mItems; }
   void setItemsChangedCallback(ItemsChangedCallback cb) {
     mItemsChanged = std::move(cb);
   }
-  void setShowMenuCallback(ShowMenuCallback cb) { mShowMenu = std::move(cb); }  // Size icons will be drawn at, used to pick between pixmaps of several
+  void setShowMenuCallback(ShowMenuCallback cb) { mShowMenu = std::move(cb); }
+  void setShowMixerCallback(ShowMixerCallback cb) {
+    mShowMixer = std::move(cb);
+  }
+  // Size icons will be drawn at, used to pick between pixmaps of several
   // sizes.
   void setIconSize(int size) { mIconSize = size; }
 
@@ -129,8 +170,13 @@ protected:
     if (mShowMenu)
       mShowMenu(*this, id, entries);
   }
+  void showMixer(const std::string &id, const SystrayMixer &mixer) {
+    if (mShowMixer)
+      mShowMixer(*this, id, mixer);
+  }
 
 private:
   ItemsChangedCallback mItemsChanged;
   ShowMenuCallback mShowMenu;
+  ShowMixerCallback mShowMixer;
 };

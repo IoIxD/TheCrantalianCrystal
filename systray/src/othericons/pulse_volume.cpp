@@ -10,14 +10,15 @@
 namespace {
 
 constexpr int SCROLL_STEP = 5;
-constexpr int LEVELS[] = {100, 75, 50, 25};
 
 // Menu entry ids.
 constexpr int MUTE_ENTRY = 1;
-// Levels are LEVEL_ENTRY + their percentage.
-constexpr int LEVEL_ENTRY = 100;
 // Devices are DEVICE_ENTRY + their index.
 constexpr int DEVICE_ENTRY = 1000;
+
+// Mixer channel ids; streams are STREAM_CHANNEL + their index.
+constexpr int MASTER_CHANNEL = 0;
+constexpr int STREAM_CHANNEL = 1;
 
 } // namespace
 
@@ -92,7 +93,8 @@ void PulseVolume::stateCallback(pa_context *context, void *data) {
     // The server's events tell us when the default device changes. For
     // inputs, source outputs are the streams apps record with.
     auto devices = self->mDirection == Direction::Output
-                       ? PA_SUBSCRIPTION_MASK_SINK
+                       ? (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK |
+                                                  PA_SUBSCRIPTION_MASK_SINK_INPUT)
                        : (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SOURCE |
                                                   PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT);
     p->pa_context_set_subscribe_callback(context, subscribeCallback, self);
@@ -225,21 +227,56 @@ void PulseVolume::devicesDone() {
   mDevices = std::move(mNewDevices);
   mNewDevices.clear();
 
-  if (mDirection == Direction::Input && mContext) {
+  // Then the streams: for outputs, applications' playback for the mixer; for
+  // inputs, recordings, to know whether to show the item at all.
+  pa_operation *op = nullptr;
+  if (mContext && mDirection == Direction::Output) {
+    mNewStreams.clear();
+    op = mLib->pa_context_get_sink_input_info_list(mContext,
+                                                   sinkInputInfoCallback, this);
+  } else if (mContext) {
     mNewRecording = false;
-    pa_operation *op = mLib->pa_context_get_source_output_info_list(
+    op = mLib->pa_context_get_source_output_info_list(
         mContext, sourceOutputInfoCallback, this);
-    if (op) {
-      finish(op);
-      return;
-    }
+  }
+  if (op) {
+    finish(op);
+    return;
   }
   refreshDone();
+}
+
+void PulseVolume::sinkInputInfoCallback(pa_context *,
+                                        const pa_sink_input_info *info, int eol,
+                                        void *data) {
+  auto *self = static_cast<PulseVolume *>(data);
+  if (eol || !info) {
+    self->mStreams = std::move(self->mNewStreams);
+    self->mNewStreams.clear();
+    self->refreshDone();
+    return;
+  }
+
+  // Some streams (e.g. event sounds' cache) can't have their volume set.
+  if (!info->has_volume || !info->volume_writable)
+    return;
+
+  Stream stream;
+  stream.index = info->index;
+  const char *app =
+      self->mLib->pa_proplist_gets(info->proplist, PA_PROP_APPLICATION_NAME);
+  stream.label = app && *app ? app : (info->name ? info->name : "Unknown");
+  stream.volume = info->volume;
+  stream.muted = info->mute;
+  self->mNewStreams.push_back(std::move(stream));
 }
 
 void PulseVolume::refreshDone() {
   mRefreshing = false;
   update();
+  // Keeps an open mixer in step with changes from elsewhere.
+  if (mMixerOpen && !mItems.empty())
+    showMixer(mItems.front().id, mixer());
   if (mRefreshAgain)
     refresh();
 }
@@ -259,9 +296,15 @@ const PulseVolume::Device *PulseVolume::defaultDevice() const {
   return &*device;
 }
 
-int PulseVolume::percent(const Device &device) const {
-  return (int)std::lround(mLib->pa_cvolume_avg(&device.volume) * 100.0 /
+int PulseVolume::percent(const pa_cvolume &volume) const {
+  return (int)std::lround(mLib->pa_cvolume_avg(&volume) * 100.0 /
                           PA_VOLUME_NORM);
+}
+
+pa_cvolume PulseVolume::scaled(pa_cvolume volume, int percent) const {
+  mLib->pa_cvolume_scale(&volume,
+                         (pa_volume_t)((uint64_t)PA_VOLUME_NORM * percent / 100));
+  return volume;
 }
 
 void PulseVolume::update() {
@@ -329,10 +372,7 @@ void PulseVolume::setPercent(int percent) {
   const Device *device = defaultDevice();
   if (!device || !mContext)
     return;
-  // Scales every channel, keeping the balance between them.
-  pa_cvolume volume = device->volume;
-  mLib->pa_cvolume_scale(&volume,
-                         (pa_volume_t)((uint64_t)PA_VOLUME_NORM * percent / 100));
+  pa_cvolume volume = scaled(device->volume, percent);
   const char *name = device->name.c_str();
   if (mDirection == Direction::Output)
     finish(mLib->pa_context_set_sink_volume_by_name(mContext, name, &volume,
@@ -354,7 +394,12 @@ void PulseVolume::setDefault(const std::string &name) {
 }
 
 void PulseVolume::activate(const std::string &id, int x, int y) {
-  contextMenu(id, x, y);
+  (void)x;
+  (void)y;
+  if (!defaultDevice())
+    return;
+  mMixerOpen = true;
+  showMixer(id, mixer());
 }
 
 void PulseVolume::secondaryActivate(const std::string &id, int x, int y) {
@@ -378,26 +423,79 @@ void PulseVolume::scroll(const std::string &id, int delta, bool horizontal) {
     setPercent(target);
 }
 
+// The device as the master channel (id MASTER_CHANNEL), then for outputs each
+// application's stream (id STREAM_CHANNEL + its index).
+SystrayMixer PulseVolume::mixer() const {
+  SystrayMixer mixer;
+  const Device *device = defaultDevice();
+  if (!device)
+    return mixer;
+
+  mixer.master.id = MASTER_CHANNEL;
+  mixer.master.label =
+      mDirection == Direction::Output ? "Volume" : "Microphone";
+  mixer.master.volume = percent(*device);
+  mixer.master.muted = device->muted;
+  // Applications only have streams while they play, but can always start.
+  mixer.expandable = mDirection == Direction::Output;
+
+  for (const Stream &stream : mStreams) {
+    SystrayMixerChannel channel;
+    channel.id = STREAM_CHANNEL + (int)stream.index;
+    channel.label = stream.label;
+    channel.volume = percent(stream.volume);
+    channel.muted = stream.muted;
+    mixer.others.push_back(std::move(channel));
+  }
+  return mixer;
+}
+
+void PulseVolume::mixerVolumeChanged(const std::string &id, int channel,
+                                     int volume) {
+  (void)id;
+  if (!mContext)
+    return;
+  if (channel == MASTER_CHANNEL) {
+    setPercent(volume);
+    return;
+  }
+  uint32_t index = (uint32_t)(channel - STREAM_CHANNEL);
+  for (const Stream &stream : mStreams) {
+    if (stream.index == index) {
+      pa_cvolume scaledVolume = scaled(stream.volume, volume);
+      finish(mLib->pa_context_set_sink_input_volume(
+          mContext, index, &scaledVolume, nullptr, nullptr));
+      return;
+    }
+  }
+}
+
+void PulseVolume::mixerMuteChanged(const std::string &id, int channel,
+                                   bool muted) {
+  (void)id;
+  if (!mContext)
+    return;
+  if (channel == MASTER_CHANNEL)
+    setMuted(muted);
+  else
+    finish(mLib->pa_context_set_sink_input_mute(
+        mContext, (uint32_t)(channel - STREAM_CHANNEL), muted, nullptr,
+        nullptr));
+}
+
+void PulseVolume::mixerClosed(const std::string &id) {
+  (void)id;
+  mMixerOpen = false;
+}
+
 void PulseVolume::contextMenu(const std::string &id, int x, int y) {
   (void)x;
   (void)y;
   const Device *device = defaultDevice();
   if (!device)
     return;
-  int level = percent(*device);
 
   std::vector<SystrayMenuEntry> entries;
-
-  SystrayMenuEntry status;
-  status.label = device->muted
-                     ? std::format("{}: muted", device->description)
-                     : std::format("{}: {}%", device->description, level);
-  status.enabled = false;
-  entries.push_back(status);
-
-  SystrayMenuEntry separator;
-  separator.type = SystrayMenuEntry::Type::Separator;
-  entries.push_back(separator);
 
   SystrayMenuEntry mute;
   mute.id = MUTE_ENTRY;
@@ -406,19 +504,12 @@ void PulseVolume::contextMenu(const std::string &id, int x, int y) {
   mute.toggled = device->muted;
   entries.push_back(mute);
 
-  // A few fixed levels, since menus can't hold a slider.
-  entries.push_back(separator);
-  for (int preset : LEVELS) {
-    SystrayMenuEntry entry;
-    entry.id = LEVEL_ENTRY + preset;
-    entry.label = std::format("{}%", preset);
-    entry.toggle = SystrayMenuEntry::Toggle::Radio;
-    entry.toggled = std::abs(level - preset) <= 2;
-    entries.push_back(entry);
-  }
-
   mMenuDevices.clear();
   if (mDevices.size() > 1) {
+    SystrayMenuEntry separator;
+    separator.type = SystrayMenuEntry::Type::Separator;
+    entries.push_back(separator);
+
     SystrayMenuEntry devices;
     devices.label = mDirection == Direction::Output ? "Output" : "Input";
     for (size_t i = 0; i < mDevices.size(); i++) {
@@ -430,7 +521,6 @@ void PulseVolume::contextMenu(const std::string &id, int x, int y) {
       devices.children.push_back(entry);
       mMenuDevices.push_back(mDevices[i].name);
     }
-    entries.push_back(separator);
     entries.push_back(devices);
   }
 
@@ -443,16 +533,10 @@ void PulseVolume::menuEntryActivated(const std::string &id, int entryId) {
   if (!device || !mContext)
     return;
 
-  if (entryId == MUTE_ENTRY) {
+  if (entryId == MUTE_ENTRY)
     setMuted(!device->muted);
-  } else if (entryId >= DEVICE_ENTRY &&
-             entryId - DEVICE_ENTRY < (int)mMenuDevices.size()) {
+  else if (entryId >= DEVICE_ENTRY &&
+           entryId - DEVICE_ENTRY < (int)mMenuDevices.size())
     setDefault(mMenuDevices[entryId - DEVICE_ENTRY]);
-  } else if (entryId > LEVEL_ENTRY && entryId <= LEVEL_ENTRY + 100) {
-    setPercent(entryId - LEVEL_ENTRY);
-    // Picking a level implies wanting to hear it (or be heard).
-    if (device->muted)
-      setMuted(false);
-  }
 }
 #endif

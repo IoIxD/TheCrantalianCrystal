@@ -46,6 +46,11 @@ void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {
              const std::vector<SystrayMenuEntry> &entries) {
         showMenu(protocol, id, entries);
       });
+  protocol->setShowMixerCallback([this](SystrayProtocol &protocol,
+                                        const std::string &id,
+                                        const SystrayMixer &mixer) {
+    showMixer(protocol, id, mixer);
+  });
   protocol->setItemsChangedCallback(
       [this](SystrayProtocol &protocol, const std::vector<SystrayItem> &items) {
         itemsChanged(protocol, items);
@@ -123,14 +128,16 @@ void TCCSystrayClient::drawOverlay(const SystrayIcon &overlay,
 }
 
 void TCCSystrayClient::relayout() {
-  // Don't leave a menu open for an item that went away.
-  if (mMenu) {
-    const auto &items = mMenu->protocol->items();
-    if (std::none_of(items.begin(), items.end(), [&](const SystrayItem &item) {
-          return item.id == mMenu->id;
-        }))
-      closeMenu();
-  }
+  // Don't leave a menu or mixer open for an item that went away.
+  auto gone = [](SystrayProtocol *protocol, const std::string &id) {
+    const auto &items = protocol->items();
+    return std::none_of(items.begin(), items.end(),
+                        [&](const SystrayItem &item) { return item.id == id; });
+  };
+  if (mMenu && gone(mMenu->protocol, mMenu->id))
+    closeMenu();
+  if (mMixer && gone(mMixer->protocol, mMixer->id))
+    closeMixer();
 
   for (auto &widget : mIconWidgets) {
     MwDestroyWidget(widget->image);
@@ -219,15 +226,11 @@ void MWAPI TCCSystrayClient::iconMouseUp(MwWidget handle, void *user,
 
   TCCSystrayClient *client = icon.client;
 
-  // Any click on the tray dismisses an open menu, and clicking the item whose
-  // menu is open toggles it off rather than opening it again.
-  if (client->mMenu) {
-    bool sameItem = client->mMenu->protocol == icon.protocol &&
-                    client->mMenu->id == icon.id;
-    client->closeMenu();
-    if (sameItem && mouse.button != MwMOUSE_MIDDLE)
-      return;
-  }
+  // Any click on the tray dismisses an open menu or mixer, and clicking the
+  // item it belongs to toggles it off rather than opening it again.
+  if (client->closePopups(icon.protocol, icon.id) &&
+      mouse.button != MwMOUSE_MIDDLE)
+    return;
 
   int x, y;
   client->screenPosition(icon, mouse, &x, &y);
@@ -248,13 +251,61 @@ void MWAPI TCCSystrayClient::windowMouseUp(MwWidget handle, void *user,
                                            void *call) {
   (void)handle;
   (void)call;
-  static_cast<TCCSystrayClient *>(user)->closeMenu();
+  static_cast<TCCSystrayClient *>(user)->closePopups(nullptr, {});
+}
+
+bool TCCSystrayClient::closePopups(SystrayProtocol *protocol,
+                                   const std::string &id) {
+  bool sameItem = (mMenu && mMenu->protocol == protocol && mMenu->id == id) ||
+                  (mMixer && mMixer->protocol == protocol && mMixer->id == id);
+  closeMenu();
+  closeMixer();
+  return sameItem;
+}
+
+void TCCSystrayClient::showMixer(SystrayProtocol &protocol,
+                                 const std::string &id,
+                                 const SystrayMixer &mixer) {
+  // The protocol keeps an open mixer up to date through here too.
+  if (mMixer && mMixer->protocol == &protocol && mMixer->id == id) {
+    mMixer->window->update(mixer);
+    return;
+  }
+  closePopups(nullptr, {});
+
+  auto icon = std::find_if(
+      mIconWidgets.begin(), mIconWidgets.end(), [&](const auto &widget) {
+        return widget->protocol == &protocol && widget->id == id;
+      });
+  if (icon == mIconWidgets.end())
+    return;
+
+  auto *target = &protocol;
+  std::string item = id;
+  mMixer = std::make_unique<OpenMixer>();
+  mMixer->protocol = &protocol;
+  mMixer->id = id;
+  mMixer->window = std::make_unique<MixerWindow>(
+      mWindow, MwGetInteger((*icon)->image, MwNx), mixer,
+      [target, item](int channel, int volume) {
+        target->mixerVolumeChanged(item, channel, volume);
+      },
+      [target, item](int channel, bool muted) {
+        target->mixerMuteChanged(item, channel, muted);
+      });
+}
+
+void TCCSystrayClient::closeMixer() {
+  if (!mMixer)
+    return;
+  mMixer->protocol->mixerClosed(mMixer->id);
+  mMixer.reset();
 }
 
 void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
                                 const std::string &id,
                                 const std::vector<SystrayMenuEntry> &entries) {
-  closeMenu();
+  closePopups(nullptr, {});
 
   auto icon = std::find_if(
       mIconWidgets.begin(), mIconWidgets.end(), [&](const auto &widget) {

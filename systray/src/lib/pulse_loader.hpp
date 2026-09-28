@@ -28,6 +28,9 @@
   X(pa_context_set_source_mute_by_name)                                        \
   X(pa_context_set_default_source)                                             \
   X(pa_context_get_source_output_info_list)                                    \
+  X(pa_context_get_sink_input_info_list)                                       \
+  X(pa_context_set_sink_input_volume)                                          \
+  X(pa_context_set_sink_input_mute)                                            \
   X(pa_proplist_gets)                                                          \
   X(pa_operation_unref)                                                        \
   X(pa_cvolume_avg)                                                            \

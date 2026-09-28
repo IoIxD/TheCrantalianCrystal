@@ -720,6 +720,31 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     spawn("konsole", args);
     break;
   }
+  // through WirePlumber, whose -l keeps volume up from going past 100%
+  case ACTION_VOLUME_UP: {
+    const char *args[] = {"wpctl", "set-volume", "-l", "1.0",
+                          "@DEFAULT_AUDIO_SINK@", "5%+", nullptr};
+    spawn("wpctl", args);
+    break;
+  }
+  case ACTION_VOLUME_DOWN: {
+    const char *args[] = {"wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
+                          "5%-", nullptr};
+    spawn("wpctl", args);
+    break;
+  }
+  case ACTION_VOLUME_MUTE: {
+    const char *args[] = {"wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@",
+                          "toggle", nullptr};
+    spawn("wpctl", args);
+    break;
+  }
+  case ACTION_MIC_MUTE: {
+    const char *args[] = {"wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@",
+                          "toggle", nullptr};
+    spawn("wpctl", args);
+    break;
+  }
   case ACTION_CLOSE:
     if (seat->focused != nullptr) {
       river_window_v1_close(seat->focused->id);
@@ -767,6 +792,13 @@ void TCCClient::seat_manage(Seat *seat) {
     pointer_binding_create(seat, super, BTN_LEFT, ACTION_MOVE);
     pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
     xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_TERMINAL);
+
+    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioRaiseVolume,
+                       ACTION_VOLUME_UP);
+    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioLowerVolume,
+                       ACTION_VOLUME_DOWN);
+    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMute, ACTION_VOLUME_MUTE);
+    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMicMute, ACTION_MIC_MUTE);
 
     /*
      * binding for testing what the window manager does when it segfaults.

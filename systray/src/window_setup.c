@@ -17,3 +17,15 @@ MwWidget window_setup(MwRect *bounds) {
 
   return window;
 }
+
+void popup_setup(MwWidget widget, int x, int y) {
+  MwPoint point;
+  point.x = x;
+  point.y = y;
+
+  /* the same way MwComboBox opens its list */
+  MwLLBeginStateChange(widget->lowlevel);
+  MwLLDetach(widget->lowlevel, &point);
+  MwLLMakeToolWindow(widget->lowlevel);
+  MwLLEndStateChange(widget->lowlevel);
+}

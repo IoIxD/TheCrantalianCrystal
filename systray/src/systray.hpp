@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mixer_window.hpp"
 #include "systray_protocol.hpp"
 
 #include <iconlib.hpp>
@@ -52,6 +53,15 @@ class TCCSystrayClient {
   };
   std::unique_ptr<OpenMenu> mMenu;
 
+  // The item mixer being shown, if any.
+  struct OpenMixer {
+    SystrayProtocol *protocol;
+    // The item it belongs to.
+    std::string id;
+    std::unique_ptr<MixerWindow> window;
+  };
+  std::unique_ptr<OpenMixer> mMixer;
+
   void addProtocol(std::unique_ptr<SystrayProtocol> protocol);
   void itemsChanged(SystrayProtocol &protocol,
                     const std::vector<SystrayItem> &items);
@@ -76,6 +86,13 @@ class TCCSystrayClient {
   void closeMenu();
   static void MWAPI menuChosen(MwWidget handle, void *user, void *call);
 
+  void showMixer(SystrayProtocol &protocol, const std::string &id,
+                 const SystrayMixer &mixer);
+  void closeMixer();
+  // Closes whichever of the menu and mixer is open. Returns whether it
+  // belonged to the given item.
+  bool closePopups(SystrayProtocol *protocol, const std::string &id);
+
 public:
   TCCSystrayClient();
   void run();
@@ -86,6 +103,8 @@ extern "C" {
 #endif
 
 MwWidget window_setup(MwRect *bounds);
+/* Turns a child widget into a popup at x, y relative to its parent. */
+void popup_setup(MwWidget widget, int x, int y);
 
 #ifdef __cplusplus
 }
