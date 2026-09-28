@@ -4,17 +4,17 @@
 
 MwWidget window_setup() {
   MwWidget window =
-      MwCreateWidget(MwWindowClass, NULL, NULL, MwDEFAULT, MwDEFAULT, 1, 16);
+      MwCreateWidget(MwWindowClass, NULL, NULL, MwDEFAULT, MwDEFAULT, 1, 32);
 
   MwRect bounds;
   MwGetScreenSize(window, &bounds);
-  MwVaApply(window, MwNwidth, bounds.width / 3, NULL);
 
   MwLLBeginStateChange(window->lowlevel);
+  MwVaApply(window, MwNwidth, bounds.width / 3, MwNheight, 32, NULL);
   MwLLMakeToolWindow(window->lowlevel);
-  MwLLWaylandSetToolWindowType(window->lowlevel,
-                               ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM);
   MwLLEndStateChange(window->lowlevel);
+
+  MwVaApply(window, MwNx, 0, MwNy, bounds.height - 32, NULL);
 
   return window;
 }
