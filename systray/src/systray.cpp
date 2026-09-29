@@ -438,6 +438,7 @@ void TCCSystrayClient::addMenuEntries(
     label += entry.label;
 
     MwMenu menu = MwMenuAdd(mMenu->menubar, parent, label.c_str());
+
     if (!entry.children.empty())
       addMenuEntries(menu, entry.children);
     else if (entry.enabled)
