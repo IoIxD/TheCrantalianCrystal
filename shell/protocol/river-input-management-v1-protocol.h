@@ -3,11 +3,11 @@
 #ifndef RIVER_INPUT_MANAGEMENT_V1_CLIENT_PROTOCOL_H
 #define RIVER_INPUT_MANAGEMENT_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -98,7 +98,7 @@ extern const struct wl_interface river_input_device_v1_interface;
 #ifndef RIVER_INPUT_MANAGER_V1_ERROR_ENUM
 #define RIVER_INPUT_MANAGER_V1_ERROR_ENUM
 enum river_input_manager_v1_error {
-	RIVER_INPUT_MANAGER_V1_ERROR_INVALID_DESTROY = 0,
+  RIVER_INPUT_MANAGER_V1_ERROR_INVALID_DESTROY = 0,
 };
 #endif /* RIVER_INPUT_MANAGER_V1_ERROR_ENUM */
 
@@ -107,34 +107,33 @@ enum river_input_manager_v1_error {
  * @struct river_input_manager_v1_listener
  */
 struct river_input_manager_v1_listener {
-	/**
-	 * the server has finished with the input manager
-	 *
-	 * This event indicates that the server will send no further
-	 * events on this object. The client should destroy the object. See
-	 * river_input_manager_v1.destroy for more information.
-	 */
-	void (*finished)(void *data,
-			 struct river_input_manager_v1 *river_input_manager_v1);
-	/**
-	 * new input device
-	 *
-	 * A new input device has been created.
-	 */
-	void (*input_device)(void *data,
-			     struct river_input_manager_v1 *river_input_manager_v1,
-			     struct river_input_device_v1 *id);
+  /**
+   * the server has finished with the input manager
+   *
+   * This event indicates that the server will send no further
+   * events on this object. The client should destroy the object. See
+   * river_input_manager_v1.destroy for more information.
+   */
+  void (*finished)(void *data,
+                   struct river_input_manager_v1 *river_input_manager_v1);
+  /**
+   * new input device
+   *
+   * A new input device has been created.
+   */
+  void (*input_device)(void *data,
+                       struct river_input_manager_v1 *river_input_manager_v1,
+                       struct river_input_device_v1 *id);
 };
 
 /**
  * @ingroup iface_river_input_manager_v1
  */
-static inline int
-river_input_manager_v1_add_listener(struct river_input_manager_v1 *river_input_manager_v1,
-				    const struct river_input_manager_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_input_manager_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_input_manager_v1_add_listener(
+    struct river_input_manager_v1 *river_input_manager_v1,
+    const struct river_input_manager_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_input_manager_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_INPUT_MANAGER_V1_STOP 0
@@ -169,23 +168,20 @@ river_input_manager_v1_add_listener(struct river_input_manager_v1 *river_input_m
 #define RIVER_INPUT_MANAGER_V1_DESTROY_SEAT_SINCE_VERSION 1
 
 /** @ingroup iface_river_input_manager_v1 */
-static inline void
-river_input_manager_v1_set_user_data(struct river_input_manager_v1 *river_input_manager_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_input_manager_v1, user_data);
+static inline void river_input_manager_v1_set_user_data(
+    struct river_input_manager_v1 *river_input_manager_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_input_manager_v1, user_data);
 }
 
 /** @ingroup iface_river_input_manager_v1 */
-static inline void *
-river_input_manager_v1_get_user_data(struct river_input_manager_v1 *river_input_manager_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_input_manager_v1);
+static inline void *river_input_manager_v1_get_user_data(
+    struct river_input_manager_v1 *river_input_manager_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_input_manager_v1);
 }
 
-static inline uint32_t
-river_input_manager_v1_get_version(struct river_input_manager_v1 *river_input_manager_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_input_manager_v1);
+static inline uint32_t river_input_manager_v1_get_version(
+    struct river_input_manager_v1 *river_input_manager_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_input_manager_v1);
 }
 
 /**
@@ -199,11 +195,11 @@ river_input_manager_v1_get_version(struct river_input_manager_v1 *river_input_ma
  * for a river_input_manager_v1.finished event before destroying this
  * object.
  */
-static inline void
-river_input_manager_v1_stop(struct river_input_manager_v1 *river_input_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_manager_v1,
-			 RIVER_INPUT_MANAGER_V1_STOP, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_manager_v1), 0);
+static inline void river_input_manager_v1_stop(
+    struct river_input_manager_v1 *river_input_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_manager_v1, RIVER_INPUT_MANAGER_V1_STOP,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_input_manager_v1), 0);
 }
 
 /**
@@ -221,11 +217,12 @@ river_input_manager_v1_stop(struct river_input_manager_v1 *river_input_manager_v
  * received it is safe to destroy this object and any other objects created
  * through this interface.
  */
-static inline void
-river_input_manager_v1_destroy(struct river_input_manager_v1 *river_input_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_manager_v1,
-			 RIVER_INPUT_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_manager_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_input_manager_v1_destroy(
+    struct river_input_manager_v1 *river_input_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_manager_v1, RIVER_INPUT_MANAGER_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_input_manager_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -237,11 +234,12 @@ river_input_manager_v1_destroy(struct river_input_manager_v1 *river_input_manage
  * The default seat with name "default" always exists and does not need to
  * be explicitly created.
  */
-static inline void
-river_input_manager_v1_create_seat(struct river_input_manager_v1 *river_input_manager_v1, const char *name)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_manager_v1,
-			 RIVER_INPUT_MANAGER_V1_CREATE_SEAT, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_manager_v1), 0, name);
+static inline void river_input_manager_v1_create_seat(
+    struct river_input_manager_v1 *river_input_manager_v1, const char *name) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_manager_v1,
+      RIVER_INPUT_MANAGER_V1_CREATE_SEAT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_manager_v1), 0, name);
 }
 
 /**
@@ -256,29 +254,30 @@ river_input_manager_v1_create_seat(struct river_input_manager_v1 *river_input_ma
  * Any input devices assigned to the destroyed seat at the time of
  * destruction are assigned to the default seat.
  */
-static inline void
-river_input_manager_v1_destroy_seat(struct river_input_manager_v1 *river_input_manager_v1, const char *name)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_manager_v1,
-			 RIVER_INPUT_MANAGER_V1_DESTROY_SEAT, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_manager_v1), 0, name);
+static inline void river_input_manager_v1_destroy_seat(
+    struct river_input_manager_v1 *river_input_manager_v1, const char *name) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_manager_v1,
+      RIVER_INPUT_MANAGER_V1_DESTROY_SEAT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_manager_v1), 0, name);
 }
 
 #ifndef RIVER_INPUT_DEVICE_V1_ERROR_ENUM
 #define RIVER_INPUT_DEVICE_V1_ERROR_ENUM
 enum river_input_device_v1_error {
-	RIVER_INPUT_DEVICE_V1_ERROR_INVALID_REPEAT_INFO = 0,
-	RIVER_INPUT_DEVICE_V1_ERROR_INVALID_SCROLL_FACTOR = 1,
-	RIVER_INPUT_DEVICE_V1_ERROR_INVALID_MAP_TO_RECTANGLE = 2,
+  RIVER_INPUT_DEVICE_V1_ERROR_INVALID_REPEAT_INFO = 0,
+  RIVER_INPUT_DEVICE_V1_ERROR_INVALID_SCROLL_FACTOR = 1,
+  RIVER_INPUT_DEVICE_V1_ERROR_INVALID_MAP_TO_RECTANGLE = 2,
 };
 #endif /* RIVER_INPUT_DEVICE_V1_ERROR_ENUM */
 
 #ifndef RIVER_INPUT_DEVICE_V1_TYPE_ENUM
 #define RIVER_INPUT_DEVICE_V1_TYPE_ENUM
 enum river_input_device_v1_type {
-	RIVER_INPUT_DEVICE_V1_TYPE_KEYBOARD = 0,
-	RIVER_INPUT_DEVICE_V1_TYPE_POINTER = 1,
-	RIVER_INPUT_DEVICE_V1_TYPE_TOUCH = 2,
-	RIVER_INPUT_DEVICE_V1_TYPE_TABLET = 3,
+  RIVER_INPUT_DEVICE_V1_TYPE_KEYBOARD = 0,
+  RIVER_INPUT_DEVICE_V1_TYPE_POINTER = 1,
+  RIVER_INPUT_DEVICE_V1_TYPE_TOUCH = 2,
+  RIVER_INPUT_DEVICE_V1_TYPE_TABLET = 3,
 };
 #endif /* RIVER_INPUT_DEVICE_V1_TYPE_ENUM */
 
@@ -287,50 +286,47 @@ enum river_input_device_v1_type {
  * @struct river_input_device_v1_listener
  */
 struct river_input_device_v1_listener {
-	/**
-	 * the input device is removed
-	 *
-	 * This event indicates that the input device has been removed.
-	 *
-	 * The server will send no further events on this object and ignore
-	 * any request (other than river_input_device_v1.destroy) made
-	 * after this event is sent. The client should destroy this object
-	 * with the river_input_device_v1.destroy request to free up
-	 * resources.
-	 */
-	void (*removed)(void *data,
-			struct river_input_device_v1 *river_input_device_v1);
-	/**
-	 * the type of the input device
-	 *
-	 * The type of the input device. This event is sent once when the
-	 * river_input_device_v1 object is created. The device type cannot
-	 * change during the lifetime of the object.
-	 */
-	void (*type)(void *data,
-		     struct river_input_device_v1 *river_input_device_v1,
-		     uint32_t type);
-	/**
-	 * the name of the input device
-	 *
-	 * The name of the input device. This event is sent once when the
-	 * river_input_device_v1 object is created. The device name cannot
-	 * change during the lifetime of the object.
-	 */
-	void (*name)(void *data,
-		     struct river_input_device_v1 *river_input_device_v1,
-		     const char *name);
+  /**
+   * the input device is removed
+   *
+   * This event indicates that the input device has been removed.
+   *
+   * The server will send no further events on this object and ignore
+   * any request (other than river_input_device_v1.destroy) made
+   * after this event is sent. The client should destroy this object
+   * with the river_input_device_v1.destroy request to free up
+   * resources.
+   */
+  void (*removed)(void *data,
+                  struct river_input_device_v1 *river_input_device_v1);
+  /**
+   * the type of the input device
+   *
+   * The type of the input device. This event is sent once when the
+   * river_input_device_v1 object is created. The device type cannot
+   * change during the lifetime of the object.
+   */
+  void (*type)(void *data, struct river_input_device_v1 *river_input_device_v1,
+               uint32_t type);
+  /**
+   * the name of the input device
+   *
+   * The name of the input device. This event is sent once when the
+   * river_input_device_v1 object is created. The device name cannot
+   * change during the lifetime of the object.
+   */
+  void (*name)(void *data, struct river_input_device_v1 *river_input_device_v1,
+               const char *name);
 };
 
 /**
  * @ingroup iface_river_input_device_v1
  */
-static inline int
-river_input_device_v1_add_listener(struct river_input_device_v1 *river_input_device_v1,
-				   const struct river_input_device_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_input_device_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_input_device_v1_add_listener(
+    struct river_input_device_v1 *river_input_device_v1,
+    const struct river_input_device_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_input_device_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_INPUT_DEVICE_V1_DESTROY 0
@@ -379,23 +375,20 @@ river_input_device_v1_add_listener(struct river_input_device_v1 *river_input_dev
 #define RIVER_INPUT_DEVICE_V1_MAP_TO_RECTANGLE_SINCE_VERSION 1
 
 /** @ingroup iface_river_input_device_v1 */
-static inline void
-river_input_device_v1_set_user_data(struct river_input_device_v1 *river_input_device_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_input_device_v1, user_data);
+static inline void river_input_device_v1_set_user_data(
+    struct river_input_device_v1 *river_input_device_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_input_device_v1, user_data);
 }
 
 /** @ingroup iface_river_input_device_v1 */
-static inline void *
-river_input_device_v1_get_user_data(struct river_input_device_v1 *river_input_device_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_input_device_v1);
+static inline void *river_input_device_v1_get_user_data(
+    struct river_input_device_v1 *river_input_device_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_input_device_v1);
 }
 
-static inline uint32_t
-river_input_device_v1_get_version(struct river_input_device_v1 *river_input_device_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_input_device_v1);
+static inline uint32_t river_input_device_v1_get_version(
+    struct river_input_device_v1 *river_input_device_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_input_device_v1);
 }
 
 /**
@@ -404,11 +397,12 @@ river_input_device_v1_get_version(struct river_input_device_v1 *river_input_devi
  * This request indicates that the client will no longer use the input
  * device object and that it may be safely destroyed.
  */
-static inline void
-river_input_device_v1_destroy(struct river_input_device_v1 *river_input_device_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_input_device_v1_destroy(
+    struct river_input_device_v1 *river_input_device_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1, RIVER_INPUT_DEVICE_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_input_device_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -419,11 +413,12 @@ river_input_device_v1_destroy(struct river_input_device_v1 *river_input_device_v
  *
  * Has no effect if a seat with the given name does not exist.
  */
-static inline void
-river_input_device_v1_assign_to_seat(struct river_input_device_v1 *river_input_device_v1, const char *name)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_ASSIGN_TO_SEAT, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), 0, name);
+static inline void river_input_device_v1_assign_to_seat(
+    struct river_input_device_v1 *river_input_device_v1, const char *name) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1,
+      RIVER_INPUT_DEVICE_V1_ASSIGN_TO_SEAT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_device_v1), 0, name);
 }
 
 /**
@@ -435,11 +430,14 @@ river_input_device_v1_assign_to_seat(struct river_input_device_v1 *river_input_d
  * Negative values for either rate or delay are illegal. A rate of zero
  * will disable any repeating (regardless of the value of delay).
  */
-static inline void
-river_input_device_v1_set_repeat_info(struct river_input_device_v1 *river_input_device_v1, int32_t rate, int32_t delay)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_SET_REPEAT_INFO, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), 0, rate, delay);
+static inline void river_input_device_v1_set_repeat_info(
+    struct river_input_device_v1 *river_input_device_v1, int32_t rate,
+    int32_t delay) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1,
+      RIVER_INPUT_DEVICE_V1_SET_REPEAT_INFO, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_device_v1), 0, rate,
+      delay);
 }
 
 /**
@@ -453,11 +451,13 @@ river_input_device_v1_set_repeat_info(struct river_input_device_v1 *river_input_
  *
  * Setting a scroll factor less than 0 is a protocol error.
  */
-static inline void
-river_input_device_v1_set_scroll_factor(struct river_input_device_v1 *river_input_device_v1, wl_fixed_t factor)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_SET_SCROLL_FACTOR, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), 0, factor);
+static inline void river_input_device_v1_set_scroll_factor(
+    struct river_input_device_v1 *river_input_device_v1, wl_fixed_t factor) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1,
+      RIVER_INPUT_DEVICE_V1_SET_SCROLL_FACTOR, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_device_v1), 0,
+      factor);
 }
 
 /**
@@ -470,11 +470,14 @@ river_input_device_v1_set_scroll_factor(struct river_input_device_v1 *river_inpu
  *
  * Passing null clears an existing mapping.
  */
-static inline void
-river_input_device_v1_map_to_output(struct river_input_device_v1 *river_input_device_v1, struct wl_output *output)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_MAP_TO_OUTPUT, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), 0, output);
+static inline void river_input_device_v1_map_to_output(
+    struct river_input_device_v1 *river_input_device_v1,
+    struct wl_output *output) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1,
+      RIVER_INPUT_DEVICE_V1_MAP_TO_OUTPUT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_device_v1), 0,
+      output);
 }
 
 /**
@@ -490,14 +493,17 @@ river_input_device_v1_map_to_output(struct river_input_device_v1 *river_input_de
  *
  * Passing 0 for width or height clears an existing mapping.
  */
-static inline void
-river_input_device_v1_map_to_rectangle(struct river_input_device_v1 *river_input_device_v1, int32_t x, int32_t y, int32_t width, int32_t height)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_input_device_v1,
-			 RIVER_INPUT_DEVICE_V1_MAP_TO_RECTANGLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_input_device_v1), 0, x, y, width, height);
+static inline void river_input_device_v1_map_to_rectangle(
+    struct river_input_device_v1 *river_input_device_v1, int32_t x, int32_t y,
+    int32_t width, int32_t height) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_input_device_v1,
+      RIVER_INPUT_DEVICE_V1_MAP_TO_RECTANGLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_input_device_v1), 0, x, y,
+      width, height);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

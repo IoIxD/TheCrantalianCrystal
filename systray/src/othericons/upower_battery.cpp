@@ -1,4 +1,4 @@
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #include "upower_battery.hpp"
 
 #include <cctype>
@@ -28,7 +28,8 @@ bool UPowerBattery::connect() {
   if (!mBus.open(DBUS_BUS_SYSTEM))
     return false;
 
-  mBus.setMessageHandler([this](DBusMessage *msg) { return handleMessage(msg); });
+  mBus.setMessageHandler(
+      [this](DBusMessage *msg) { return handleMessage(msg); });
   mBus.addMatch("type='signal',sender='org.freedesktop.UPower',"
                 "path='/org/freedesktop/UPower/devices/DisplayDevice',"
                 "interface='org.freedesktop.DBus.Properties',"
@@ -42,16 +43,14 @@ bool UPowerBattery::connect() {
 }
 
 bool UPowerBattery::handleMessage(DBusMessage *msg) {
-  DBusLib *d = mBus.lib();
-  if (d->dbus_message_is_signal(msg, "org.freedesktop.DBus.Properties",
-                                "PropertiesChanged") &&
-      eq(d->dbus_message_get_path(msg), DEVICE_PATH)) {
+  if (dbus_message_is_signal(msg, "org.freedesktop.DBus.Properties",
+                             "PropertiesChanged") &&
+      eq(dbus_message_get_path(msg), DEVICE_PATH)) {
     // Simpler than applying the changes, and they're rare.
     fetch();
     return true;
   }
-  if (d->dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS,
-                                "NameOwnerChanged")) {
+  if (dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
     fetch();
     return true;
   }
@@ -59,28 +58,27 @@ bool UPowerBattery::handleMessage(DBusMessage *msg) {
 }
 
 void UPowerBattery::fetch() {
-  DBusLib *d = mBus.lib();
   mBus.getAllProperties(
       UPOWER_NAME, DEVICE_PATH, DEVICE_IFACE,
-      [this, d](const char *name, DBusMessageIter *value) {
-        int type = d->dbus_message_iter_get_arg_type(value);
+      [this](const char *name, DBusMessageIter *value) {
+        int type = dbus_message_iter_get_arg_type(value);
         if (eq(name, "IsPresent") && type == DBUS_TYPE_BOOLEAN) {
           dbus_bool_t b;
-          d->dbus_message_iter_get_basic(value, &b);
+          dbus_message_iter_get_basic(value, &b);
           mPresent = b;
         } else if (eq(name, "Type") && type == DBUS_TYPE_UINT32) {
-          d->dbus_message_iter_get_basic(value, &mType);
+          dbus_message_iter_get_basic(value, &mType);
         } else if (eq(name, "Percentage") && type == DBUS_TYPE_DOUBLE) {
-          d->dbus_message_iter_get_basic(value, &mPercentage);
+          dbus_message_iter_get_basic(value, &mPercentage);
         } else if (eq(name, "State") && type == DBUS_TYPE_UINT32) {
-          d->dbus_message_iter_get_basic(value, &mState);
+          dbus_message_iter_get_basic(value, &mState);
         } else if (eq(name, "TimeToEmpty") && type == DBUS_TYPE_INT64) {
-          d->dbus_message_iter_get_basic(value, &mTimeToEmpty);
+          dbus_message_iter_get_basic(value, &mTimeToEmpty);
         } else if (eq(name, "TimeToFull") && type == DBUS_TYPE_INT64) {
-          d->dbus_message_iter_get_basic(value, &mTimeToFull);
+          dbus_message_iter_get_basic(value, &mTimeToFull);
         } else if (eq(name, "IconName") && type == DBUS_TYPE_STRING) {
           const char *str;
-          d->dbus_message_iter_get_basic(value, &str);
+          dbus_message_iter_get_basic(value, &str);
           mIconName = str;
         }
       },
@@ -98,11 +96,11 @@ void UPowerBattery::update() {
   if (mPresent && mType == 2) {
     SystrayItem item;
     item.id = ITEM_ID;
-    item.title = std::format("Battery: {}%, {}", std::lround(mPercentage),
-                             stateText());
+    item.title =
+        std::format("Battery: {}%, {}", std::lround(mPercentage), stateText());
 
-    bool charging = mState == Charging || mState == FullyCharged ||
-                    mState == PendingCharge;
+    bool charging =
+        mState == Charging || mState == FullyCharged || mState == PendingCharge;
     int level = (int)std::lround(mPercentage / 10) * 10;
     const char *suffix = charging ? "-charging" : "";
 
@@ -130,10 +128,9 @@ void UPowerBattery::update() {
 std::string UPowerBattery::stateText() const {
   switch (mState) {
   case Charging:
-    return mTimeToFull > 0
-               ? std::format("charging, {} until full",
-                             formatDuration(mTimeToFull))
-               : "charging";
+    return mTimeToFull > 0 ? std::format("charging, {} until full",
+                                         formatDuration(mTimeToFull))
+                           : "charging";
   case Discharging:
     return mTimeToEmpty > 0
                ? std::format("{} remaining", formatDuration(mTimeToEmpty))

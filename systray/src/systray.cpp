@@ -1,9 +1,9 @@
 #include "systray.hpp"
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #include "dbus/sni_watcher.hpp"
 #include "othericons/upower_battery.hpp"
 #endif
-#ifdef TCC_SYSTRAY_PULSE
+#ifdef TCC_HAS_PULSE
 #include "othericons/pulse_volume.hpp"
 #endif
 #ifdef TCC_SYSTRAY_RIVER
@@ -27,7 +27,7 @@ TCCSystrayClient::TCCSystrayClient() {
   MwAddUserHandler(mNotch, MwNdrawHandler, drawNotch, this);
   MwAddUserHandler(mNotch, MwNmouseUpHandler, notchMouseUp, this);
 
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
   addProtocol(std::make_unique<UPowerBattery>());
   // The network and Bluetooth items are nm-applet's and blueman-applet's,
@@ -35,7 +35,7 @@ TCCSystrayClient::TCCSystrayClient() {
   launchDetached({"nm-applet", "--indicator"});
   launchDetached({"blueman-applet"});
 #endif
-#ifdef TCC_SYSTRAY_PULSE
+#ifdef TCC_HAS_PULSE
   addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
   addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Output));
 #endif

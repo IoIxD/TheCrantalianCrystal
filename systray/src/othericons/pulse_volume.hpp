@@ -1,8 +1,8 @@
-#ifdef TCC_SYSTRAY_PULSE
+#ifdef TCC_HAS_PULSE
 #pragma once
 
-#include "../lib/pulse_loader.hpp"
 #include "../systray_protocol.hpp"
+#include "pulse_loader.hpp"
 
 #include <string>
 #include <vector>
@@ -61,7 +61,6 @@ private:
 
   const Direction mDirection;
 
-  PulseLib *mLib = nullptr;
   pa_mainloop *mMainloop = nullptr;
   pa_context *mContext = nullptr;
   // Set when the connection was lost, to make a new one on the next poll.

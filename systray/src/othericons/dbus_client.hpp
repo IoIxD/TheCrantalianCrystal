@@ -1,7 +1,7 @@
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #pragma once
 
-#include "../lib/dbus_loader.hpp"
+#include "dbus_loader.hpp"
 
 #include <functional>
 #include <vector>
@@ -34,7 +34,6 @@ public:
   void poll();
   int fd() const;
 
-  DBusLib *lib() const { return mLib; }
   DBusConnection *connection() const { return mConn; }
 
   // Adds a match rule for signals to receive.
@@ -55,9 +54,8 @@ public:
   // Iterates an a{sv} dictionary.
   void forEachProperty(DBusMessageIter *dict, const PropertyHandler &handler);
 
-  static bool isError(DBusLib *lib, DBusMessage *reply) {
-    return !reply ||
-           lib->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR;
+  static bool isError(DBusMessage *reply) {
+    return !reply || dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR;
   }
 
 private:
@@ -66,7 +64,6 @@ private:
     ReplyHandler onReply;
   };
 
-  DBusLib *mLib = nullptr;
   DBusConnection *mConn = nullptr;
   MessageHandler mMessageHandler;
   // Outstanding calls, cancelled on close.

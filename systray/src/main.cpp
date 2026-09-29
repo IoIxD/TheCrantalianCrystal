@@ -1,9 +1,14 @@
 #include "systray.hpp"
 #include <Mw/Milsko.h>
 
+#include "dynload.hpp"
+
 int main() {
-  // signal(SIGCHLD, SIG_IGN);
-  // signal(SIGHUP, SIG_IGN);
+  if (!dynload_setup::dbus() || !dynload_setup::pulse() ||
+      !dynload_setup::wayland() || !dynload_setup::gtk()) {
+    return 1;
+  }
+
   MwLibraryInit();
 
   TCCSystrayClient systray;

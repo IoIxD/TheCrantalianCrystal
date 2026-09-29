@@ -7,23 +7,21 @@
 #include <format>
 
 static GLuint create_shader_program() {
-  auto gl = GLLib::get();
   GLuint vertex_shader = 0, fragment_shader = 0;
 
   int i = 0;
   for (auto shader : {&vertex_shader, &fragment_shader}) {
-    *shader =
-        gl->glCreateShader((i == 0) ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+    *shader = glCreateShader((i == 0) ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
     auto src = ((i == 0) ? SSD_VERT_SOURCE : SSD_FRAG_SOURCE);
 
-    gl->glShaderSource(*shader, 1, &src, NULL);
-    gl->glCompileShader(*shader);
+    glShaderSource(*shader, 1, &src, NULL);
+    glCompileShader(*shader);
 
     GLint status;
-    gl->glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
       char log[512];
-      gl->glGetShaderInfoLog(*shader, sizeof(log), NULL, log);
+      glGetShaderInfoLog(*shader, sizeof(log), NULL, log);
       printf("ERROR: shader compilation failed: %s\n", log);
       raise(SIGTRAP);
     }
@@ -31,29 +29,28 @@ static GLuint create_shader_program() {
     i++;
   };
 
-  GLuint program = gl->glCreateProgram();
-  gl->glAttachShader(program, vertex_shader);
-  gl->glAttachShader(program, fragment_shader);
-  gl->glBindAttribLocation(program, 0, "position");
-  gl->glLinkProgram(program);
+  GLuint program = glCreateProgram();
+  glAttachShader(program, vertex_shader);
+  glAttachShader(program, fragment_shader);
+  glBindAttribLocation(program, 0, "position");
+  glLinkProgram(program);
 
   GLint status;
-  gl->glGetProgramiv(program, GL_LINK_STATUS, &status);
+  glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (status == GL_FALSE) {
     char log[512];
-    gl->glGetProgramInfoLog(program, sizeof(log), NULL, log);
+    glGetProgramInfoLog(program, sizeof(log), NULL, log);
     printf("ERROR: shader program linking failed: %s\n", log);
     raise(SIGTRAP);
   }
 
-  gl->glDeleteShader(vertex_shader);
-  gl->glDeleteShader(fragment_shader);
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
 
   return program;
 }
 
 void TCCClient::Window::setup_decor() {
-  auto egl = EGLLib::get();
   river_decoration_v1_set_offset(decor_decor, -SSD_BORDER_SIZE,
                                  -SSD_BORDER_SIZE_TOP);
   this->client->window_set_position(this, this->x + SSD_BORDER_SIZE,
@@ -87,56 +84,54 @@ void TCCClient::Window::setup_decor() {
   EGLConfig *configs;
   EGLBoolean ret;
 
-  mEGLDisplay = egl->eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR,
-                                           client->mDisplay, NULL);
+  mEGLDisplay =
+      eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, client->mDisplay, NULL);
 
-  ret = egl->eglInitialize(mEGLDisplay, &major, &minor);
+  ret = eglInitialize(mEGLDisplay, &major, &minor);
   assert(ret == EGL_TRUE);
 
-  if (!egl->eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
+  if (!eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
     assert(0);
 
   configs = (EGLConfig *)calloc(count, sizeof *configs);
   assert(configs);
 
-  ret = egl->eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
+  ret = eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
   assert(ret && n >= 1);
 
   mEGLConfig = configs[0];
 
   free(configs);
 
-  mEGLWindow =
-      egl->wl_egl_window_create(decor_surface, decor_width, decor_height);
+  mEGLWindow = wl_egl_window_create(decor_surface, decor_width, decor_height);
   if (!mEGLWindow) {
-    printf("ERROR: eglCreateWindowSurface, %0X\n", egl->eglGetError());
+    printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
     has_decor = false;
     return;
   }
 
-  ret = egl->eglBindAPI(EGL_OPENGL_API);
+  ret = eglBindAPI(EGL_OPENGL_API);
   assert(ret == EGL_TRUE);
-  mEGLContext = egl->eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT,
-                                      contextAttribs);
+  mEGLContext =
+      eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT, contextAttribs);
   assert(mEGLContext);
 
-  mEGLSurface = egl->eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig,
-                                                    mEGLWindow, NULL);
+  mEGLSurface =
+      eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig, mEGLWindow, NULL);
   if (mEGLSurface == EGL_NO_SURFACE) {
-    printf("eglCreatePlatformWindowSurface error: %0X\n", egl->eglGetError());
+    printf("eglCreatePlatformWindowSurface error: %0X\n", eglGetError());
     has_decor = false;
     return;
   }
 
-  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
-                           mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", egl->eglGetError());
+  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
     has_decor = false;
     return;
     // raise(SIGTRAP);
   };
 
-  egl->eglSwapInterval(mEGLDisplay, 0);
+  eglSwapInterval(mEGLDisplay, 0);
 
   mEGLShaderProgram = create_shader_program();
 
@@ -153,13 +148,10 @@ void TCCClient::Window::setup_decor() {
 };
 
 void TCCClient::Window::decor_draw() {
-  auto egl = EGLLib::get();
-  auto gl = GLLib::get();
-  egl->wl_egl_window_resize(mEGLWindow, decor_width, decor_height, 0, 0);
+  wl_egl_window_resize(mEGLWindow, decor_width, decor_height, 0, 0);
 
-  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
-                           mEGLContext)) {
-    printf("eglMakeCurrent error %08X\n", egl->eglGetError());
+  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+    printf("eglMakeCurrent error %08X\n", eglGetError());
     has_decor = false;
     return;
   };
@@ -168,93 +160,87 @@ void TCCClient::Window::decor_draw() {
   decor_draw_icon();
 
   /* draw text */
-  gl->glViewport(0, 0, decor_width, decor_height);
+  glViewport(0, 0, decor_width, decor_height);
   mGlyphManager.draw_text(title, 32, 22, decor_width, decor_height, true,
                           false);
 
-  egl->eglSwapBuffers(mEGLDisplay, mEGLSurface);
+  eglSwapBuffers(mEGLDisplay, mEGLSurface);
 };
 
 void TCCClient::Window::decor_draw_backing() {
-  auto gl = GLLib::get();
-  gl->glViewport(0, 0, decor_width, decor_height);
+  glViewport(0, 0, decor_width, decor_height);
 
-  gl->glClearColor(0.f, 0.0f, 0.f, 0.f);
-  gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0.f, 0.0f, 0.f, 0.f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  gl->glEnable(GL_BLEND);
-  gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  gl->glUseProgram(mEGLShaderProgram);
-  gl->glUniform2f(gl->glGetUniformLocation(mEGLShaderProgram, "resolution"),
-                  (float)decor_width, (float)decor_height);
+  glUseProgram(mEGLShaderProgram);
+  glUniform2f(glGetUniformLocation(mEGLShaderProgram, "resolution"),
+              (float)decor_width, (float)decor_height);
 
-  gl->glUniform1i(
-      gl->glGetUniformLocation(mEGLShaderProgram, "ssd_border_size"),
-      SSD_BORDER_SIZE);
-  gl->glUniform1i(
-      gl->glGetUniformLocation(mEGLShaderProgram, "ssd_border_size_top"),
-      SSD_BORDER_SIZE_TOP - 1);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "ssd_border_size"),
+              SSD_BORDER_SIZE);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "ssd_border_size_top"),
+              SSD_BORDER_SIZE_TOP - 1);
 
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "close_held"),
-                  close_held);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "minimize_held"),
-                  minimize_held);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "maximize_held"),
-                  maximize_held);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "close_hover"),
-                  close_hover);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "minimize_hover"),
-                  minimize_hover);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "maximize_hover"),
-                  maximize_hover);
-  gl->glUniform1i(gl->glGetUniformLocation(mEGLShaderProgram, "show_maximize"),
-                  show_maximize);
-  gl->glBegin(GL_QUADS);
-  gl->glTexCoord2f(0.0f, 1.0f);
-  gl->glVertex3f(-1, -1, 1); // bottom-left
-  gl->glTexCoord2f(1.0f, 1.0f);
-  gl->glVertex3f(1, -1, 1);
-  gl->glTexCoord2f(1.0f, 0.0f);
-  gl->glVertex3f(1, 1, 1);
-  gl->glTexCoord2f(0.0f, 0.0f);
-  gl->glVertex3f(-1, 1, 1); // top-right
-  gl->glEnd();
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "close_held"),
+              close_held);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "minimize_held"),
+              minimize_held);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_held"),
+              maximize_held);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "close_hover"),
+              close_hover);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "minimize_hover"),
+              minimize_hover);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_hover"),
+              maximize_hover);
+  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "show_maximize"),
+              show_maximize);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex3f(-1, -1, 1); // bottom-left
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex3f(1, -1, 1);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex3f(1, 1, 1);
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex3f(-1, 1, 1); // top-right
+  glEnd();
 
-  gl->glUseProgram(0);
-  gl->glDisable(GL_BLEND);
+  glUseProgram(0);
+  glDisable(GL_BLEND);
 }
 void TCCClient::Window::decor_draw_icon() {
-  auto gl = GLLib::get();
   if (decor_icon_texture != -1) {
-    gl->glViewport(10, decor_height - 20 - SSD_BORDER_LEEWAY, 16, 16);
+    glViewport(10, decor_height - 20 - SSD_BORDER_LEEWAY, 16, 16);
 
-    gl->glEnable(GL_TEXTURE_2D);
-    gl->glEnable(GL_BLEND);
-    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    gl->glBindTexture(GL_TEXTURE_2D, decor_icon_texture);
-    gl->glBegin(GL_QUADS);
-    gl->glTexCoord2f(0.0f, 1.0f);
-    gl->glVertex3f(-1, -1, 1); // bottom-left
-    gl->glTexCoord2f(1.0f, 1.0f);
-    gl->glVertex3f(1, -1, 1);
-    gl->glTexCoord2f(1.0f, 0.0f);
-    gl->glVertex3f(1, 1, 1);
-    gl->glTexCoord2f(0.0f, 0.0f);
-    gl->glVertex3f(-1, 1, 1); // top-right
-    gl->glEnd();
-    gl->glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, decor_icon_texture);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-1, -1, 1); // bottom-left
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f(1, -1, 1);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f(1, 1, 1);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-1, 1, 1); // top-right
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    gl->glDisable(GL_BLEND);
+    glDisable(GL_BLEND);
   }
 }
 
 TCCClient::Window::~Window() {
-  auto egl = EGLLib::get();
-  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
-                           mEGLContext)) {
-    printf("eglMakeCurrent error %08X\n", egl->eglGetError());
+  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+    printf("eglMakeCurrent error %08X\n", eglGetError());
     has_decor = false;
     return;
   };
@@ -263,7 +249,7 @@ TCCClient::Window::~Window() {
     glyph->destroy();
   }
 
-  egl->wl_egl_window_destroy(mEGLWindow);
-  egl->eglDestroyContext(mEGLDisplay, mEGLContext);
-  egl->eglDestroyContext(mEGLDisplay, mEGLSurface);
+  wl_egl_window_destroy(mEGLWindow);
+  eglDestroyContext(mEGLDisplay, mEGLContext);
+  eglDestroyContext(mEGLDisplay, mEGLSurface);
 }

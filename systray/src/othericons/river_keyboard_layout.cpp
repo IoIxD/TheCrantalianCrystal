@@ -1,6 +1,6 @@
 #ifdef TCC_SYSTRAY_RIVER
 #include "river_keyboard_layout.hpp"
-#include "../lib/wayland_loader.hpp"
+#include "wayland_loader.h"
 
 #include <river-input-management-v1-protocol.h>
 #include <river-xkb-config-v1-protocol.h>
@@ -39,7 +39,8 @@ std::vector<std::string> splitEnv(const char *var) {
 }
 
 // Events we don't need.
-void ignoreInputDevice(void *, river_xkb_keyboard_v1 *, river_input_device_v1 *) {}
+void ignoreInputDevice(void *, river_xkb_keyboard_v1 *,
+                       river_input_device_v1 *) {}
 void ignoreLock(void *, river_xkb_keyboard_v1 *) {}
 
 } // namespace
@@ -50,11 +51,7 @@ RiverKeyboardLayout::~RiverKeyboardLayout() {
 }
 
 bool RiverKeyboardLayout::connect() {
-  mLib = WaylandLib::get();
-  if (!mLib)
-    return false;
-
-  mDisplay = mLib->wl_display_connect(nullptr);
+  mDisplay = wl_display_connect(nullptr);
   if (!mDisplay)
     return false;
 
@@ -65,12 +62,12 @@ bool RiverKeyboardLayout::connect() {
   mRegistry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(mRegistry, &registryListener, this);
   // Once for the globals, once more for the keyboards and their layouts.
-  mLib->wl_display_roundtrip(mDisplay);
+  wl_display_roundtrip(mDisplay);
   if (!mConfig) {
     disconnect();
     return false;
   }
-  mLib->wl_display_roundtrip(mDisplay);
+  wl_display_roundtrip(mDisplay);
 
   mLayouts = splitEnv("XKB_DEFAULT_LAYOUT");
   mVariants = splitEnv("XKB_DEFAULT_VARIANT");
@@ -88,14 +85,14 @@ void RiverKeyboardLayout::disconnect() {
   // doesn't matter when the whole connection goes away.
   if (mRegistry)
     wl_registry_destroy(mRegistry);
-  mLib->wl_display_disconnect(mDisplay);
+  wl_display_disconnect(mDisplay);
   mDisplay = nullptr;
   mRegistry = nullptr;
   mConfig = nullptr;
 }
 
 int RiverKeyboardLayout::fd() const {
-  return mDisplay ? mLib->wl_display_get_fd(mDisplay) : -1;
+  return mDisplay ? wl_display_get_fd(mDisplay) : -1;
 }
 
 void RiverKeyboardLayout::poll() {
@@ -103,22 +100,22 @@ void RiverKeyboardLayout::poll() {
     return;
 
   // Reads whatever the compositor sent, without blocking.
-  while (mLib->wl_display_prepare_read(mDisplay) != 0)
-    mLib->wl_display_dispatch_pending(mDisplay);
-  mLib->wl_display_flush(mDisplay);
+  while (wl_display_prepare_read(mDisplay) != 0)
+    wl_display_dispatch_pending(mDisplay);
+  wl_display_flush(mDisplay);
 
-  pollfd pfd = {mLib->wl_display_get_fd(mDisplay), POLLIN, 0};
+  pollfd pfd = {wl_display_get_fd(mDisplay), POLLIN, 0};
   if (::poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN)) {
-    if (mLib->wl_display_read_events(mDisplay) < 0) {
+    if (wl_display_read_events(mDisplay) < 0) {
       disconnect();
       mItems.clear();
       itemsChanged();
       return;
     }
   } else {
-    mLib->wl_display_cancel_read(mDisplay);
+    wl_display_cancel_read(mDisplay);
   }
-  mLib->wl_display_dispatch_pending(mDisplay);
+  wl_display_dispatch_pending(mDisplay);
 }
 
 void RiverKeyboardLayout::registryGlobal(void *data, wl_registry *registry,
@@ -244,7 +241,7 @@ void RiverKeyboardLayout::setLayout(uint32_t index) {
   for (river_xkb_keyboard_v1 *keyboard : mKeyboards)
     river_xkb_keyboard_v1_set_layout_by_index(keyboard, (int32_t)index);
   if (mDisplay)
-    mLib->wl_display_flush(mDisplay);
+    wl_display_flush(mDisplay);
 }
 
 void RiverKeyboardLayout::activate(const std::string &id, int x, int y) {

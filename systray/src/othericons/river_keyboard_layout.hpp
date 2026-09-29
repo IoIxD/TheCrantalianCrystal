@@ -39,7 +39,6 @@ public:
   void menuEntryActivated(const std::string &id, int entryId) override;
 
 private:
-  WaylandLib *mLib = nullptr;
   // Our own connection; Milsko's isn't available to us.
   wl_display *mDisplay = nullptr;
   wl_registry *mRegistry = nullptr;

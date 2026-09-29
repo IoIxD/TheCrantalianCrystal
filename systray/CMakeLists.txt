@@ -9,13 +9,18 @@ file(GLOB_RECURSE sources *.cpp *.c)
 
 add_executable(${PROJECT_NAME} ${sources})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/submodules/milsko/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE Mw tcc_iconlib)
+target_link_libraries(${PROJECT_NAME} PRIVATE Mw tcc_iconlib tcc_dynload)
 
 pkg_check_modules(DBUS dbus-1)
+pkg_check_modules(PULSE libpulse)
+
 if(DBUS_FOUND)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${DBUS_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
-  target_compile_definitions(${PROJECT_NAME} PRIVATE TCC_SYSTRAY_DBUS)
+  include_directories(${DBUS_INCLUDE_DIRS})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC TCC_HAS_DBUS)
+endif()
+if(PULSE_FOUND)
+  include_directories(${PULSE_INCLUDE_DIRS})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC TCC_HAS_PULSE)
 endif()
 
 # river's xkb config protocol, for the keyboard layout item. The protocol code
@@ -55,13 +60,5 @@ if(WAYLAND_FOUND AND WAYLAND_SCANNER AND WAYLAND_SCANNER_PC_FOUND)
                  ${RIVER_GENERATED_DIR}/wayland-protocol.c)
   target_include_directories(${PROJECT_NAME} PRIVATE ${RIVER_GENERATED_DIR}
                              ${WAYLAND_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
   target_compile_definitions(${PROJECT_NAME} PRIVATE TCC_SYSTRAY_RIVER)
-endif()
-
-pkg_check_modules(PULSE libpulse)
-if(PULSE_FOUND)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${PULSE_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
-  target_compile_definitions(${PROJECT_NAME} PRIVATE TCC_SYSTRAY_PULSE)
 endif()

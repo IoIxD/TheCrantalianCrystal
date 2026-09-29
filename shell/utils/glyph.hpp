@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../lib/egl_loader.hpp"
-#include "../lib/freetype_loader.hpp"
-#include "../lib/gl_loader.hpp"
+#include "egl_loader.hpp"
+#include "freetype_loader.hpp"
+#include "gl_loader.hpp"
 
 class GlyphManager {
   static FT_Library FTLibrary;

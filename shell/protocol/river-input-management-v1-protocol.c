@@ -23,17 +23,17 @@
  * IN THE SOFTWARE.
  */
 
+#include "wayland_loader.h"
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include "wayland-util.h"
+#include <stdlib.h>
 
 #ifndef __has_attribute
-# define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */
+#define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
 #endif
 
 #if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__ ((visibility("hidden")))
+#define WL_PRIVATE __attribute__((visibility("hidden")))
 #else
 #define WL_PRIVATE
 #endif
@@ -42,50 +42,47 @@ extern const struct wl_interface river_input_device_v1_interface;
 extern const struct wl_interface wl_output_interface;
 
 static const struct wl_interface *river_input_management_v1_types[] = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	&river_input_device_v1_interface,
-	&wl_output_interface,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    &river_input_device_v1_interface,
+    &wl_output_interface,
 };
 
 static const struct wl_message river_input_manager_v1_requests[] = {
-	{ "stop", "", river_input_management_v1_types + 0 },
-	{ "destroy", "", river_input_management_v1_types + 0 },
-	{ "create_seat", "s", river_input_management_v1_types + 0 },
-	{ "destroy_seat", "s", river_input_management_v1_types + 0 },
+    {"stop", "", river_input_management_v1_types + 0},
+    {"destroy", "", river_input_management_v1_types + 0},
+    {"create_seat", "s", river_input_management_v1_types + 0},
+    {"destroy_seat", "s", river_input_management_v1_types + 0},
 };
 
 static const struct wl_message river_input_manager_v1_events[] = {
-	{ "finished", "", river_input_management_v1_types + 0 },
-	{ "input_device", "n", river_input_management_v1_types + 4 },
+    {"finished", "", river_input_management_v1_types + 0},
+    {"input_device", "n", river_input_management_v1_types + 4},
 };
 
 WL_PRIVATE const struct wl_interface river_input_manager_v1_interface = {
-	"river_input_manager_v1", 1,
-	4, river_input_manager_v1_requests,
-	2, river_input_manager_v1_events,
+    "river_input_manager_v1",        1, 4,
+    river_input_manager_v1_requests, 2, river_input_manager_v1_events,
 };
 
 static const struct wl_message river_input_device_v1_requests[] = {
-	{ "destroy", "", river_input_management_v1_types + 0 },
-	{ "assign_to_seat", "s", river_input_management_v1_types + 0 },
-	{ "set_repeat_info", "ii", river_input_management_v1_types + 0 },
-	{ "set_scroll_factor", "f", river_input_management_v1_types + 0 },
-	{ "map_to_output", "?o", river_input_management_v1_types + 5 },
-	{ "map_to_rectangle", "iiii", river_input_management_v1_types + 0 },
+    {"destroy", "", river_input_management_v1_types + 0},
+    {"assign_to_seat", "s", river_input_management_v1_types + 0},
+    {"set_repeat_info", "ii", river_input_management_v1_types + 0},
+    {"set_scroll_factor", "f", river_input_management_v1_types + 0},
+    {"map_to_output", "?o", river_input_management_v1_types + 5},
+    {"map_to_rectangle", "iiii", river_input_management_v1_types + 0},
 };
 
 static const struct wl_message river_input_device_v1_events[] = {
-	{ "removed", "", river_input_management_v1_types + 0 },
-	{ "type", "u", river_input_management_v1_types + 0 },
-	{ "name", "s", river_input_management_v1_types + 0 },
+    {"removed", "", river_input_management_v1_types + 0},
+    {"type", "u", river_input_management_v1_types + 0},
+    {"name", "s", river_input_management_v1_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface river_input_device_v1_interface = {
-	"river_input_device_v1", 1,
-	6, river_input_device_v1_requests,
-	3, river_input_device_v1_events,
+    "river_input_device_v1",        1, 6,
+    river_input_device_v1_requests, 3, river_input_device_v1_events,
 };
-

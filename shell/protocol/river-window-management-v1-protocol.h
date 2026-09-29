@@ -3,11 +3,11 @@
 #ifndef RIVER_WINDOW_MANAGEMENT_V1_CLIENT_PROTOCOL_H
 #define RIVER_WINDOW_MANAGEMENT_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -27,14 +27,17 @@ extern "C" {
  * document are to be interpreted as described in IETF RFC 2119.
  *
  * @section page_ifaces_river_window_management_v1 Interfaces
- * - @subpage page_iface_river_window_manager_v1 - window manager global interface
+ * - @subpage page_iface_river_window_manager_v1 - window manager global
+ * interface
  * - @subpage page_iface_river_window_v1 - a logical window
  * - @subpage page_iface_river_decoration_v1 - a window decoration
- * - @subpage page_iface_river_shell_surface_v1 - a surface for window manager UI
+ * - @subpage page_iface_river_shell_surface_v1 - a surface for window manager
+ * UI
  * - @subpage page_iface_river_node_v1 - a node in the render list
  * - @subpage page_iface_river_output_v1 - a logical output
  * - @subpage page_iface_river_seat_v1 - a window management seat
- * - @subpage page_iface_river_pointer_binding_v1 - configure a pointer binding, receive trigger events
+ * - @subpage page_iface_river_pointer_binding_v1 - configure a pointer binding,
+ * receive trigger events
  * @section page_copyright_river_window_management_v1 Copyright
  * <pre>
  *
@@ -441,7 +444,8 @@ extern const struct wl_interface river_seat_v1_interface;
  * See @ref iface_river_pointer_binding_v1.
  */
 /**
- * @defgroup iface_river_pointer_binding_v1 The river_pointer_binding_v1 interface
+ * @defgroup iface_river_pointer_binding_v1 The river_pointer_binding_v1
+ * interface
  *
  * This object allows the window manager to configure a pointer binding and
  * receive events when the binding is triggered.
@@ -464,18 +468,18 @@ extern const struct wl_interface river_pointer_binding_v1_interface;
 #ifndef RIVER_WINDOW_MANAGER_V1_ERROR_ENUM
 #define RIVER_WINDOW_MANAGER_V1_ERROR_ENUM
 enum river_window_manager_v1_error {
-	/**
-	 * request violates manage/render sequence ordering
-	 */
-	RIVER_WINDOW_MANAGER_V1_ERROR_SEQUENCE_ORDER = 0,
-	/**
-	 * given wl_surface already has a role
-	 */
-	RIVER_WINDOW_MANAGER_V1_ERROR_ROLE = 1,
-	/**
-	 * window manager unresponsive
-	 */
-	RIVER_WINDOW_MANAGER_V1_ERROR_UNRESPONSIVE = 2,
+  /**
+   * request violates manage/render sequence ordering
+   */
+  RIVER_WINDOW_MANAGER_V1_ERROR_SEQUENCE_ORDER = 0,
+  /**
+   * given wl_surface already has a role
+   */
+  RIVER_WINDOW_MANAGER_V1_ERROR_ROLE = 1,
+  /**
+   * window manager unresponsive
+   */
+  RIVER_WINDOW_MANAGER_V1_ERROR_UNRESPONSIVE = 2,
 };
 #endif /* RIVER_WINDOW_MANAGER_V1_ERROR_ENUM */
 
@@ -484,135 +488,134 @@ enum river_window_manager_v1_error {
  * @struct river_window_manager_v1_listener
  */
 struct river_window_manager_v1_listener {
-	/**
-	 * window management unavailable
-	 *
-	 * This event indicates that window management is not available
-	 * to the client, perhaps due to another window management client
-	 * already running. The circumstances causing this event to be sent
-	 * are compositor policy.
-	 *
-	 * If sent, this event is guaranteed to be the first and only event
-	 * sent by the server.
-	 *
-	 * The server will send no further events on this object. The
-	 * client should destroy this object and all objects created
-	 * through this interface.
-	 */
-	void (*unavailable)(void *data,
-			    struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * the server has finished with the window manager
-	 *
-	 * This event indicates that the server will send no further
-	 * events on this object. The client should destroy the object. See
-	 * river_window_manager_v1.destroy for more information.
-	 */
-	void (*finished)(void *data,
-			 struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * start a manage sequence
-	 *
-	 * This event indicates that the server has sent events
-	 * indicating all state changes since the last manage sequence.
-	 *
-	 * In response to this event, the client should make requests
-	 * modifying window management state as it chooses. Then, the
-	 * client must make the manage_finish request.
-	 *
-	 * See the description of the river_window_manager_v1 interface for
-	 * a complete overview of the manage/render sequence loop.
-	 */
-	void (*manage_start)(void *data,
-			     struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * start a render sequence
-	 *
-	 * This event indicates that the server has sent all
-	 * river_window_v1.dimensions events necessary.
-	 *
-	 * In response to this event, the client should make requests
-	 * modifying rendering state as it chooses. Then, the client must
-	 * make the render_finish request.
-	 *
-	 * See the description of the river_window_manager_v1 interface for
-	 * a complete overview of the manage/render sequence loop.
-	 */
-	void (*render_start)(void *data,
-			     struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * the session has been locked
-	 *
-	 * This event indicates that the session has been locked.
-	 *
-	 * The window manager may wish to restrict which key bindings are
-	 * available while locked or otherwise use this information.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*session_locked)(void *data,
-			       struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * the session has been unlocked
-	 *
-	 * This event indicates that the session has been unlocked.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*session_unlocked)(void *data,
-				 struct river_window_manager_v1 *river_window_manager_v1);
-	/**
-	 * new window
-	 *
-	 * A new window has been created.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param id new window
-	 */
-	void (*window)(void *data,
-		       struct river_window_manager_v1 *river_window_manager_v1,
-		       struct river_window_v1 *id);
-	/**
-	 * new output
-	 *
-	 * A new logical output has been created, perhaps due to a new
-	 * physical monitor being plugged in or perhaps due to a change in
-	 * configuration.
-	 *
-	 * This event will be followed by river_output_v1.position and
-	 * dimensions events as well as a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param id new output
-	 */
-	void (*output)(void *data,
-		       struct river_window_manager_v1 *river_window_manager_v1,
-		       struct river_output_v1 *id);
-	/**
-	 * new seat
-	 *
-	 * A new seat has been created.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param id new seat
-	 */
-	void (*seat)(void *data,
-		     struct river_window_manager_v1 *river_window_manager_v1,
-		     struct river_seat_v1 *id);
+  /**
+   * window management unavailable
+   *
+   * This event indicates that window management is not available
+   * to the client, perhaps due to another window management client
+   * already running. The circumstances causing this event to be sent
+   * are compositor policy.
+   *
+   * If sent, this event is guaranteed to be the first and only event
+   * sent by the server.
+   *
+   * The server will send no further events on this object. The
+   * client should destroy this object and all objects created
+   * through this interface.
+   */
+  void (*unavailable)(void *data,
+                      struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * the server has finished with the window manager
+   *
+   * This event indicates that the server will send no further
+   * events on this object. The client should destroy the object. See
+   * river_window_manager_v1.destroy for more information.
+   */
+  void (*finished)(void *data,
+                   struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * start a manage sequence
+   *
+   * This event indicates that the server has sent events
+   * indicating all state changes since the last manage sequence.
+   *
+   * In response to this event, the client should make requests
+   * modifying window management state as it chooses. Then, the
+   * client must make the manage_finish request.
+   *
+   * See the description of the river_window_manager_v1 interface for
+   * a complete overview of the manage/render sequence loop.
+   */
+  void (*manage_start)(void *data,
+                       struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * start a render sequence
+   *
+   * This event indicates that the server has sent all
+   * river_window_v1.dimensions events necessary.
+   *
+   * In response to this event, the client should make requests
+   * modifying rendering state as it chooses. Then, the client must
+   * make the render_finish request.
+   *
+   * See the description of the river_window_manager_v1 interface for
+   * a complete overview of the manage/render sequence loop.
+   */
+  void (*render_start)(void *data,
+                       struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * the session has been locked
+   *
+   * This event indicates that the session has been locked.
+   *
+   * The window manager may wish to restrict which key bindings are
+   * available while locked or otherwise use this information.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*session_locked)(
+      void *data, struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * the session has been unlocked
+   *
+   * This event indicates that the session has been unlocked.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*session_unlocked)(
+      void *data, struct river_window_manager_v1 *river_window_manager_v1);
+  /**
+   * new window
+   *
+   * A new window has been created.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param id new window
+   */
+  void (*window)(void *data,
+                 struct river_window_manager_v1 *river_window_manager_v1,
+                 struct river_window_v1 *id);
+  /**
+   * new output
+   *
+   * A new logical output has been created, perhaps due to a new
+   * physical monitor being plugged in or perhaps due to a change in
+   * configuration.
+   *
+   * This event will be followed by river_output_v1.position and
+   * dimensions events as well as a manage_start event after all
+   * other new state has been sent by the server.
+   * @param id new output
+   */
+  void (*output)(void *data,
+                 struct river_window_manager_v1 *river_window_manager_v1,
+                 struct river_output_v1 *id);
+  /**
+   * new seat
+   *
+   * A new seat has been created.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param id new seat
+   */
+  void (*seat)(void *data,
+               struct river_window_manager_v1 *river_window_manager_v1,
+               struct river_seat_v1 *id);
 };
 
 /**
  * @ingroup iface_river_window_manager_v1
  */
-static inline int
-river_window_manager_v1_add_listener(struct river_window_manager_v1 *river_window_manager_v1,
-				     const struct river_window_manager_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_window_manager_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_window_manager_v1_add_listener(
+    struct river_window_manager_v1 *river_window_manager_v1,
+    const struct river_window_manager_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_window_manager_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_WINDOW_MANAGER_V1_STOP 0
@@ -690,23 +693,20 @@ river_window_manager_v1_add_listener(struct river_window_manager_v1 *river_windo
 #define RIVER_WINDOW_MANAGER_V1_EXIT_SESSION_SINCE_VERSION 4
 
 /** @ingroup iface_river_window_manager_v1 */
-static inline void
-river_window_manager_v1_set_user_data(struct river_window_manager_v1 *river_window_manager_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_window_manager_v1, user_data);
+static inline void river_window_manager_v1_set_user_data(
+    struct river_window_manager_v1 *river_window_manager_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_window_manager_v1, user_data);
 }
 
 /** @ingroup iface_river_window_manager_v1 */
-static inline void *
-river_window_manager_v1_get_user_data(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_window_manager_v1);
+static inline void *river_window_manager_v1_get_user_data(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_window_manager_v1);
 }
 
-static inline uint32_t
-river_window_manager_v1_get_version(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1);
+static inline uint32_t river_window_manager_v1_get_version(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1);
 }
 
 /**
@@ -720,11 +720,12 @@ river_window_manager_v1_get_version(struct river_window_manager_v1 *river_window
  * for a river_window_manager_v1.finished event before destroying this
  * object.
  */
-static inline void
-river_window_manager_v1_stop(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_STOP, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0);
+static inline void river_window_manager_v1_stop(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1, RIVER_WINDOW_MANAGER_V1_STOP,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1),
+      0);
 }
 
 /**
@@ -739,11 +740,13 @@ river_window_manager_v1_stop(struct river_window_manager_v1 *river_window_manage
  * received it is safe to destroy this object and any other objects created
  * through this interface.
  */
-static inline void
-river_window_manager_v1_destroy(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_window_manager_v1_destroy(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -761,11 +764,12 @@ river_window_manager_v1_destroy(struct river_window_manager_v1 *river_window_man
  * See the description of the river_window_manager_v1 interface for a
  * complete overview of the manage/render sequence loop.
  */
-static inline void
-river_window_manager_v1_manage_finish(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_MANAGE_FINISH, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0);
+static inline void river_window_manager_v1_manage_finish(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_MANAGE_FINISH, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1), 0);
 }
 
 /**
@@ -780,11 +784,12 @@ river_window_manager_v1_manage_finish(struct river_window_manager_v1 *river_wind
  * that the compositor is not aware of (e.g. a dbus event) which should
  * affect window management or rendering state.
  */
-static inline void
-river_window_manager_v1_manage_dirty(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_MANAGE_DIRTY, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0);
+static inline void river_window_manager_v1_manage_dirty(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_MANAGE_DIRTY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1), 0);
 }
 
 /**
@@ -802,11 +807,12 @@ river_window_manager_v1_manage_dirty(struct river_window_manager_v1 *river_windo
  * See the description of the river_window_manager_v1 interface for a
  * complete overview of the manage/render sequence loop.
  */
-static inline void
-river_window_manager_v1_render_finish(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_RENDER_FINISH, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0);
+static inline void river_window_manager_v1_render_finish(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_RENDER_FINISH, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1), 0);
 }
 
 /**
@@ -819,14 +825,19 @@ river_window_manager_v1_render_finish(struct river_window_manager_v1 *river_wind
  * attached or committed is a protocol error.
  */
 static inline struct river_shell_surface_v1 *
-river_window_manager_v1_get_shell_surface(struct river_window_manager_v1 *river_window_manager_v1, struct wl_surface *surface)
-{
-	struct wl_proxy *id;
+river_window_manager_v1_get_shell_surface(
+    struct river_window_manager_v1 *river_window_manager_v1,
+    struct wl_surface *surface) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_GET_SHELL_SURFACE, &river_shell_surface_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0, NULL, surface);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_GET_SHELL_SURFACE,
+      &river_shell_surface_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1), 0, NULL,
+      surface);
 
-	return (struct river_shell_surface_v1 *) id;
+  return (struct river_shell_surface_v1 *)id;
 }
 
 /**
@@ -840,75 +851,76 @@ river_window_manager_v1_get_shell_surface(struct river_window_manager_v1 *river_
  * asks to exit the Wayland session, not for example on normal window
  * manager termination.
  */
-static inline void
-river_window_manager_v1_exit_session(struct river_window_manager_v1 *river_window_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_manager_v1,
-			 RIVER_WINDOW_MANAGER_V1_EXIT_SESSION, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_manager_v1), 0);
+static inline void river_window_manager_v1_exit_session(
+    struct river_window_manager_v1 *river_window_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_manager_v1,
+      RIVER_WINDOW_MANAGER_V1_EXIT_SESSION, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_manager_v1), 0);
 }
 
 #ifndef RIVER_WINDOW_V1_ERROR_ENUM
 #define RIVER_WINDOW_V1_ERROR_ENUM
 enum river_window_v1_error {
-	/**
-	 * window already has a node object
-	 */
-	RIVER_WINDOW_V1_ERROR_NODE_EXISTS = 0,
-	/**
-	 * proposed dimensions out of bounds
-	 */
-	RIVER_WINDOW_V1_ERROR_INVALID_DIMENSIONS = 1,
-	/**
-	 * invalid arg to set_borders
-	 */
-	RIVER_WINDOW_V1_ERROR_INVALID_BORDER = 2,
-	/**
-	 * invalid arg to set_clip_box
-	 */
-	RIVER_WINDOW_V1_ERROR_INVALID_CLIP_BOX = 3,
+  /**
+   * window already has a node object
+   */
+  RIVER_WINDOW_V1_ERROR_NODE_EXISTS = 0,
+  /**
+   * proposed dimensions out of bounds
+   */
+  RIVER_WINDOW_V1_ERROR_INVALID_DIMENSIONS = 1,
+  /**
+   * invalid arg to set_borders
+   */
+  RIVER_WINDOW_V1_ERROR_INVALID_BORDER = 2,
+  /**
+   * invalid arg to set_clip_box
+   */
+  RIVER_WINDOW_V1_ERROR_INVALID_CLIP_BOX = 3,
 };
 #endif /* RIVER_WINDOW_V1_ERROR_ENUM */
 
 #ifndef RIVER_WINDOW_V1_DECORATION_HINT_ENUM
 #define RIVER_WINDOW_V1_DECORATION_HINT_ENUM
 enum river_window_v1_decoration_hint {
-	/**
-	 * only supports client side decoration
-	 */
-	RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD = 0,
-	/**
-	 * client side decoration preferred, both CSD and SSD supported
-	 */
-	RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_CSD = 1,
-	/**
-	 * server side decoration preferred, both CSD and SSD supported
-	 */
-	RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_SSD = 2,
-	/**
-	 * no preference, both CSD and SSD supported
-	 */
-	RIVER_WINDOW_V1_DECORATION_HINT_NO_PREFERENCE = 3,
+  /**
+   * only supports client side decoration
+   */
+  RIVER_WINDOW_V1_DECORATION_HINT_ONLY_SUPPORTS_CSD = 0,
+  /**
+   * client side decoration preferred, both CSD and SSD supported
+   */
+  RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_CSD = 1,
+  /**
+   * server side decoration preferred, both CSD and SSD supported
+   */
+  RIVER_WINDOW_V1_DECORATION_HINT_PREFERS_SSD = 2,
+  /**
+   * no preference, both CSD and SSD supported
+   */
+  RIVER_WINDOW_V1_DECORATION_HINT_NO_PREFERENCE = 3,
 };
 #endif /* RIVER_WINDOW_V1_DECORATION_HINT_ENUM */
 
 #ifndef RIVER_WINDOW_V1_EDGES_ENUM
 #define RIVER_WINDOW_V1_EDGES_ENUM
 enum river_window_v1_edges {
-	RIVER_WINDOW_V1_EDGES_NONE = 0,
-	RIVER_WINDOW_V1_EDGES_TOP = 1,
-	RIVER_WINDOW_V1_EDGES_BOTTOM = 2,
-	RIVER_WINDOW_V1_EDGES_LEFT = 4,
-	RIVER_WINDOW_V1_EDGES_RIGHT = 8,
+  RIVER_WINDOW_V1_EDGES_NONE = 0,
+  RIVER_WINDOW_V1_EDGES_TOP = 1,
+  RIVER_WINDOW_V1_EDGES_BOTTOM = 2,
+  RIVER_WINDOW_V1_EDGES_LEFT = 4,
+  RIVER_WINDOW_V1_EDGES_RIGHT = 8,
 };
 #endif /* RIVER_WINDOW_V1_EDGES_ENUM */
 
 #ifndef RIVER_WINDOW_V1_CAPABILITIES_ENUM
 #define RIVER_WINDOW_V1_CAPABILITIES_ENUM
 enum river_window_v1_capabilities {
-	RIVER_WINDOW_V1_CAPABILITIES_WINDOW_MENU = 1,
-	RIVER_WINDOW_V1_CAPABILITIES_MAXIMIZE = 2,
-	RIVER_WINDOW_V1_CAPABILITIES_FULLSCREEN = 4,
-	RIVER_WINDOW_V1_CAPABILITIES_MINIMIZE = 8,
+  RIVER_WINDOW_V1_CAPABILITIES_WINDOW_MENU = 1,
+  RIVER_WINDOW_V1_CAPABILITIES_MAXIMIZE = 2,
+  RIVER_WINDOW_V1_CAPABILITIES_FULLSCREEN = 4,
+  RIVER_WINDOW_V1_CAPABILITIES_MINIMIZE = 8,
 };
 #endif /* RIVER_WINDOW_V1_CAPABILITIES_ENUM */
 
@@ -917,364 +929,349 @@ enum river_window_v1_capabilities {
  * @struct river_window_v1_listener
  */
 struct river_window_v1_listener {
-	/**
-	 * the window has been closed
-	 *
-	 * The window has been closed by the server, perhaps due to an
-	 * xdg_toplevel.close request or similar.
-	 *
-	 * The server will send no further events on this object and ignore
-	 * any request other than river_window_v1.destroy made after this
-	 * event is sent. The client should destroy this object with the
-	 * river_window_v1.destroy request to free up resources.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*closed)(void *data,
-		       struct river_window_v1 *river_window_v1);
-	/**
-	 * the window's preferred min/max dimensions
-	 *
-	 * This event informs the window manager of the window's
-	 * preferred min/max dimensions. These preferences are a hint, and
-	 * the window manager is free to propose dimensions outside of
-	 * these bounds.
-	 *
-	 * All min/max width/height values must be strictly greater than or
-	 * equal to 0. A value of 0 indicates that the window has no
-	 * preference for that value.
-	 *
-	 * The min_width/min_height must be strictly less than or equal to
-	 * the max_width/max_height.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param min_width minimum width
-	 * @param min_height minimum height
-	 * @param max_width maximum width
-	 * @param max_height maximum height
-	 */
-	void (*dimensions_hint)(void *data,
-				struct river_window_v1 *river_window_v1,
-				int32_t min_width,
-				int32_t min_height,
-				int32_t max_width,
-				int32_t max_height);
-	/**
-	 * window dimensions
-	 *
-	 * This event indicates the dimensions of the window in the
-	 * compositor's logical coordinate space. The width and height must
-	 * be strictly greater than zero.
-	 *
-	 * Note that the dimensions of a river_window_v1 refer to the
-	 * dimensions of the window content and are unaffected by the
-	 * presence of borders or decoration surfaces.
-	 *
-	 * This event is sent as part of a render sequence before the
-	 * render_start event.
-	 *
-	 * It may be sent due to a propose_dimensions or fullscreen request
-	 * in a previous manage sequence or because a window independently
-	 * decides to change its dimensions.
-	 *
-	 * The window will not be displayed until the first dimensions
-	 * event is received and the render sequence is finished.
-	 * @param width window content width
-	 * @param height window content height
-	 */
-	void (*dimensions)(void *data,
-			   struct river_window_v1 *river_window_v1,
-			   int32_t width,
-			   int32_t height);
-	/**
-	 * the window set an application ID
-	 *
-	 * The window set an application ID.
-	 *
-	 * The app_id argument will be null if the window has never set an
-	 * application ID or if the window cleared its application ID.
-	 * (Xwayland windows may do this for example, though xdg-toplevels
-	 * may not.)
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param app_id window application ID
-	 */
-	void (*app_id)(void *data,
-		       struct river_window_v1 *river_window_v1,
-		       const char *app_id);
-	/**
-	 * the window set a title
-	 *
-	 * The window set a title.
-	 *
-	 * The title argument will be null if the window has never set a
-	 * title or if the window cleared its title. (Xwayland windows may
-	 * do this for example, though xdg-toplevels may not.)
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param title window title
-	 */
-	void (*title)(void *data,
-		      struct river_window_v1 *river_window_v1,
-		      const char *title);
-	/**
-	 * the window set a parent
-	 *
-	 * The window set a parent window. If this event is never
-	 * received or if the parent argument is null then the window has
-	 * no parent.
-	 *
-	 * A surface with a parent set might be a dialog, file picker, or
-	 * similar for the parent window.
-	 *
-	 * Child windows should generally be rendered directly above their
-	 * parent.
-	 *
-	 * The compositor must guarantee that there are no loops in the
-	 * window tree: a parent must not be the descendant of one of its
-	 * children.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param parent parent window, if any
-	 */
-	void (*parent)(void *data,
-		       struct river_window_v1 *river_window_v1,
-		       struct river_window_v1 *parent);
-	/**
-	 * supported/preferred decoration style
-	 *
-	 * Information from the window about the supported and preferred
-	 * client side/server side decoration options.
-	 *
-	 * This event may be sent multiple times over the lifetime of the
-	 * window if the window changes its preferences.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param hint decoration hint
-	 */
-	void (*decoration_hint)(void *data,
-				struct river_window_v1 *river_window_v1,
-				uint32_t hint);
-	/**
-	 * window requested interactive pointer move
-	 *
-	 * This event informs the window manager that the window has
-	 * requested to be interactively moved using the pointer. The seat
-	 * argument indicates the seat for the move.
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * that an interactive move be started, perhaps when a client-side
-	 * rendered titlebar is dragged.
-	 *
-	 * The window manager may use the river_seat_v1.op_start_pointer
-	 * request to interactively move the window or ignore this event
-	 * entirely.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param seat requested seat
-	 */
-	void (*pointer_move_requested)(void *data,
-				       struct river_window_v1 *river_window_v1,
-				       struct river_seat_v1 *seat);
-	/**
-	 * window requested interactive pointer resize
-	 *
-	 * This event informs the window manager that the window has
-	 * requested to be interactively resized using the pointer. The
-	 * seat argument indicates the seat for the resize.
-	 *
-	 * The edges argument indicates which edges the window has
-	 * requested to be resized from. The edges argument will never be
-	 * none and will never have both top and bottom or both left and
-	 * right edges set.
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * that an interactive resize be started, perhaps when the corner
-	 * of client-side rendered decorations is dragged.
-	 *
-	 * The window manager may use the river_seat_v1.op_start_pointer
-	 * request to interactively resize the window or ignore this event
-	 * entirely.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param seat requested seat
-	 * @param edges requested edges
-	 */
-	void (*pointer_resize_requested)(void *data,
-					 struct river_window_v1 *river_window_v1,
-					 struct river_seat_v1 *seat,
-					 uint32_t edges);
-	/**
-	 * window requested that the window menu be shown
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * that a window menu be shown, for example when the user right
-	 * clicks on client side window decorations.
-	 *
-	 * A window menu might include options to maximize or minimize the
-	 * window.
-	 *
-	 * The window manager is free to ignore this request and decide
-	 * what the window menu contains if it does choose to show one.
-	 *
-	 * The x and y arguments indicate where the window requested that
-	 * the window menu be shown.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param x x offset from top left corner
-	 * @param y y offset from top left corner
-	 */
-	void (*show_window_menu_requested)(void *data,
-					   struct river_window_v1 *river_window_v1,
-					   int32_t x,
-					   int32_t y);
-	/**
-	 * the window requested to be maximized
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * to be maximized.
-	 *
-	 * The window manager is free to honor this request using
-	 * river_window_v1.inform_maximized or ignore it.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*maximize_requested)(void *data,
-				   struct river_window_v1 *river_window_v1);
-	/**
-	 * the window requested to be unmaximized
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * to be unmaximized.
-	 *
-	 * The window manager is free to honor this request using
-	 * river_window_v1.inform_unmaximized or ignore it.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*unmaximize_requested)(void *data,
-				     struct river_window_v1 *river_window_v1);
-	/**
-	 * the window requested to be fullscreen
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * that they be made fullscreen and allows them to provide an
-	 * optional output hint.
-	 *
-	 * If the output argument is null, the window has no preference and
-	 * the window manager should choose an output.
-	 *
-	 * The window manager is free to honor this request using
-	 * river_window_v1.fullscreen or ignore it.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param output fullscreen output requested
-	 */
-	void (*fullscreen_requested)(void *data,
-				     struct river_window_v1 *river_window_v1,
-				     struct river_output_v1 *output);
-	/**
-	 * the window requested to exit fullscreen
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * to exit fullscreen.
-	 *
-	 * The window manager is free to honor this request using
-	 * river_window_v1.exit_fullscreen or ignore it.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*exit_fullscreen_requested)(void *data,
-					  struct river_window_v1 *river_window_v1);
-	/**
-	 * the window requested to be minimized
-	 *
-	 * The xdg-shell protocol for example allows windows to request
-	 * to be minimized.
-	 *
-	 * The window manager is free to ignore this request, hide the
-	 * window, or do whatever else it chooses.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*minimize_requested)(void *data,
-				   struct river_window_v1 *river_window_v1);
-	/**
-	 * unreliable PID of the window's creator
-	 *
-	 * This event gives an unreliable PID of the process that created
-	 * the window. Obtaining this information is inherently racy due to
-	 * PID reuse. Therefore, this PID must not be used for anything
-	 * security sensitive.
-	 *
-	 * Note also that a single process may create multiple windows, so
-	 * there is not necessarily a 1-to-1 mapping from PID to window.
-	 * Multiple windows may have the same PID.
-	 *
-	 * This event is sent once when the river_window_v1 is created and
-	 * never sent again.
-	 * @param unreliable_pid unreliable PID
-	 * @since 2
-	 */
-	void (*unreliable_pid)(void *data,
-			       struct river_window_v1 *river_window_v1,
-			       int32_t unreliable_pid);
-	/**
-	 * presentation hint set by the window
-	 *
-	 * This event communicates the window's preferred presentation
-	 * mode.
-	 *
-	 * This event will be followed by a render_start event after all
-	 * other new state has been sent by the server.
-	 * @param hint presentation hint
-	 * @since 4
-	 */
-	void (*presentation_hint)(void *data,
-				  struct river_window_v1 *river_window_v1,
-				  uint32_t hint);
-	/**
-	 * unique window identifier
-	 *
-	 * The identifier is a string that contains up to 32 printable
-	 * ASCII bytes. The identifier must not be an empty string.
-	 *
-	 * It is compositor policy how the identifier is generated, but the
-	 * following properties must be upheld:
-	 *
-	 * 1. The identifier must uniquely identify the window. Two windows
-	 * must not share the same identifier.
-	 *
-	 * 2. The identifier must not be reused. This avoids races around
-	 * window creation/destruction when identifiers are used in
-	 * out-of-band IPC.
-	 *
-	 * If the compositor implements the ext-foreign-toplevel-list-v1
-	 * protocol, the river_window_v1.identifier event must match the
-	 * corresponding ext_foreign_toplevel_handle_v1.identifier event.
-	 *
-	 * This event is sent once when the river_window_v1 is created and
-	 * never sent again.
-	 * @param identifier unique identifier
-	 * @since 4
-	 */
-	void (*identifier)(void *data,
-			   struct river_window_v1 *river_window_v1,
-			   const char *identifier);
+  /**
+   * the window has been closed
+   *
+   * The window has been closed by the server, perhaps due to an
+   * xdg_toplevel.close request or similar.
+   *
+   * The server will send no further events on this object and ignore
+   * any request other than river_window_v1.destroy made after this
+   * event is sent. The client should destroy this object with the
+   * river_window_v1.destroy request to free up resources.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*closed)(void *data, struct river_window_v1 *river_window_v1);
+  /**
+   * the window's preferred min/max dimensions
+   *
+   * This event informs the window manager of the window's
+   * preferred min/max dimensions. These preferences are a hint, and
+   * the window manager is free to propose dimensions outside of
+   * these bounds.
+   *
+   * All min/max width/height values must be strictly greater than or
+   * equal to 0. A value of 0 indicates that the window has no
+   * preference for that value.
+   *
+   * The min_width/min_height must be strictly less than or equal to
+   * the max_width/max_height.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param min_width minimum width
+   * @param min_height minimum height
+   * @param max_width maximum width
+   * @param max_height maximum height
+   */
+  void (*dimensions_hint)(void *data, struct river_window_v1 *river_window_v1,
+                          int32_t min_width, int32_t min_height,
+                          int32_t max_width, int32_t max_height);
+  /**
+   * window dimensions
+   *
+   * This event indicates the dimensions of the window in the
+   * compositor's logical coordinate space. The width and height must
+   * be strictly greater than zero.
+   *
+   * Note that the dimensions of a river_window_v1 refer to the
+   * dimensions of the window content and are unaffected by the
+   * presence of borders or decoration surfaces.
+   *
+   * This event is sent as part of a render sequence before the
+   * render_start event.
+   *
+   * It may be sent due to a propose_dimensions or fullscreen request
+   * in a previous manage sequence or because a window independently
+   * decides to change its dimensions.
+   *
+   * The window will not be displayed until the first dimensions
+   * event is received and the render sequence is finished.
+   * @param width window content width
+   * @param height window content height
+   */
+  void (*dimensions)(void *data, struct river_window_v1 *river_window_v1,
+                     int32_t width, int32_t height);
+  /**
+   * the window set an application ID
+   *
+   * The window set an application ID.
+   *
+   * The app_id argument will be null if the window has never set an
+   * application ID or if the window cleared its application ID.
+   * (Xwayland windows may do this for example, though xdg-toplevels
+   * may not.)
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param app_id window application ID
+   */
+  void (*app_id)(void *data, struct river_window_v1 *river_window_v1,
+                 const char *app_id);
+  /**
+   * the window set a title
+   *
+   * The window set a title.
+   *
+   * The title argument will be null if the window has never set a
+   * title or if the window cleared its title. (Xwayland windows may
+   * do this for example, though xdg-toplevels may not.)
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param title window title
+   */
+  void (*title)(void *data, struct river_window_v1 *river_window_v1,
+                const char *title);
+  /**
+   * the window set a parent
+   *
+   * The window set a parent window. If this event is never
+   * received or if the parent argument is null then the window has
+   * no parent.
+   *
+   * A surface with a parent set might be a dialog, file picker, or
+   * similar for the parent window.
+   *
+   * Child windows should generally be rendered directly above their
+   * parent.
+   *
+   * The compositor must guarantee that there are no loops in the
+   * window tree: a parent must not be the descendant of one of its
+   * children.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param parent parent window, if any
+   */
+  void (*parent)(void *data, struct river_window_v1 *river_window_v1,
+                 struct river_window_v1 *parent);
+  /**
+   * supported/preferred decoration style
+   *
+   * Information from the window about the supported and preferred
+   * client side/server side decoration options.
+   *
+   * This event may be sent multiple times over the lifetime of the
+   * window if the window changes its preferences.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param hint decoration hint
+   */
+  void (*decoration_hint)(void *data, struct river_window_v1 *river_window_v1,
+                          uint32_t hint);
+  /**
+   * window requested interactive pointer move
+   *
+   * This event informs the window manager that the window has
+   * requested to be interactively moved using the pointer. The seat
+   * argument indicates the seat for the move.
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * that an interactive move be started, perhaps when a client-side
+   * rendered titlebar is dragged.
+   *
+   * The window manager may use the river_seat_v1.op_start_pointer
+   * request to interactively move the window or ignore this event
+   * entirely.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param seat requested seat
+   */
+  void (*pointer_move_requested)(void *data,
+                                 struct river_window_v1 *river_window_v1,
+                                 struct river_seat_v1 *seat);
+  /**
+   * window requested interactive pointer resize
+   *
+   * This event informs the window manager that the window has
+   * requested to be interactively resized using the pointer. The
+   * seat argument indicates the seat for the resize.
+   *
+   * The edges argument indicates which edges the window has
+   * requested to be resized from. The edges argument will never be
+   * none and will never have both top and bottom or both left and
+   * right edges set.
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * that an interactive resize be started, perhaps when the corner
+   * of client-side rendered decorations is dragged.
+   *
+   * The window manager may use the river_seat_v1.op_start_pointer
+   * request to interactively resize the window or ignore this event
+   * entirely.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param seat requested seat
+   * @param edges requested edges
+   */
+  void (*pointer_resize_requested)(void *data,
+                                   struct river_window_v1 *river_window_v1,
+                                   struct river_seat_v1 *seat, uint32_t edges);
+  /**
+   * window requested that the window menu be shown
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * that a window menu be shown, for example when the user right
+   * clicks on client side window decorations.
+   *
+   * A window menu might include options to maximize or minimize the
+   * window.
+   *
+   * The window manager is free to ignore this request and decide
+   * what the window menu contains if it does choose to show one.
+   *
+   * The x and y arguments indicate where the window requested that
+   * the window menu be shown.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param x x offset from top left corner
+   * @param y y offset from top left corner
+   */
+  void (*show_window_menu_requested)(void *data,
+                                     struct river_window_v1 *river_window_v1,
+                                     int32_t x, int32_t y);
+  /**
+   * the window requested to be maximized
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * to be maximized.
+   *
+   * The window manager is free to honor this request using
+   * river_window_v1.inform_maximized or ignore it.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*maximize_requested)(void *data,
+                             struct river_window_v1 *river_window_v1);
+  /**
+   * the window requested to be unmaximized
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * to be unmaximized.
+   *
+   * The window manager is free to honor this request using
+   * river_window_v1.inform_unmaximized or ignore it.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*unmaximize_requested)(void *data,
+                               struct river_window_v1 *river_window_v1);
+  /**
+   * the window requested to be fullscreen
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * that they be made fullscreen and allows them to provide an
+   * optional output hint.
+   *
+   * If the output argument is null, the window has no preference and
+   * the window manager should choose an output.
+   *
+   * The window manager is free to honor this request using
+   * river_window_v1.fullscreen or ignore it.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param output fullscreen output requested
+   */
+  void (*fullscreen_requested)(void *data,
+                               struct river_window_v1 *river_window_v1,
+                               struct river_output_v1 *output);
+  /**
+   * the window requested to exit fullscreen
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * to exit fullscreen.
+   *
+   * The window manager is free to honor this request using
+   * river_window_v1.exit_fullscreen or ignore it.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*exit_fullscreen_requested)(void *data,
+                                    struct river_window_v1 *river_window_v1);
+  /**
+   * the window requested to be minimized
+   *
+   * The xdg-shell protocol for example allows windows to request
+   * to be minimized.
+   *
+   * The window manager is free to ignore this request, hide the
+   * window, or do whatever else it chooses.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*minimize_requested)(void *data,
+                             struct river_window_v1 *river_window_v1);
+  /**
+   * unreliable PID of the window's creator
+   *
+   * This event gives an unreliable PID of the process that created
+   * the window. Obtaining this information is inherently racy due to
+   * PID reuse. Therefore, this PID must not be used for anything
+   * security sensitive.
+   *
+   * Note also that a single process may create multiple windows, so
+   * there is not necessarily a 1-to-1 mapping from PID to window.
+   * Multiple windows may have the same PID.
+   *
+   * This event is sent once when the river_window_v1 is created and
+   * never sent again.
+   * @param unreliable_pid unreliable PID
+   * @since 2
+   */
+  void (*unreliable_pid)(void *data, struct river_window_v1 *river_window_v1,
+                         int32_t unreliable_pid);
+  /**
+   * presentation hint set by the window
+   *
+   * This event communicates the window's preferred presentation
+   * mode.
+   *
+   * This event will be followed by a render_start event after all
+   * other new state has been sent by the server.
+   * @param hint presentation hint
+   * @since 4
+   */
+  void (*presentation_hint)(void *data, struct river_window_v1 *river_window_v1,
+                            uint32_t hint);
+  /**
+   * unique window identifier
+   *
+   * The identifier is a string that contains up to 32 printable
+   * ASCII bytes. The identifier must not be an empty string.
+   *
+   * It is compositor policy how the identifier is generated, but the
+   * following properties must be upheld:
+   *
+   * 1. The identifier must uniquely identify the window. Two windows
+   * must not share the same identifier.
+   *
+   * 2. The identifier must not be reused. This avoids races around
+   * window creation/destruction when identifiers are used in
+   * out-of-band IPC.
+   *
+   * If the compositor implements the ext-foreign-toplevel-list-v1
+   * protocol, the river_window_v1.identifier event must match the
+   * corresponding ext_foreign_toplevel_handle_v1.identifier event.
+   *
+   * This event is sent once when the river_window_v1 is created and
+   * never sent again.
+   * @param identifier unique identifier
+   * @since 4
+   */
+  void (*identifier)(void *data, struct river_window_v1 *river_window_v1,
+                     const char *identifier);
 };
 
 /**
@@ -1282,10 +1279,10 @@ struct river_window_v1_listener {
  */
 static inline int
 river_window_v1_add_listener(struct river_window_v1 *river_window_v1,
-			     const struct river_window_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_window_v1,
-				     (void (**)(void)) listener, data);
+                             const struct river_window_v1_listener *listener,
+                             void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_window_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_WINDOW_V1_DESTROY 0
@@ -1485,22 +1482,20 @@ river_window_v1_add_listener(struct river_window_v1 *river_window_v1,
 
 /** @ingroup iface_river_window_v1 */
 static inline void
-river_window_v1_set_user_data(struct river_window_v1 *river_window_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_window_v1, user_data);
+river_window_v1_set_user_data(struct river_window_v1 *river_window_v1,
+                              void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_window_v1, user_data);
 }
 
 /** @ingroup iface_river_window_v1 */
 static inline void *
-river_window_v1_get_user_data(struct river_window_v1 *river_window_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_window_v1);
+river_window_v1_get_user_data(struct river_window_v1 *river_window_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_window_v1);
 }
 
 static inline uint32_t
-river_window_v1_get_version(struct river_window_v1 *river_window_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_window_v1);
+river_window_v1_get_version(struct river_window_v1 *river_window_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_window_v1);
 }
 
 /**
@@ -1514,10 +1509,11 @@ river_window_v1_get_version(struct river_window_v1 *river_window_v1)
  * the window.
  */
 static inline void
-river_window_v1_destroy(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), WL_MARSHAL_FLAG_DESTROY);
+river_window_v1_destroy(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -1534,10 +1530,10 @@ river_window_v1_destroy(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_close(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_CLOSE, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_close(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_CLOSE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1549,14 +1545,15 @@ river_window_v1_close(struct river_window_v1 *river_window_v1)
  * window.
  */
 static inline struct river_node_v1 *
-river_window_v1_get_node(struct river_window_v1 *river_window_v1)
-{
-	struct wl_proxy *id;
+river_window_v1_get_node(struct river_window_v1 *river_window_v1) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_GET_NODE, &river_node_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, NULL);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_GET_NODE,
+      &river_node_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, NULL);
 
-	return (struct river_node_v1 *) id;
+  return (struct river_node_v1 *)id;
 }
 
 /**
@@ -1589,10 +1586,12 @@ river_window_v1_get_node(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_propose_dimensions(struct river_window_v1 *river_window_v1, int32_t width, int32_t height)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_PROPOSE_DIMENSIONS, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, width, height);
+river_window_v1_propose_dimensions(struct river_window_v1 *river_window_v1,
+                                   int32_t width, int32_t height) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_PROPOSE_DIMENSIONS,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, width,
+      height);
 }
 
 /**
@@ -1608,10 +1607,10 @@ river_window_v1_propose_dimensions(struct river_window_v1 *river_window_v1, int3
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_hide(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_HIDE, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_hide(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_HIDE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1628,10 +1627,10 @@ river_window_v1_hide(struct river_window_v1 *river_window_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_show(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SHOW, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_show(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SHOW, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1647,10 +1646,10 @@ river_window_v1_show(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_use_csd(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_USE_CSD, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_use_csd(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_USE_CSD, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1666,10 +1665,10 @@ river_window_v1_use_csd(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_use_ssd(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_USE_SSD, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_use_ssd(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_USE_SSD, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1703,10 +1702,13 @@ river_window_v1_use_ssd(struct river_window_v1 *river_window_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_borders(struct river_window_v1 *river_window_v1, uint32_t edges, int32_t width, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_BORDERS, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, edges, width, r, g, b, a);
+river_window_v1_set_borders(struct river_window_v1 *river_window_v1,
+                            uint32_t edges, int32_t width, uint32_t r,
+                            uint32_t g, uint32_t b, uint32_t a) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_BORDERS, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, edges, width,
+      r, g, b, a);
 }
 
 /**
@@ -1727,10 +1729,11 @@ river_window_v1_set_borders(struct river_window_v1 *river_window_v1, uint32_t ed
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_tiled(struct river_window_v1 *river_window_v1, uint32_t edges)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_TILED, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, edges);
+river_window_v1_set_tiled(struct river_window_v1 *river_window_v1,
+                          uint32_t edges) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_TILED, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, edges);
 }
 
 /**
@@ -1744,14 +1747,17 @@ river_window_v1_set_tiled(struct river_window_v1 *river_window_v1, uint32_t edge
  * attached or committed is a protocol error.
  */
 static inline struct river_decoration_v1 *
-river_window_v1_get_decoration_above(struct river_window_v1 *river_window_v1, struct wl_surface *surface)
-{
-	struct wl_proxy *id;
+river_window_v1_get_decoration_above(struct river_window_v1 *river_window_v1,
+                                     struct wl_surface *surface) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_GET_DECORATION_ABOVE, &river_decoration_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, NULL, surface);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_GET_DECORATION_ABOVE,
+      &river_decoration_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, NULL,
+      surface);
 
-	return (struct river_decoration_v1 *) id;
+  return (struct river_decoration_v1 *)id;
 }
 
 /**
@@ -1765,14 +1771,17 @@ river_window_v1_get_decoration_above(struct river_window_v1 *river_window_v1, st
  * attached or committed is a protocol error.
  */
 static inline struct river_decoration_v1 *
-river_window_v1_get_decoration_below(struct river_window_v1 *river_window_v1, struct wl_surface *surface)
-{
-	struct wl_proxy *id;
+river_window_v1_get_decoration_below(struct river_window_v1 *river_window_v1,
+                                     struct wl_surface *surface) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_GET_DECORATION_BELOW, &river_decoration_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, NULL, surface);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_GET_DECORATION_BELOW,
+      &river_decoration_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, NULL,
+      surface);
 
-	return (struct river_decoration_v1 *) id;
+  return (struct river_decoration_v1 *)id;
 }
 
 /**
@@ -1789,10 +1798,10 @@ river_window_v1_get_decoration_below(struct river_window_v1 *river_window_v1, st
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_resize_start(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_RESIZE_START, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_resize_start(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_RESIZE_START,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1806,10 +1815,10 @@ river_window_v1_inform_resize_start(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_resize_end(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_RESIZE_END, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_resize_end(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_RESIZE_END,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1831,10 +1840,11 @@ river_window_v1_inform_resize_end(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_capabilities(struct river_window_v1 *river_window_v1, uint32_t caps)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_CAPABILITIES, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, caps);
+river_window_v1_set_capabilities(struct river_window_v1 *river_window_v1,
+                                 uint32_t caps) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_CAPABILITIES,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, caps);
 }
 
 /**
@@ -1851,10 +1861,10 @@ river_window_v1_set_capabilities(struct river_window_v1 *river_window_v1, uint32
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_maximized(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_MAXIMIZED, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_maximized(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_MAXIMIZED,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1868,10 +1878,10 @@ river_window_v1_inform_maximized(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_unmaximized(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_UNMAXIMIZED, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_unmaximized(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_UNMAXIMIZED,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1889,10 +1899,10 @@ river_window_v1_inform_unmaximized(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_fullscreen(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_fullscreen(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_FULLSCREEN,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1910,10 +1920,10 @@ river_window_v1_inform_fullscreen(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_inform_not_fullscreen(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_INFORM_NOT_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_inform_not_fullscreen(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_INFORM_NOT_FULLSCREEN,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -1953,10 +1963,11 @@ river_window_v1_inform_not_fullscreen(struct river_window_v1 *river_window_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_fullscreen(struct river_window_v1 *river_window_v1, struct river_output_v1 *output)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, output);
+river_window_v1_fullscreen(struct river_window_v1 *river_window_v1,
+                           struct river_output_v1 *output) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_FULLSCREEN, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, output);
 }
 
 /**
@@ -1979,10 +1990,10 @@ river_window_v1_fullscreen(struct river_window_v1 *river_window_v1, struct river
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_exit_fullscreen(struct river_window_v1 *river_window_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_EXIT_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0);
+river_window_v1_exit_fullscreen(struct river_window_v1 *river_window_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_EXIT_FULLSCREEN, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0);
 }
 
 /**
@@ -2004,10 +2015,12 @@ river_window_v1_exit_fullscreen(struct river_window_v1 *river_window_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_clip_box(struct river_window_v1 *river_window_v1, int32_t x, int32_t y, int32_t width, int32_t height)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_CLIP_BOX, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, x, y, width, height);
+river_window_v1_set_clip_box(struct river_window_v1 *river_window_v1, int32_t x,
+                             int32_t y, int32_t width, int32_t height) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_CLIP_BOX, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, x, y, width,
+      height);
 }
 
 /**
@@ -2034,10 +2047,13 @@ river_window_v1_set_clip_box(struct river_window_v1 *river_window_v1, int32_t x,
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_content_clip_box(struct river_window_v1 *river_window_v1, int32_t x, int32_t y, int32_t width, int32_t height)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_CONTENT_CLIP_BOX, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, x, y, width, height);
+river_window_v1_set_content_clip_box(struct river_window_v1 *river_window_v1,
+                                     int32_t x, int32_t y, int32_t width,
+                                     int32_t height) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_CONTENT_CLIP_BOX,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0, x, y,
+      width, height);
 }
 
 /**
@@ -2059,26 +2075,27 @@ river_window_v1_set_content_clip_box(struct river_window_v1 *river_window_v1, in
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_window_v1_set_dimension_bounds(struct river_window_v1 *river_window_v1, int32_t max_width, int32_t max_height)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_window_v1,
-			 RIVER_WINDOW_V1_SET_DIMENSION_BOUNDS, NULL, wl_proxy_get_version((struct wl_proxy *) river_window_v1), 0, max_width, max_height);
+river_window_v1_set_dimension_bounds(struct river_window_v1 *river_window_v1,
+                                     int32_t max_width, int32_t max_height) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_window_v1, RIVER_WINDOW_V1_SET_DIMENSION_BOUNDS,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_window_v1), 0,
+      max_width, max_height);
 }
 
 #ifndef RIVER_DECORATION_V1_ERROR_ENUM
 #define RIVER_DECORATION_V1_ERROR_ENUM
 enum river_decoration_v1_error {
-	/**
-	 * failed to commit the surface before the window manager commit
-	 */
-	RIVER_DECORATION_V1_ERROR_NO_COMMIT = 0,
+  /**
+   * failed to commit the surface before the window manager commit
+   */
+  RIVER_DECORATION_V1_ERROR_NO_COMMIT = 0,
 };
 #endif /* RIVER_DECORATION_V1_ERROR_ENUM */
 
 #define RIVER_DECORATION_V1_DESTROY 0
 #define RIVER_DECORATION_V1_SET_OFFSET 1
 #define RIVER_DECORATION_V1_SYNC_NEXT_COMMIT 2
-
 
 /**
  * @ingroup iface_river_decoration_v1
@@ -2094,23 +2111,20 @@ enum river_decoration_v1_error {
 #define RIVER_DECORATION_V1_SYNC_NEXT_COMMIT_SINCE_VERSION 1
 
 /** @ingroup iface_river_decoration_v1 */
-static inline void
-river_decoration_v1_set_user_data(struct river_decoration_v1 *river_decoration_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_decoration_v1, user_data);
+static inline void river_decoration_v1_set_user_data(
+    struct river_decoration_v1 *river_decoration_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_decoration_v1, user_data);
 }
 
 /** @ingroup iface_river_decoration_v1 */
-static inline void *
-river_decoration_v1_get_user_data(struct river_decoration_v1 *river_decoration_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_decoration_v1);
+static inline void *river_decoration_v1_get_user_data(
+    struct river_decoration_v1 *river_decoration_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_decoration_v1);
 }
 
-static inline uint32_t
-river_decoration_v1_get_version(struct river_decoration_v1 *river_decoration_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_decoration_v1);
+static inline uint32_t river_decoration_v1_get_version(
+    struct river_decoration_v1 *river_decoration_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_decoration_v1);
 }
 
 /**
@@ -2120,10 +2134,11 @@ river_decoration_v1_get_version(struct river_decoration_v1 *river_decoration_v1)
  * object and that it may be safely destroyed.
  */
 static inline void
-river_decoration_v1_destroy(struct river_decoration_v1 *river_decoration_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_decoration_v1,
-			 RIVER_DECORATION_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_decoration_v1), WL_MARSHAL_FLAG_DESTROY);
+river_decoration_v1_destroy(struct river_decoration_v1 *river_decoration_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_decoration_v1, RIVER_DECORATION_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_decoration_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2139,10 +2154,12 @@ river_decoration_v1_destroy(struct river_decoration_v1 *river_decoration_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_decoration_v1_set_offset(struct river_decoration_v1 *river_decoration_v1, int32_t x, int32_t y)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_decoration_v1,
-			 RIVER_DECORATION_V1_SET_OFFSET, NULL, wl_proxy_get_version((struct wl_proxy *) river_decoration_v1), 0, x, y);
+river_decoration_v1_set_offset(struct river_decoration_v1 *river_decoration_v1,
+                               int32_t x, int32_t y) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_decoration_v1, RIVER_DECORATION_V1_SET_OFFSET,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_decoration_v1), 0, x,
+      y);
 }
 
 /**
@@ -2159,31 +2176,31 @@ river_decoration_v1_set_offset(struct river_decoration_v1 *river_decoration_v1, 
  * This request modifies rendering state and may only be made as part of a
  * render sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_decoration_v1_sync_next_commit(struct river_decoration_v1 *river_decoration_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_decoration_v1,
-			 RIVER_DECORATION_V1_SYNC_NEXT_COMMIT, NULL, wl_proxy_get_version((struct wl_proxy *) river_decoration_v1), 0);
+static inline void river_decoration_v1_sync_next_commit(
+    struct river_decoration_v1 *river_decoration_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_decoration_v1,
+      RIVER_DECORATION_V1_SYNC_NEXT_COMMIT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_decoration_v1), 0);
 }
 
 #ifndef RIVER_SHELL_SURFACE_V1_ERROR_ENUM
 #define RIVER_SHELL_SURFACE_V1_ERROR_ENUM
 enum river_shell_surface_v1_error {
-	/**
-	 * shell surface already has a node object
-	 */
-	RIVER_SHELL_SURFACE_V1_ERROR_NODE_EXISTS = 0,
-	/**
-	 * failed to commit the surface before the window manager commit
-	 */
-	RIVER_SHELL_SURFACE_V1_ERROR_NO_COMMIT = 1,
+  /**
+   * shell surface already has a node object
+   */
+  RIVER_SHELL_SURFACE_V1_ERROR_NODE_EXISTS = 0,
+  /**
+   * failed to commit the surface before the window manager commit
+   */
+  RIVER_SHELL_SURFACE_V1_ERROR_NO_COMMIT = 1,
 };
 #endif /* RIVER_SHELL_SURFACE_V1_ERROR_ENUM */
 
 #define RIVER_SHELL_SURFACE_V1_DESTROY 0
 #define RIVER_SHELL_SURFACE_V1_GET_NODE 1
 #define RIVER_SHELL_SURFACE_V1_SYNC_NEXT_COMMIT 2
-
 
 /**
  * @ingroup iface_river_shell_surface_v1
@@ -2199,23 +2216,20 @@ enum river_shell_surface_v1_error {
 #define RIVER_SHELL_SURFACE_V1_SYNC_NEXT_COMMIT_SINCE_VERSION 1
 
 /** @ingroup iface_river_shell_surface_v1 */
-static inline void
-river_shell_surface_v1_set_user_data(struct river_shell_surface_v1 *river_shell_surface_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_shell_surface_v1, user_data);
+static inline void river_shell_surface_v1_set_user_data(
+    struct river_shell_surface_v1 *river_shell_surface_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_shell_surface_v1, user_data);
 }
 
 /** @ingroup iface_river_shell_surface_v1 */
-static inline void *
-river_shell_surface_v1_get_user_data(struct river_shell_surface_v1 *river_shell_surface_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_shell_surface_v1);
+static inline void *river_shell_surface_v1_get_user_data(
+    struct river_shell_surface_v1 *river_shell_surface_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_shell_surface_v1);
 }
 
-static inline uint32_t
-river_shell_surface_v1_get_version(struct river_shell_surface_v1 *river_shell_surface_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_shell_surface_v1);
+static inline uint32_t river_shell_surface_v1_get_version(
+    struct river_shell_surface_v1 *river_shell_surface_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_shell_surface_v1);
 }
 
 /**
@@ -2224,11 +2238,12 @@ river_shell_surface_v1_get_version(struct river_shell_surface_v1 *river_shell_su
  * This request indicates that the client will no longer use the shell
  * surface object and that it may be safely destroyed.
  */
-static inline void
-river_shell_surface_v1_destroy(struct river_shell_surface_v1 *river_shell_surface_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_shell_surface_v1,
-			 RIVER_SHELL_SURFACE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_shell_surface_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_shell_surface_v1_destroy(
+    struct river_shell_surface_v1 *river_shell_surface_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_shell_surface_v1, RIVER_SHELL_SURFACE_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_shell_surface_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2239,15 +2254,16 @@ river_shell_surface_v1_destroy(struct river_shell_surface_v1 *river_shell_surfac
  * It is a protocol error to make this request more than once for a single
  * shell surface.
  */
-static inline struct river_node_v1 *
-river_shell_surface_v1_get_node(struct river_shell_surface_v1 *river_shell_surface_v1)
-{
-	struct wl_proxy *id;
+static inline struct river_node_v1 *river_shell_surface_v1_get_node(
+    struct river_shell_surface_v1 *river_shell_surface_v1) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_shell_surface_v1,
-			 RIVER_SHELL_SURFACE_V1_GET_NODE, &river_node_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_shell_surface_v1), 0, NULL);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_shell_surface_v1,
+      RIVER_SHELL_SURFACE_V1_GET_NODE, &river_node_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_shell_surface_v1), 0, NULL);
 
-	return (struct river_node_v1 *) id;
+  return (struct river_node_v1 *)id;
 }
 
 /**
@@ -2264,11 +2280,12 @@ river_shell_surface_v1_get_node(struct river_shell_surface_v1 *river_shell_surfa
  * This request modifies rendering state and may only be made as part of a
  * render sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_shell_surface_v1_sync_next_commit(struct river_shell_surface_v1 *river_shell_surface_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_shell_surface_v1,
-			 RIVER_SHELL_SURFACE_V1_SYNC_NEXT_COMMIT, NULL, wl_proxy_get_version((struct wl_proxy *) river_shell_surface_v1), 0);
+static inline void river_shell_surface_v1_sync_next_commit(
+    struct river_shell_surface_v1 *river_shell_surface_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_shell_surface_v1,
+      RIVER_SHELL_SURFACE_V1_SYNC_NEXT_COMMIT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_shell_surface_v1), 0);
 }
 
 #define RIVER_NODE_V1_DESTROY 0
@@ -2277,7 +2294,6 @@ river_shell_surface_v1_sync_next_commit(struct river_shell_surface_v1 *river_she
 #define RIVER_NODE_V1_PLACE_BOTTOM 3
 #define RIVER_NODE_V1_PLACE_ABOVE 4
 #define RIVER_NODE_V1_PLACE_BELOW 5
-
 
 /**
  * @ingroup iface_river_node_v1
@@ -2306,22 +2322,20 @@ river_shell_surface_v1_sync_next_commit(struct river_shell_surface_v1 *river_she
 
 /** @ingroup iface_river_node_v1 */
 static inline void
-river_node_v1_set_user_data(struct river_node_v1 *river_node_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_node_v1, user_data);
+river_node_v1_set_user_data(struct river_node_v1 *river_node_v1,
+                            void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_node_v1, user_data);
 }
 
 /** @ingroup iface_river_node_v1 */
 static inline void *
-river_node_v1_get_user_data(struct river_node_v1 *river_node_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_node_v1);
+river_node_v1_get_user_data(struct river_node_v1 *river_node_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_node_v1);
 }
 
 static inline uint32_t
-river_node_v1_get_version(struct river_node_v1 *river_node_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_node_v1);
+river_node_v1_get_version(struct river_node_v1 *river_node_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_node_v1);
 }
 
 /**
@@ -2330,11 +2344,11 @@ river_node_v1_get_version(struct river_node_v1 *river_node_v1)
  * This request indicates that the client will no longer use the node
  * object and that it may be safely destroyed.
  */
-static inline void
-river_node_v1_destroy(struct river_node_v1 *river_node_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_node_v1_destroy(struct river_node_v1 *river_node_v1) {
+  wl_proxy_marshal_flags((struct wl_proxy *)river_node_v1,
+                         RIVER_NODE_V1_DESTROY, NULL,
+                         wl_proxy_get_version((struct wl_proxy *)river_node_v1),
+                         WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2354,10 +2368,11 @@ river_node_v1_destroy(struct river_node_v1 *river_node_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_node_v1_set_position(struct river_node_v1 *river_node_v1, int32_t x, int32_t y)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_SET_POSITION, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), 0, x, y);
+river_node_v1_set_position(struct river_node_v1 *river_node_v1, int32_t x,
+                           int32_t y) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_node_v1, RIVER_NODE_V1_SET_POSITION, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_node_v1), 0, x, y);
 }
 
 /**
@@ -2370,10 +2385,10 @@ river_node_v1_set_position(struct river_node_v1 *river_node_v1, int32_t x, int32
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_node_v1_place_top(struct river_node_v1 *river_node_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_PLACE_TOP, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), 0);
+river_node_v1_place_top(struct river_node_v1 *river_node_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_node_v1, RIVER_NODE_V1_PLACE_TOP, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_node_v1), 0);
 }
 
 /**
@@ -2386,10 +2401,10 @@ river_node_v1_place_top(struct river_node_v1 *river_node_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_node_v1_place_bottom(struct river_node_v1 *river_node_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_PLACE_BOTTOM, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), 0);
+river_node_v1_place_bottom(struct river_node_v1 *river_node_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_node_v1, RIVER_NODE_V1_PLACE_BOTTOM, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_node_v1), 0);
 }
 
 /**
@@ -2404,10 +2419,11 @@ river_node_v1_place_bottom(struct river_node_v1 *river_node_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_node_v1_place_above(struct river_node_v1 *river_node_v1, struct river_node_v1 *other)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_PLACE_ABOVE, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), 0, other);
+river_node_v1_place_above(struct river_node_v1 *river_node_v1,
+                          struct river_node_v1 *other) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_node_v1, RIVER_NODE_V1_PLACE_ABOVE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_node_v1), 0, other);
 }
 
 /**
@@ -2422,20 +2438,21 @@ river_node_v1_place_above(struct river_node_v1 *river_node_v1, struct river_node
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_node_v1_place_below(struct river_node_v1 *river_node_v1, struct river_node_v1 *other)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_node_v1,
-			 RIVER_NODE_V1_PLACE_BELOW, NULL, wl_proxy_get_version((struct wl_proxy *) river_node_v1), 0, other);
+river_node_v1_place_below(struct river_node_v1 *river_node_v1,
+                          struct river_node_v1 *other) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_node_v1, RIVER_NODE_V1_PLACE_BELOW, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_node_v1), 0, other);
 }
 
 #ifndef RIVER_OUTPUT_V1_ERROR_ENUM
 #define RIVER_OUTPUT_V1_ERROR_ENUM
 enum river_output_v1_error {
-	/**
-	 * invalid presentation mode enum value
-	 * @since 4
-	 */
-	RIVER_OUTPUT_V1_ERROR_INVALID_PRESENTATION_MODE = 0,
+  /**
+   * invalid presentation mode enum value
+   * @since 4
+   */
+  RIVER_OUTPUT_V1_ERROR_INVALID_PRESENTATION_MODE = 0,
 };
 /**
  * @ingroup iface_river_output_v1
@@ -2446,21 +2463,21 @@ enum river_output_v1_error {
 #ifndef RIVER_OUTPUT_V1_PRESENTATION_MODE_ENUM
 #define RIVER_OUTPUT_V1_PRESENTATION_MODE_ENUM
 enum river_output_v1_presentation_mode {
-	/**
-	 * tearing-free presentation
-	 *
-	 * Output page-flips should be synchronized to the vertical
-	 * blanking period, eliminating tearing. This is the default
-	 * presentation mode.
-	 */
-	RIVER_OUTPUT_V1_PRESENTATION_MODE_VSYNC = 0,
-	/**
-	 * asynchronous presentation
-	 *
-	 * Output page-flips should not be synchronized to the vertical
-	 * blanking period, visual screen tearing may occur.
-	 */
-	RIVER_OUTPUT_V1_PRESENTATION_MODE_ASYNC = 1,
+  /**
+   * tearing-free presentation
+   *
+   * Output page-flips should be synchronized to the vertical
+   * blanking period, eliminating tearing. This is the default
+   * presentation mode.
+   */
+  RIVER_OUTPUT_V1_PRESENTATION_MODE_VSYNC = 0,
+  /**
+   * asynchronous presentation
+   *
+   * Output page-flips should not be synchronized to the vertical
+   * blanking period, visual screen tearing may occur.
+   */
+  RIVER_OUTPUT_V1_PRESENTATION_MODE_ASYNC = 1,
 };
 #endif /* RIVER_OUTPUT_V1_PRESENTATION_MODE_ENUM */
 
@@ -2469,100 +2486,94 @@ enum river_output_v1_presentation_mode {
  * @struct river_output_v1_listener
  */
 struct river_output_v1_listener {
-	/**
-	 * the output is removed
-	 *
-	 * This event indicates that the logical output is no longer
-	 * conceptually part of window management space.
-	 *
-	 * The server will send no further events on this object and ignore
-	 * any request (other than river_output_v1.destroy) made after this
-	 * event is sent. The client should destroy this object with the
-	 * river_output_v1.destroy request to free up resources.
-	 *
-	 * This event may be sent because a corresponding physical output
-	 * has been physically unplugged or because some output
-	 * configuration has changed.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*removed)(void *data,
-			struct river_output_v1 *river_output_v1);
-	/**
-	 * corresponding wl_output
-	 *
-	 * The wl_output object corresponding to the river_output_v1. The
-	 * argument is the global name of the wl_output advertised with
-	 * wl_registry.global.
-	 *
-	 * It is guaranteed that the corresponding wl_output is advertised
-	 * before this event is sent.
-	 *
-	 * This event is sent exactly once. The wl_output associated with a
-	 * river_output_v1 cannot change. It is guaranteed that there is a
-	 * 1-to-1 mapping between wl_output and river_output_v1 objects.
-	 *
-	 * The global_remove event for the corresponding wl_output may be
-	 * sent before the river_output_v1.removed event. This is due to
-	 * the fact that river_output_v1 state changes are synced to the
-	 * river window management manage sequence while changes to globals
-	 * are not.
-	 *
-	 * Rationale: The window manager may need information provided by
-	 * the wl_output interface such as the name/description. It also
-	 * may need the wl_output object to start screencopy for example.
-	 * @param name name of the wl_output global
-	 */
-	void (*wl_output)(void *data,
-			  struct river_output_v1 *river_output_v1,
-			  uint32_t name);
-	/**
-	 * output position
-	 *
-	 * This event indicates the position of the output in the
-	 * compositor's logical coordinate space. The x and y coordinates
-	 * may be positive or negative.
-	 *
-	 * This event is sent once when the river_output_v1 is created and
-	 * again whenever the position changes.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The server must guarantee that the position and dimensions
-	 * events do not cause the areas of multiple logical outputs to
-	 * overlap when the corresponding manage_start event is received.
-	 * @param x global x coordinate
-	 * @param y global y coordinate
-	 */
-	void (*position)(void *data,
-			 struct river_output_v1 *river_output_v1,
-			 int32_t x,
-			 int32_t y);
-	/**
-	 * output dimensions
-	 *
-	 * This event indicates the dimensions of the output in the
-	 * compositor's logical coordinate space. The width and height will
-	 * always be strictly greater than zero.
-	 *
-	 * This event is sent once when the river_output_v1 is created and
-	 * again whenever the dimensions change.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The server must guarantee that the position and dimensions
-	 * events do not cause the areas of multiple logical outputs to
-	 * overlap when the corresponding manage_start event is received.
-	 * @param width output width
-	 * @param height output height
-	 */
-	void (*dimensions)(void *data,
-			   struct river_output_v1 *river_output_v1,
-			   int32_t width,
-			   int32_t height);
+  /**
+   * the output is removed
+   *
+   * This event indicates that the logical output is no longer
+   * conceptually part of window management space.
+   *
+   * The server will send no further events on this object and ignore
+   * any request (other than river_output_v1.destroy) made after this
+   * event is sent. The client should destroy this object with the
+   * river_output_v1.destroy request to free up resources.
+   *
+   * This event may be sent because a corresponding physical output
+   * has been physically unplugged or because some output
+   * configuration has changed.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*removed)(void *data, struct river_output_v1 *river_output_v1);
+  /**
+   * corresponding wl_output
+   *
+   * The wl_output object corresponding to the river_output_v1. The
+   * argument is the global name of the wl_output advertised with
+   * wl_registry.global.
+   *
+   * It is guaranteed that the corresponding wl_output is advertised
+   * before this event is sent.
+   *
+   * This event is sent exactly once. The wl_output associated with a
+   * river_output_v1 cannot change. It is guaranteed that there is a
+   * 1-to-1 mapping between wl_output and river_output_v1 objects.
+   *
+   * The global_remove event for the corresponding wl_output may be
+   * sent before the river_output_v1.removed event. This is due to
+   * the fact that river_output_v1 state changes are synced to the
+   * river window management manage sequence while changes to globals
+   * are not.
+   *
+   * Rationale: The window manager may need information provided by
+   * the wl_output interface such as the name/description. It also
+   * may need the wl_output object to start screencopy for example.
+   * @param name name of the wl_output global
+   */
+  void (*wl_output)(void *data, struct river_output_v1 *river_output_v1,
+                    uint32_t name);
+  /**
+   * output position
+   *
+   * This event indicates the position of the output in the
+   * compositor's logical coordinate space. The x and y coordinates
+   * may be positive or negative.
+   *
+   * This event is sent once when the river_output_v1 is created and
+   * again whenever the position changes.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The server must guarantee that the position and dimensions
+   * events do not cause the areas of multiple logical outputs to
+   * overlap when the corresponding manage_start event is received.
+   * @param x global x coordinate
+   * @param y global y coordinate
+   */
+  void (*position)(void *data, struct river_output_v1 *river_output_v1,
+                   int32_t x, int32_t y);
+  /**
+   * output dimensions
+   *
+   * This event indicates the dimensions of the output in the
+   * compositor's logical coordinate space. The width and height will
+   * always be strictly greater than zero.
+   *
+   * This event is sent once when the river_output_v1 is created and
+   * again whenever the dimensions change.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The server must guarantee that the position and dimensions
+   * events do not cause the areas of multiple logical outputs to
+   * overlap when the corresponding manage_start event is received.
+   * @param width output width
+   * @param height output height
+   */
+  void (*dimensions)(void *data, struct river_output_v1 *river_output_v1,
+                     int32_t width, int32_t height);
 };
 
 /**
@@ -2570,10 +2581,10 @@ struct river_output_v1_listener {
  */
 static inline int
 river_output_v1_add_listener(struct river_output_v1 *river_output_v1,
-			     const struct river_output_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_output_v1,
-				     (void (**)(void)) listener, data);
+                             const struct river_output_v1_listener *listener,
+                             void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_output_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_OUTPUT_V1_DESTROY 0
@@ -2607,22 +2618,20 @@ river_output_v1_add_listener(struct river_output_v1 *river_output_v1,
 
 /** @ingroup iface_river_output_v1 */
 static inline void
-river_output_v1_set_user_data(struct river_output_v1 *river_output_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_output_v1, user_data);
+river_output_v1_set_user_data(struct river_output_v1 *river_output_v1,
+                              void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_output_v1, user_data);
 }
 
 /** @ingroup iface_river_output_v1 */
 static inline void *
-river_output_v1_get_user_data(struct river_output_v1 *river_output_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_output_v1);
+river_output_v1_get_user_data(struct river_output_v1 *river_output_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_output_v1);
 }
 
 static inline uint32_t
-river_output_v1_get_version(struct river_output_v1 *river_output_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_output_v1);
+river_output_v1_get_version(struct river_output_v1 *river_output_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_output_v1);
 }
 
 /**
@@ -2635,10 +2644,11 @@ river_output_v1_get_version(struct river_output_v1 *river_output_v1)
  * received to complete destruction of the output.
  */
 static inline void
-river_output_v1_destroy(struct river_output_v1 *river_output_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_output_v1,
-			 RIVER_OUTPUT_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_output_v1), WL_MARSHAL_FLAG_DESTROY);
+river_output_v1_destroy(struct river_output_v1 *river_output_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_output_v1, RIVER_OUTPUT_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_output_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2652,10 +2662,11 @@ river_output_v1_destroy(struct river_output_v1 *river_output_v1)
  * render sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_output_v1_set_presentation_mode(struct river_output_v1 *river_output_v1, uint32_t mode)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_output_v1,
-			 RIVER_OUTPUT_V1_SET_PRESENTATION_MODE, NULL, wl_proxy_get_version((struct wl_proxy *) river_output_v1), 0, mode);
+river_output_v1_set_presentation_mode(struct river_output_v1 *river_output_v1,
+                                      uint32_t mode) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_output_v1, RIVER_OUTPUT_V1_SET_PRESENTATION_MODE,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_output_v1), 0, mode);
 }
 
 #ifndef RIVER_SEAT_V1_MODIFIERS_ENUM
@@ -2672,19 +2683,19 @@ river_output_v1_set_presentation_mode(struct river_output_v1 *river_output_v1, u
  * bindings however so these values are not included in this enum.
  */
 enum river_seat_v1_modifiers {
-	RIVER_SEAT_V1_MODIFIERS_NONE = 0,
-	RIVER_SEAT_V1_MODIFIERS_SHIFT = 1,
-	RIVER_SEAT_V1_MODIFIERS_CTRL = 4,
-	/**
-	 * commonly called alt
-	 */
-	RIVER_SEAT_V1_MODIFIERS_MOD1 = 8,
-	RIVER_SEAT_V1_MODIFIERS_MOD3 = 32,
-	/**
-	 * commonly called super or logo
-	 */
-	RIVER_SEAT_V1_MODIFIERS_MOD4 = 64,
-	RIVER_SEAT_V1_MODIFIERS_MOD5 = 128,
+  RIVER_SEAT_V1_MODIFIERS_NONE = 0,
+  RIVER_SEAT_V1_MODIFIERS_SHIFT = 1,
+  RIVER_SEAT_V1_MODIFIERS_CTRL = 4,
+  /**
+   * commonly called alt
+   */
+  RIVER_SEAT_V1_MODIFIERS_MOD1 = 8,
+  RIVER_SEAT_V1_MODIFIERS_MOD3 = 32,
+  /**
+   * commonly called super or logo
+   */
+  RIVER_SEAT_V1_MODIFIERS_MOD4 = 64,
+  RIVER_SEAT_V1_MODIFIERS_MOD5 = 128,
 };
 #endif /* RIVER_SEAT_V1_MODIFIERS_ENUM */
 
@@ -2693,188 +2704,178 @@ enum river_seat_v1_modifiers {
  * @struct river_seat_v1_listener
  */
 struct river_seat_v1_listener {
-	/**
-	 * the seat is removed
-	 *
-	 * This event indicates that seat is no longer in use and should
-	 * be destroyed.
-	 *
-	 * The server will send no further events on this object and ignore
-	 * any request (other than river_seat_v1.destroy) made after this
-	 * event is sent. The client should destroy this object with the
-	 * river_seat_v1.destroy request to free up resources.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*removed)(void *data,
-			struct river_seat_v1 *river_seat_v1);
-	/**
-	 * corresponding wl_seat
-	 *
-	 * The wl_seat object corresponding to the river_seat_v1. The
-	 * argument is the global name of the wl_seat advertised with
-	 * wl_registry.global.
-	 *
-	 * It is guaranteed that the corresponding wl_seat is advertised
-	 * before this event is sent.
-	 *
-	 * This event is sent exactly once. The wl_seat associated with a
-	 * river_seat_v1 cannot change. It is guaranteed that there is a
-	 * 1-to-1 mapping between wl_seat and river_seat_v1 objects.
-	 *
-	 * The global_remove event for the corresponding wl_seat may be
-	 * sent before the river_seat_v1.removed event. This is due to the
-	 * fact that river_seat_v1 state changes are synced to the river
-	 * window management manage sequence while changes to globals are
-	 * not.
-	 *
-	 * Rationale: The window manager may want to trigger window
-	 * management state changes based on normal input events received
-	 * by its shell surfaces for example.
-	 * @param name name of the wl_seat global
-	 */
-	void (*wl_seat)(void *data,
-			struct river_seat_v1 *river_seat_v1,
-			uint32_t name);
-	/**
-	 * pointer entered a window
-	 *
-	 * The seat's pointer entered the given window's area.
-	 *
-	 * The area of a window is defined to include the area defined by
-	 * the window dimensions, borders configured using
-	 * river_window_v1.set_borders, and the input regions of decoration
-	 * surfaces. In particular, it does not include input regions of
-	 * surfaces belonging to the window that extend outside the window
-	 * dimensions.
-	 *
-	 * The pointer of a seat may only enter a single window at a time.
-	 * When the pointer moves between windows, the pointer_leave event
-	 * for the old window must be sent before the pointer_enter event
-	 * for the new window.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param window window entered
-	 */
-	void (*pointer_enter)(void *data,
-			      struct river_seat_v1 *river_seat_v1,
-			      struct river_window_v1 *window);
-	/**
-	 * pointer left the entered window
-	 *
-	 * The seat's pointer left the window for which pointer_enter was
-	 * most recently sent. See pointer_enter for details.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*pointer_leave)(void *data,
-			      struct river_seat_v1 *river_seat_v1);
-	/**
-	 * a window has been interacted with
-	 *
-	 * A window has been interacted with beyond the pointer merely
-	 * passing over it. This event might be sent due to a pointer
-	 * button press or due to a touch/tablet tool interaction with the
-	 * window.
-	 *
-	 * There are no guarantees regarding how this event is sent in
-	 * relation to the pointer_enter and pointer_leave events as the
-	 * interaction may use touch or tablet tool input.
-	 *
-	 * Rationale: this event gives window managers necessary
-	 * information to determine when to send keyboard focus, raise a
-	 * window that already has keyboard focus, etc. Rather than expose
-	 * all pointer, touch, and tablet events to window managers, a
-	 * policy over mechanism approach is taken.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param window window interacted with
-	 */
-	void (*window_interaction)(void *data,
-				   struct river_seat_v1 *river_seat_v1,
-				   struct river_window_v1 *window);
-	/**
-	 * a shell surface has been interacted with
-	 *
-	 * A shell surface has been interacted with beyond the pointer
-	 * merely passing over it. This event might be sent due to a
-	 * pointer button press or due to a touch/tablet tool interaction
-	 * with the shell_surface.
-	 *
-	 * There are no guarantees regarding how this event is sent in
-	 * relation to the pointer_enter and pointer_leave events as the
-	 * interaction may use touch or tablet tool input.
-	 *
-	 * Rationale: While the shell surface does receive all wl_pointer,
-	 * wl_touch, etc. input events for the surface directly, these
-	 * events do not necessarily trigger a manage sequence and
-	 * therefore do not allow the window manager to update focus or
-	 * perform other actions in response to the input in a race-free
-	 * way.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param shell_surface shell surface interacted with
-	 */
-	void (*shell_surface_interaction)(void *data,
-					  struct river_seat_v1 *river_seat_v1,
-					  struct river_shell_surface_v1 *shell_surface);
-	/**
-	 * total cumulative motion since op start
-	 *
-	 * This event indicates the total change in position since the
-	 * start of the operation of the pointer/touch point/etc.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param dx total change in x
-	 * @param dy total change in y
-	 */
-	void (*op_delta)(void *data,
-			 struct river_seat_v1 *river_seat_v1,
-			 int32_t dx,
-			 int32_t dy);
-	/**
-	 * operation input has been released
-	 *
-	 * The input driving the current interactive operation has been
-	 * released. For a pointer op for example, all pointer buttons have
-	 * been released.
-	 *
-	 * Depending on the op type, op_delta events may continue to be
-	 * sent until the op is ended with the op_end request.
-	 *
-	 * This event is sent at most once during an interactive operation.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*op_release)(void *data,
-			   struct river_seat_v1 *river_seat_v1);
-	/**
-	 * The current position of the pointer
-	 *
-	 * The current position of the pointer in the compositor's
-	 * logical coordinate space.
-	 *
-	 * This state is special in that a change in pointer position alone
-	 * must not cause the compositor to start a manage sequence.
-	 *
-	 * Assuming the seat has a pointer, this event must be sent in
-	 * every manage sequence unless there is no change in x/y position
-	 * since the last time this event was sent.
-	 * @param x global x coordinate
-	 * @param y global y coordinate
-	 * @since 2
-	 */
-	void (*pointer_position)(void *data,
-				 struct river_seat_v1 *river_seat_v1,
-				 int32_t x,
-				 int32_t y);
+  /**
+   * the seat is removed
+   *
+   * This event indicates that seat is no longer in use and should
+   * be destroyed.
+   *
+   * The server will send no further events on this object and ignore
+   * any request (other than river_seat_v1.destroy) made after this
+   * event is sent. The client should destroy this object with the
+   * river_seat_v1.destroy request to free up resources.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*removed)(void *data, struct river_seat_v1 *river_seat_v1);
+  /**
+   * corresponding wl_seat
+   *
+   * The wl_seat object corresponding to the river_seat_v1. The
+   * argument is the global name of the wl_seat advertised with
+   * wl_registry.global.
+   *
+   * It is guaranteed that the corresponding wl_seat is advertised
+   * before this event is sent.
+   *
+   * This event is sent exactly once. The wl_seat associated with a
+   * river_seat_v1 cannot change. It is guaranteed that there is a
+   * 1-to-1 mapping between wl_seat and river_seat_v1 objects.
+   *
+   * The global_remove event for the corresponding wl_seat may be
+   * sent before the river_seat_v1.removed event. This is due to the
+   * fact that river_seat_v1 state changes are synced to the river
+   * window management manage sequence while changes to globals are
+   * not.
+   *
+   * Rationale: The window manager may want to trigger window
+   * management state changes based on normal input events received
+   * by its shell surfaces for example.
+   * @param name name of the wl_seat global
+   */
+  void (*wl_seat)(void *data, struct river_seat_v1 *river_seat_v1,
+                  uint32_t name);
+  /**
+   * pointer entered a window
+   *
+   * The seat's pointer entered the given window's area.
+   *
+   * The area of a window is defined to include the area defined by
+   * the window dimensions, borders configured using
+   * river_window_v1.set_borders, and the input regions of decoration
+   * surfaces. In particular, it does not include input regions of
+   * surfaces belonging to the window that extend outside the window
+   * dimensions.
+   *
+   * The pointer of a seat may only enter a single window at a time.
+   * When the pointer moves between windows, the pointer_leave event
+   * for the old window must be sent before the pointer_enter event
+   * for the new window.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param window window entered
+   */
+  void (*pointer_enter)(void *data, struct river_seat_v1 *river_seat_v1,
+                        struct river_window_v1 *window);
+  /**
+   * pointer left the entered window
+   *
+   * The seat's pointer left the window for which pointer_enter was
+   * most recently sent. See pointer_enter for details.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*pointer_leave)(void *data, struct river_seat_v1 *river_seat_v1);
+  /**
+   * a window has been interacted with
+   *
+   * A window has been interacted with beyond the pointer merely
+   * passing over it. This event might be sent due to a pointer
+   * button press or due to a touch/tablet tool interaction with the
+   * window.
+   *
+   * There are no guarantees regarding how this event is sent in
+   * relation to the pointer_enter and pointer_leave events as the
+   * interaction may use touch or tablet tool input.
+   *
+   * Rationale: this event gives window managers necessary
+   * information to determine when to send keyboard focus, raise a
+   * window that already has keyboard focus, etc. Rather than expose
+   * all pointer, touch, and tablet events to window managers, a
+   * policy over mechanism approach is taken.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param window window interacted with
+   */
+  void (*window_interaction)(void *data, struct river_seat_v1 *river_seat_v1,
+                             struct river_window_v1 *window);
+  /**
+   * a shell surface has been interacted with
+   *
+   * A shell surface has been interacted with beyond the pointer
+   * merely passing over it. This event might be sent due to a
+   * pointer button press or due to a touch/tablet tool interaction
+   * with the shell_surface.
+   *
+   * There are no guarantees regarding how this event is sent in
+   * relation to the pointer_enter and pointer_leave events as the
+   * interaction may use touch or tablet tool input.
+   *
+   * Rationale: While the shell surface does receive all wl_pointer,
+   * wl_touch, etc. input events for the surface directly, these
+   * events do not necessarily trigger a manage sequence and
+   * therefore do not allow the window manager to update focus or
+   * perform other actions in response to the input in a race-free
+   * way.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param shell_surface shell surface interacted with
+   */
+  void (*shell_surface_interaction)(
+      void *data, struct river_seat_v1 *river_seat_v1,
+      struct river_shell_surface_v1 *shell_surface);
+  /**
+   * total cumulative motion since op start
+   *
+   * This event indicates the total change in position since the
+   * start of the operation of the pointer/touch point/etc.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param dx total change in x
+   * @param dy total change in y
+   */
+  void (*op_delta)(void *data, struct river_seat_v1 *river_seat_v1, int32_t dx,
+                   int32_t dy);
+  /**
+   * operation input has been released
+   *
+   * The input driving the current interactive operation has been
+   * released. For a pointer op for example, all pointer buttons have
+   * been released.
+   *
+   * Depending on the op type, op_delta events may continue to be
+   * sent until the op is ended with the op_end request.
+   *
+   * This event is sent at most once during an interactive operation.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*op_release)(void *data, struct river_seat_v1 *river_seat_v1);
+  /**
+   * The current position of the pointer
+   *
+   * The current position of the pointer in the compositor's
+   * logical coordinate space.
+   *
+   * This state is special in that a change in pointer position alone
+   * must not cause the compositor to start a manage sequence.
+   *
+   * Assuming the seat has a pointer, this event must be sent in
+   * every manage sequence unless there is no change in x/y position
+   * since the last time this event was sent.
+   * @param x global x coordinate
+   * @param y global y coordinate
+   * @since 2
+   */
+  void (*pointer_position)(void *data, struct river_seat_v1 *river_seat_v1,
+                           int32_t x, int32_t y);
 };
 
 /**
@@ -2882,10 +2883,10 @@ struct river_seat_v1_listener {
  */
 static inline int
 river_seat_v1_add_listener(struct river_seat_v1 *river_seat_v1,
-			   const struct river_seat_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_seat_v1,
-				     (void (**)(void)) listener, data);
+                           const struct river_seat_v1_listener *listener,
+                           void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_seat_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_SEAT_V1_DESTROY 0
@@ -2974,22 +2975,20 @@ river_seat_v1_add_listener(struct river_seat_v1 *river_seat_v1,
 
 /** @ingroup iface_river_seat_v1 */
 static inline void
-river_seat_v1_set_user_data(struct river_seat_v1 *river_seat_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_seat_v1, user_data);
+river_seat_v1_set_user_data(struct river_seat_v1 *river_seat_v1,
+                            void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_seat_v1, user_data);
 }
 
 /** @ingroup iface_river_seat_v1 */
 static inline void *
-river_seat_v1_get_user_data(struct river_seat_v1 *river_seat_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_seat_v1);
+river_seat_v1_get_user_data(struct river_seat_v1 *river_seat_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_seat_v1);
 }
 
 static inline uint32_t
-river_seat_v1_get_version(struct river_seat_v1 *river_seat_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_seat_v1);
+river_seat_v1_get_version(struct river_seat_v1 *river_seat_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_seat_v1);
 }
 
 /**
@@ -3001,11 +3000,11 @@ river_seat_v1_get_version(struct river_seat_v1 *river_seat_v1)
  * This request should be made after the river_seat_v1.removed event is
  * received to complete destruction of the seat.
  */
-static inline void
-river_seat_v1_destroy(struct river_seat_v1 *river_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_seat_v1_destroy(struct river_seat_v1 *river_seat_v1) {
+  wl_proxy_marshal_flags((struct wl_proxy *)river_seat_v1,
+                         RIVER_SEAT_V1_DESTROY, NULL,
+                         wl_proxy_get_version((struct wl_proxy *)river_seat_v1),
+                         WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -3017,10 +3016,11 @@ river_seat_v1_destroy(struct river_seat_v1 *river_seat_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_seat_v1_focus_window(struct river_seat_v1 *river_seat_v1, struct river_window_v1 *window)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_FOCUS_WINDOW, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0, window);
+river_seat_v1_focus_window(struct river_seat_v1 *river_seat_v1,
+                           struct river_window_v1 *window) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_FOCUS_WINDOW, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0, window);
 }
 
 /**
@@ -3032,11 +3032,12 @@ river_seat_v1_focus_window(struct river_seat_v1 *river_seat_v1, struct river_win
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_seat_v1_focus_shell_surface(struct river_seat_v1 *river_seat_v1, struct river_shell_surface_v1 *shell_surface)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_FOCUS_SHELL_SURFACE, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0, shell_surface);
+static inline void river_seat_v1_focus_shell_surface(
+    struct river_seat_v1 *river_seat_v1,
+    struct river_shell_surface_v1 *shell_surface) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_FOCUS_SHELL_SURFACE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0, shell_surface);
 }
 
 /**
@@ -3048,10 +3049,10 @@ river_seat_v1_focus_shell_surface(struct river_seat_v1 *river_seat_v1, struct ri
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_seat_v1_clear_focus(struct river_seat_v1 *river_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_CLEAR_FOCUS, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0);
+river_seat_v1_clear_focus(struct river_seat_v1 *river_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_CLEAR_FOCUS, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0);
 }
 
 /**
@@ -3080,10 +3081,10 @@ river_seat_v1_clear_focus(struct river_seat_v1 *river_seat_v1)
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_seat_v1_op_start_pointer(struct river_seat_v1 *river_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_OP_START_POINTER, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0);
+river_seat_v1_op_start_pointer(struct river_seat_v1 *river_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_OP_START_POINTER, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0);
 }
 
 /**
@@ -3096,11 +3097,10 @@ river_seat_v1_op_start_pointer(struct river_seat_v1 *river_seat_v1)
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_seat_v1_op_end(struct river_seat_v1 *river_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_OP_END, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0);
+static inline void river_seat_v1_op_end(struct river_seat_v1 *river_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_OP_END, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0);
 }
 
 /**
@@ -3116,14 +3116,17 @@ river_seat_v1_op_end(struct river_seat_v1 *river_seat_v1)
  * completed and the enable request is made during a manage sequence.
  */
 static inline struct river_pointer_binding_v1 *
-river_seat_v1_get_pointer_binding(struct river_seat_v1 *river_seat_v1, uint32_t button, uint32_t modifiers)
-{
-	struct wl_proxy *id;
+river_seat_v1_get_pointer_binding(struct river_seat_v1 *river_seat_v1,
+                                  uint32_t button, uint32_t modifiers) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_GET_POINTER_BINDING, &river_pointer_binding_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0, NULL, button, modifiers);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_GET_POINTER_BINDING,
+      &river_pointer_binding_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0, NULL, button,
+      modifiers);
 
-	return (struct river_pointer_binding_v1 *) id;
+  return (struct river_pointer_binding_v1 *)id;
 }
 
 /**
@@ -3137,10 +3140,11 @@ river_seat_v1_get_pointer_binding(struct river_seat_v1 *river_seat_v1, uint32_t 
  * XCURSOR_SIZE environment variable for programs it starts.
  */
 static inline void
-river_seat_v1_set_xcursor_theme(struct river_seat_v1 *river_seat_v1, const char *name, uint32_t size)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_SET_XCURSOR_THEME, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0, name, size);
+river_seat_v1_set_xcursor_theme(struct river_seat_v1 *river_seat_v1,
+                                const char *name, uint32_t size) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_SET_XCURSOR_THEME, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0, name, size);
 }
 
 /**
@@ -3156,10 +3160,11 @@ river_seat_v1_set_xcursor_theme(struct river_seat_v1 *river_seat_v1, const char 
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_seat_v1_pointer_warp(struct river_seat_v1 *river_seat_v1, int32_t x, int32_t y)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_seat_v1,
-			 RIVER_SEAT_V1_POINTER_WARP, NULL, wl_proxy_get_version((struct wl_proxy *) river_seat_v1), 0, x, y);
+river_seat_v1_pointer_warp(struct river_seat_v1 *river_seat_v1, int32_t x,
+                           int32_t y) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_seat_v1, RIVER_SEAT_V1_POINTER_WARP, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_seat_v1), 0, x, y);
 }
 
 /**
@@ -3167,60 +3172,59 @@ river_seat_v1_pointer_warp(struct river_seat_v1 *river_seat_v1, int32_t x, int32
  * @struct river_pointer_binding_v1_listener
  */
 struct river_pointer_binding_v1_listener {
-	/**
-	 * the bound pointer button has been pressed
-	 *
-	 * This event indicates that the pointer button triggering the
-	 * binding has been pressed.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The compositor should wait for the manage sequence to complete
-	 * before processing further input events. This allows the window
-	 * manager client to, for example, modify key bindings and keyboard
-	 * focus without racing against future input events. The window
-	 * manager should of course respond as soon as possible as the
-	 * capacity of the compositor to buffer incoming input events is
-	 * finite.
-	 */
-	void (*pressed)(void *data,
-			struct river_pointer_binding_v1 *river_pointer_binding_v1);
-	/**
-	 * the bound pointer button has been released
-	 *
-	 * This event indicates that the pointer button triggering the
-	 * binding has been released.
-	 *
-	 * Releasing the modifiers for the binding without releasing the
-	 * pointer button does not trigger the release event. This event is
-	 * sent when the pointer button is released, even if the modifiers
-	 * have changed since the pressed event.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The compositor should wait for the manage sequence to complete
-	 * before processing further input events. This allows the window
-	 * manager client to, for example, modify key bindings and keyboard
-	 * focus without racing against future input events. The window
-	 * manager should of course respond as soon as possible as the
-	 * capacity of the compositor to buffer incoming input events is
-	 * finite.
-	 */
-	void (*released)(void *data,
-			 struct river_pointer_binding_v1 *river_pointer_binding_v1);
+  /**
+   * the bound pointer button has been pressed
+   *
+   * This event indicates that the pointer button triggering the
+   * binding has been pressed.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The compositor should wait for the manage sequence to complete
+   * before processing further input events. This allows the window
+   * manager client to, for example, modify key bindings and keyboard
+   * focus without racing against future input events. The window
+   * manager should of course respond as soon as possible as the
+   * capacity of the compositor to buffer incoming input events is
+   * finite.
+   */
+  void (*pressed)(void *data,
+                  struct river_pointer_binding_v1 *river_pointer_binding_v1);
+  /**
+   * the bound pointer button has been released
+   *
+   * This event indicates that the pointer button triggering the
+   * binding has been released.
+   *
+   * Releasing the modifiers for the binding without releasing the
+   * pointer button does not trigger the release event. This event is
+   * sent when the pointer button is released, even if the modifiers
+   * have changed since the pressed event.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The compositor should wait for the manage sequence to complete
+   * before processing further input events. This allows the window
+   * manager client to, for example, modify key bindings and keyboard
+   * focus without racing against future input events. The window
+   * manager should of course respond as soon as possible as the
+   * capacity of the compositor to buffer incoming input events is
+   * finite.
+   */
+  void (*released)(void *data,
+                   struct river_pointer_binding_v1 *river_pointer_binding_v1);
 };
 
 /**
  * @ingroup iface_river_pointer_binding_v1
  */
-static inline int
-river_pointer_binding_v1_add_listener(struct river_pointer_binding_v1 *river_pointer_binding_v1,
-				      const struct river_pointer_binding_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_pointer_binding_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_pointer_binding_v1_add_listener(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1,
+    const struct river_pointer_binding_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_pointer_binding_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_POINTER_BINDING_V1_DESTROY 0
@@ -3250,23 +3254,22 @@ river_pointer_binding_v1_add_listener(struct river_pointer_binding_v1 *river_poi
 #define RIVER_POINTER_BINDING_V1_DISABLE_SINCE_VERSION 1
 
 /** @ingroup iface_river_pointer_binding_v1 */
-static inline void
-river_pointer_binding_v1_set_user_data(struct river_pointer_binding_v1 *river_pointer_binding_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_pointer_binding_v1, user_data);
+static inline void river_pointer_binding_v1_set_user_data(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_pointer_binding_v1,
+                         user_data);
 }
 
 /** @ingroup iface_river_pointer_binding_v1 */
-static inline void *
-river_pointer_binding_v1_get_user_data(struct river_pointer_binding_v1 *river_pointer_binding_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_pointer_binding_v1);
+static inline void *river_pointer_binding_v1_get_user_data(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_pointer_binding_v1);
 }
 
-static inline uint32_t
-river_pointer_binding_v1_get_version(struct river_pointer_binding_v1 *river_pointer_binding_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_pointer_binding_v1);
+static inline uint32_t river_pointer_binding_v1_get_version(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_pointer_binding_v1);
 }
 
 /**
@@ -3275,11 +3278,13 @@ river_pointer_binding_v1_get_version(struct river_pointer_binding_v1 *river_poin
  * This request indicates that the client will no longer use the pointer
  * binding object and that it may be safely destroyed.
  */
-static inline void
-river_pointer_binding_v1_destroy(struct river_pointer_binding_v1 *river_pointer_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_pointer_binding_v1,
-			 RIVER_POINTER_BINDING_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_pointer_binding_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_pointer_binding_v1_destroy(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_pointer_binding_v1,
+      RIVER_POINTER_BINDING_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_pointer_binding_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -3292,11 +3297,12 @@ river_pointer_binding_v1_destroy(struct river_pointer_binding_v1 *river_pointer_
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_pointer_binding_v1_enable(struct river_pointer_binding_v1 *river_pointer_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_pointer_binding_v1,
-			 RIVER_POINTER_BINDING_V1_ENABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_pointer_binding_v1), 0);
+static inline void river_pointer_binding_v1_enable(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_pointer_binding_v1,
+      RIVER_POINTER_BINDING_V1_ENABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_pointer_binding_v1), 0);
 }
 
 /**
@@ -3308,14 +3314,15 @@ river_pointer_binding_v1_enable(struct river_pointer_binding_v1 *river_pointer_b
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_pointer_binding_v1_disable(struct river_pointer_binding_v1 *river_pointer_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_pointer_binding_v1,
-			 RIVER_POINTER_BINDING_V1_DISABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_pointer_binding_v1), 0);
+static inline void river_pointer_binding_v1_disable(
+    struct river_pointer_binding_v1 *river_pointer_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_pointer_binding_v1,
+      RIVER_POINTER_BINDING_V1_DISABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_pointer_binding_v1), 0);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

@@ -26,17 +26,17 @@
  * SOFTWARE.
  */
 
+#include "wayland_loader.h"
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include "wayland-util.h"
+#include <stdlib.h>
 
 #ifndef __has_attribute
-# define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */
+#define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
 #endif
 
 #if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__ ((visibility("hidden")))
+#define WL_PRIVATE __attribute__((visibility("hidden")))
 #else
 #define WL_PRIVATE
 #endif
@@ -53,202 +53,190 @@ extern const struct wl_interface zwp_tablet_tool_v2_interface;
 extern const struct wl_interface zwp_tablet_v2_interface;
 
 static const struct wl_interface *tablet_v2_types[] = {
-	NULL,
-	NULL,
-	NULL,
-	&zwp_tablet_seat_v2_interface,
-	&wl_seat_interface,
-	&zwp_tablet_v2_interface,
-	&zwp_tablet_tool_v2_interface,
-	&zwp_tablet_pad_v2_interface,
-	NULL,
-	&wl_surface_interface,
-	NULL,
-	NULL,
-	NULL,
-	&zwp_tablet_v2_interface,
-	&wl_surface_interface,
-	&zwp_tablet_pad_ring_v2_interface,
-	&zwp_tablet_pad_strip_v2_interface,
-	&zwp_tablet_pad_dial_v2_interface,
-	&zwp_tablet_pad_group_v2_interface,
-	NULL,
-	&zwp_tablet_v2_interface,
-	&wl_surface_interface,
-	NULL,
-	&wl_surface_interface,
+    NULL,
+    NULL,
+    NULL,
+    &zwp_tablet_seat_v2_interface,
+    &wl_seat_interface,
+    &zwp_tablet_v2_interface,
+    &zwp_tablet_tool_v2_interface,
+    &zwp_tablet_pad_v2_interface,
+    NULL,
+    &wl_surface_interface,
+    NULL,
+    NULL,
+    NULL,
+    &zwp_tablet_v2_interface,
+    &wl_surface_interface,
+    &zwp_tablet_pad_ring_v2_interface,
+    &zwp_tablet_pad_strip_v2_interface,
+    &zwp_tablet_pad_dial_v2_interface,
+    &zwp_tablet_pad_group_v2_interface,
+    NULL,
+    &zwp_tablet_v2_interface,
+    &wl_surface_interface,
+    NULL,
+    &wl_surface_interface,
 };
 
 static const struct wl_message zwp_tablet_manager_v2_requests[] = {
-	{ "get_tablet_seat", "no", tablet_v2_types + 3 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"get_tablet_seat", "no", tablet_v2_types + 3},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_manager_v2_interface = {
-	"zwp_tablet_manager_v2", 2,
-	2, zwp_tablet_manager_v2_requests,
-	0, NULL,
+    "zwp_tablet_manager_v2", 2, 2, zwp_tablet_manager_v2_requests, 0, NULL,
 };
 
 static const struct wl_message zwp_tablet_seat_v2_requests[] = {
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_seat_v2_events[] = {
-	{ "tablet_added", "n", tablet_v2_types + 5 },
-	{ "tool_added", "n", tablet_v2_types + 6 },
-	{ "pad_added", "n", tablet_v2_types + 7 },
+    {"tablet_added", "n", tablet_v2_types + 5},
+    {"tool_added", "n", tablet_v2_types + 6},
+    {"pad_added", "n", tablet_v2_types + 7},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_seat_v2_interface = {
-	"zwp_tablet_seat_v2", 2,
-	1, zwp_tablet_seat_v2_requests,
-	3, zwp_tablet_seat_v2_events,
+    "zwp_tablet_seat_v2",        2, 1,
+    zwp_tablet_seat_v2_requests, 3, zwp_tablet_seat_v2_events,
 };
 
 static const struct wl_message zwp_tablet_tool_v2_requests[] = {
-	{ "set_cursor", "u?oii", tablet_v2_types + 8 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"set_cursor", "u?oii", tablet_v2_types + 8},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_tool_v2_events[] = {
-	{ "type", "u", tablet_v2_types + 0 },
-	{ "hardware_serial", "uu", tablet_v2_types + 0 },
-	{ "hardware_id_wacom", "uu", tablet_v2_types + 0 },
-	{ "capability", "u", tablet_v2_types + 0 },
-	{ "done", "", tablet_v2_types + 0 },
-	{ "removed", "", tablet_v2_types + 0 },
-	{ "proximity_in", "uoo", tablet_v2_types + 12 },
-	{ "proximity_out", "", tablet_v2_types + 0 },
-	{ "down", "u", tablet_v2_types + 0 },
-	{ "up", "", tablet_v2_types + 0 },
-	{ "motion", "ff", tablet_v2_types + 0 },
-	{ "pressure", "u", tablet_v2_types + 0 },
-	{ "distance", "u", tablet_v2_types + 0 },
-	{ "tilt", "ff", tablet_v2_types + 0 },
-	{ "rotation", "f", tablet_v2_types + 0 },
-	{ "slider", "i", tablet_v2_types + 0 },
-	{ "wheel", "fi", tablet_v2_types + 0 },
-	{ "button", "uuu", tablet_v2_types + 0 },
-	{ "frame", "u", tablet_v2_types + 0 },
+    {"type", "u", tablet_v2_types + 0},
+    {"hardware_serial", "uu", tablet_v2_types + 0},
+    {"hardware_id_wacom", "uu", tablet_v2_types + 0},
+    {"capability", "u", tablet_v2_types + 0},
+    {"done", "", tablet_v2_types + 0},
+    {"removed", "", tablet_v2_types + 0},
+    {"proximity_in", "uoo", tablet_v2_types + 12},
+    {"proximity_out", "", tablet_v2_types + 0},
+    {"down", "u", tablet_v2_types + 0},
+    {"up", "", tablet_v2_types + 0},
+    {"motion", "ff", tablet_v2_types + 0},
+    {"pressure", "u", tablet_v2_types + 0},
+    {"distance", "u", tablet_v2_types + 0},
+    {"tilt", "ff", tablet_v2_types + 0},
+    {"rotation", "f", tablet_v2_types + 0},
+    {"slider", "i", tablet_v2_types + 0},
+    {"wheel", "fi", tablet_v2_types + 0},
+    {"button", "uuu", tablet_v2_types + 0},
+    {"frame", "u", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_tool_v2_interface = {
-	"zwp_tablet_tool_v2", 2,
-	2, zwp_tablet_tool_v2_requests,
-	19, zwp_tablet_tool_v2_events,
+    "zwp_tablet_tool_v2",        2,  2,
+    zwp_tablet_tool_v2_requests, 19, zwp_tablet_tool_v2_events,
 };
 
 static const struct wl_message zwp_tablet_v2_requests[] = {
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_v2_events[] = {
-	{ "name", "s", tablet_v2_types + 0 },
-	{ "id", "uu", tablet_v2_types + 0 },
-	{ "path", "s", tablet_v2_types + 0 },
-	{ "done", "", tablet_v2_types + 0 },
-	{ "removed", "", tablet_v2_types + 0 },
-	{ "bustype", "2u", tablet_v2_types + 0 },
+    {"name", "s", tablet_v2_types + 0},
+    {"id", "uu", tablet_v2_types + 0},
+    {"path", "s", tablet_v2_types + 0},
+    {"done", "", tablet_v2_types + 0},
+    {"removed", "", tablet_v2_types + 0},
+    {"bustype", "2u", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_v2_interface = {
-	"zwp_tablet_v2", 2,
-	1, zwp_tablet_v2_requests,
-	6, zwp_tablet_v2_events,
+    "zwp_tablet_v2", 2, 1, zwp_tablet_v2_requests, 6, zwp_tablet_v2_events,
 };
 
 static const struct wl_message zwp_tablet_pad_ring_v2_requests[] = {
-	{ "set_feedback", "su", tablet_v2_types + 0 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"set_feedback", "su", tablet_v2_types + 0},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_pad_ring_v2_events[] = {
-	{ "source", "u", tablet_v2_types + 0 },
-	{ "angle", "f", tablet_v2_types + 0 },
-	{ "stop", "", tablet_v2_types + 0 },
-	{ "frame", "u", tablet_v2_types + 0 },
+    {"source", "u", tablet_v2_types + 0},
+    {"angle", "f", tablet_v2_types + 0},
+    {"stop", "", tablet_v2_types + 0},
+    {"frame", "u", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_pad_ring_v2_interface = {
-	"zwp_tablet_pad_ring_v2", 2,
-	2, zwp_tablet_pad_ring_v2_requests,
-	4, zwp_tablet_pad_ring_v2_events,
+    "zwp_tablet_pad_ring_v2",        2, 2,
+    zwp_tablet_pad_ring_v2_requests, 4, zwp_tablet_pad_ring_v2_events,
 };
 
 static const struct wl_message zwp_tablet_pad_strip_v2_requests[] = {
-	{ "set_feedback", "su", tablet_v2_types + 0 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"set_feedback", "su", tablet_v2_types + 0},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_pad_strip_v2_events[] = {
-	{ "source", "u", tablet_v2_types + 0 },
-	{ "position", "u", tablet_v2_types + 0 },
-	{ "stop", "", tablet_v2_types + 0 },
-	{ "frame", "u", tablet_v2_types + 0 },
+    {"source", "u", tablet_v2_types + 0},
+    {"position", "u", tablet_v2_types + 0},
+    {"stop", "", tablet_v2_types + 0},
+    {"frame", "u", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_pad_strip_v2_interface = {
-	"zwp_tablet_pad_strip_v2", 2,
-	2, zwp_tablet_pad_strip_v2_requests,
-	4, zwp_tablet_pad_strip_v2_events,
+    "zwp_tablet_pad_strip_v2",        2, 2,
+    zwp_tablet_pad_strip_v2_requests, 4, zwp_tablet_pad_strip_v2_events,
 };
 
 static const struct wl_message zwp_tablet_pad_group_v2_requests[] = {
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_pad_group_v2_events[] = {
-	{ "buttons", "a", tablet_v2_types + 0 },
-	{ "ring", "n", tablet_v2_types + 15 },
-	{ "strip", "n", tablet_v2_types + 16 },
-	{ "modes", "u", tablet_v2_types + 0 },
-	{ "done", "", tablet_v2_types + 0 },
-	{ "mode_switch", "uuu", tablet_v2_types + 0 },
-	{ "dial", "2n", tablet_v2_types + 17 },
+    {"buttons", "a", tablet_v2_types + 0},
+    {"ring", "n", tablet_v2_types + 15},
+    {"strip", "n", tablet_v2_types + 16},
+    {"modes", "u", tablet_v2_types + 0},
+    {"done", "", tablet_v2_types + 0},
+    {"mode_switch", "uuu", tablet_v2_types + 0},
+    {"dial", "2n", tablet_v2_types + 17},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_pad_group_v2_interface = {
-	"zwp_tablet_pad_group_v2", 2,
-	1, zwp_tablet_pad_group_v2_requests,
-	7, zwp_tablet_pad_group_v2_events,
+    "zwp_tablet_pad_group_v2",        2, 1,
+    zwp_tablet_pad_group_v2_requests, 7, zwp_tablet_pad_group_v2_events,
 };
 
 static const struct wl_message zwp_tablet_pad_v2_requests[] = {
-	{ "set_feedback", "usu", tablet_v2_types + 0 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"set_feedback", "usu", tablet_v2_types + 0},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_pad_v2_events[] = {
-	{ "group", "n", tablet_v2_types + 18 },
-	{ "path", "s", tablet_v2_types + 0 },
-	{ "buttons", "u", tablet_v2_types + 0 },
-	{ "done", "", tablet_v2_types + 0 },
-	{ "button", "uuu", tablet_v2_types + 0 },
-	{ "enter", "uoo", tablet_v2_types + 19 },
-	{ "leave", "uo", tablet_v2_types + 22 },
-	{ "removed", "", tablet_v2_types + 0 },
+    {"group", "n", tablet_v2_types + 18},
+    {"path", "s", tablet_v2_types + 0},
+    {"buttons", "u", tablet_v2_types + 0},
+    {"done", "", tablet_v2_types + 0},
+    {"button", "uuu", tablet_v2_types + 0},
+    {"enter", "uoo", tablet_v2_types + 19},
+    {"leave", "uo", tablet_v2_types + 22},
+    {"removed", "", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_pad_v2_interface = {
-	"zwp_tablet_pad_v2", 2,
-	2, zwp_tablet_pad_v2_requests,
-	8, zwp_tablet_pad_v2_events,
+    "zwp_tablet_pad_v2",        2, 2,
+    zwp_tablet_pad_v2_requests, 8, zwp_tablet_pad_v2_events,
 };
 
 static const struct wl_message zwp_tablet_pad_dial_v2_requests[] = {
-	{ "set_feedback", "su", tablet_v2_types + 0 },
-	{ "destroy", "", tablet_v2_types + 0 },
+    {"set_feedback", "su", tablet_v2_types + 0},
+    {"destroy", "", tablet_v2_types + 0},
 };
 
 static const struct wl_message zwp_tablet_pad_dial_v2_events[] = {
-	{ "delta", "i", tablet_v2_types + 0 },
-	{ "frame", "u", tablet_v2_types + 0 },
+    {"delta", "i", tablet_v2_types + 0},
+    {"frame", "u", tablet_v2_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface zwp_tablet_pad_dial_v2_interface = {
-	"zwp_tablet_pad_dial_v2", 2,
-	2, zwp_tablet_pad_dial_v2_requests,
-	2, zwp_tablet_pad_dial_v2_events,
+    "zwp_tablet_pad_dial_v2",        2, 2,
+    zwp_tablet_pad_dial_v2_requests, 2, zwp_tablet_pad_dial_v2_events,
 };
-

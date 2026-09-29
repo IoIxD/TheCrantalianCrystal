@@ -3,11 +3,11 @@
 #ifndef CURSOR_SHAPE_V1_CLIENT_PROTOCOL_H
 #define CURSOR_SHAPE_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -63,7 +63,8 @@ struct zwp_tablet_tool_v2;
  * See @ref iface_wp_cursor_shape_manager_v1.
  */
 /**
- * @defgroup iface_wp_cursor_shape_manager_v1 The wp_cursor_shape_manager_v1 interface
+ * @defgroup iface_wp_cursor_shape_manager_v1 The wp_cursor_shape_manager_v1
+ * interface
  *
  * This global offers an alternative, optional way to set cursor images. This
  * new way uses enumerated cursors instead of a wl_surface like
@@ -87,7 +88,8 @@ extern const struct wl_interface wp_cursor_shape_manager_v1_interface;
  * See @ref iface_wp_cursor_shape_device_v1.
  */
 /**
- * @defgroup iface_wp_cursor_shape_device_v1 The wp_cursor_shape_device_v1 interface
+ * @defgroup iface_wp_cursor_shape_device_v1 The wp_cursor_shape_device_v1
+ * interface
  *
  * This interface allows clients to set the cursor shape.
  */
@@ -97,7 +99,6 @@ extern const struct wl_interface wp_cursor_shape_device_v1_interface;
 #define WP_CURSOR_SHAPE_MANAGER_V1_DESTROY 0
 #define WP_CURSOR_SHAPE_MANAGER_V1_GET_POINTER 1
 #define WP_CURSOR_SHAPE_MANAGER_V1_GET_TABLET_TOOL_V2 2
-
 
 /**
  * @ingroup iface_wp_cursor_shape_manager_v1
@@ -113,23 +114,22 @@ extern const struct wl_interface wp_cursor_shape_device_v1_interface;
 #define WP_CURSOR_SHAPE_MANAGER_V1_GET_TABLET_TOOL_V2_SINCE_VERSION 1
 
 /** @ingroup iface_wp_cursor_shape_manager_v1 */
-static inline void
-wp_cursor_shape_manager_v1_set_user_data(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) wp_cursor_shape_manager_v1, user_data);
+static inline void wp_cursor_shape_manager_v1_set_user_data(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)wp_cursor_shape_manager_v1,
+                         user_data);
 }
 
 /** @ingroup iface_wp_cursor_shape_manager_v1 */
-static inline void *
-wp_cursor_shape_manager_v1_get_user_data(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) wp_cursor_shape_manager_v1);
+static inline void *wp_cursor_shape_manager_v1_get_user_data(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)wp_cursor_shape_manager_v1);
 }
 
-static inline uint32_t
-wp_cursor_shape_manager_v1_get_version(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_manager_v1);
+static inline uint32_t wp_cursor_shape_manager_v1_get_version(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_manager_v1);
 }
 
 /**
@@ -137,11 +137,13 @@ wp_cursor_shape_manager_v1_get_version(struct wp_cursor_shape_manager_v1 *wp_cur
  *
  * Destroy the cursor shape manager.
  */
-static inline void
-wp_cursor_shape_manager_v1_destroy(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) wp_cursor_shape_manager_v1,
-			 WP_CURSOR_SHAPE_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_manager_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void wp_cursor_shape_manager_v1_destroy(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)wp_cursor_shape_manager_v1,
+      WP_CURSOR_SHAPE_MANAGER_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_manager_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -153,14 +155,19 @@ wp_cursor_shape_manager_v1_destroy(struct wp_cursor_shape_manager_v1 *wp_cursor_
  * wp_cursor_shape_device_v1 object becomes inert.
  */
 static inline struct wp_cursor_shape_device_v1 *
-wp_cursor_shape_manager_v1_get_pointer(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1, struct wl_pointer *pointer)
-{
-	struct wl_proxy *cursor_shape_device;
+wp_cursor_shape_manager_v1_get_pointer(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1,
+    struct wl_pointer *pointer) {
+  struct wl_proxy *cursor_shape_device;
 
-	cursor_shape_device = wl_proxy_marshal_flags((struct wl_proxy *) wp_cursor_shape_manager_v1,
-			 WP_CURSOR_SHAPE_MANAGER_V1_GET_POINTER, &wp_cursor_shape_device_v1_interface, wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_manager_v1), 0, NULL, pointer);
+  cursor_shape_device = wl_proxy_marshal_flags(
+      (struct wl_proxy *)wp_cursor_shape_manager_v1,
+      WP_CURSOR_SHAPE_MANAGER_V1_GET_POINTER,
+      &wp_cursor_shape_device_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_manager_v1), 0,
+      NULL, pointer);
 
-	return (struct wp_cursor_shape_device_v1 *) cursor_shape_device;
+  return (struct wp_cursor_shape_device_v1 *)cursor_shape_device;
 }
 
 /**
@@ -172,14 +179,19 @@ wp_cursor_shape_manager_v1_get_pointer(struct wp_cursor_shape_manager_v1 *wp_cur
  * object becomes inert.
  */
 static inline struct wp_cursor_shape_device_v1 *
-wp_cursor_shape_manager_v1_get_tablet_tool_v2(struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1, struct zwp_tablet_tool_v2 *tablet_tool)
-{
-	struct wl_proxy *cursor_shape_device;
+wp_cursor_shape_manager_v1_get_tablet_tool_v2(
+    struct wp_cursor_shape_manager_v1 *wp_cursor_shape_manager_v1,
+    struct zwp_tablet_tool_v2 *tablet_tool) {
+  struct wl_proxy *cursor_shape_device;
 
-	cursor_shape_device = wl_proxy_marshal_flags((struct wl_proxy *) wp_cursor_shape_manager_v1,
-			 WP_CURSOR_SHAPE_MANAGER_V1_GET_TABLET_TOOL_V2, &wp_cursor_shape_device_v1_interface, wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_manager_v1), 0, NULL, tablet_tool);
+  cursor_shape_device = wl_proxy_marshal_flags(
+      (struct wl_proxy *)wp_cursor_shape_manager_v1,
+      WP_CURSOR_SHAPE_MANAGER_V1_GET_TABLET_TOOL_V2,
+      &wp_cursor_shape_device_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_manager_v1), 0,
+      NULL, tablet_tool);
 
-	return (struct wp_cursor_shape_device_v1 *) cursor_shape_device;
+  return (struct wp_cursor_shape_device_v1 *)cursor_shape_device;
 }
 
 #ifndef WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ENUM
@@ -202,152 +214,155 @@ wp_cursor_shape_manager_v1_get_tablet_tool_v2(struct wp_cursor_shape_manager_v1 
  * should use visually compatible images and metaphors.
  */
 enum wp_cursor_shape_device_v1_shape {
-	/**
-	 * default cursor
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT = 1,
-	/**
-	 * a context menu is available for the object under the cursor
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CONTEXT_MENU = 2,
-	/**
-	 * help is available for the object under the cursor
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_HELP = 3,
-	/**
-	 * pointer that indicates a link or another interactive element
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER = 4,
-	/**
-	 * progress indicator
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_PROGRESS = 5,
-	/**
-	 * program is busy, user should wait
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_WAIT = 6,
-	/**
-	 * a cell or set of cells may be selected
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CELL = 7,
-	/**
-	 * simple crosshair
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR = 8,
-	/**
-	 * text may be selected
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT = 9,
-	/**
-	 * vertical text may be selected
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_VERTICAL_TEXT = 10,
-	/**
-	 * drag-and-drop: alias of/shortcut to something is to be created
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALIAS = 11,
-	/**
-	 * drag-and-drop: something is to be copied
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COPY = 12,
-	/**
-	 * drag-and-drop: something is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE = 13,
-	/**
-	 * drag-and-drop: the dragged item cannot be dropped at the current cursor location
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NO_DROP = 14,
-	/**
-	 * drag-and-drop: the requested action will not be carried out
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED = 15,
-	/**
-	 * drag-and-drop: something can be grabbed
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRAB = 16,
-	/**
-	 * drag-and-drop: something is being grabbed
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRABBING = 17,
-	/**
-	 * resizing: the east border is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE = 18,
-	/**
-	 * resizing: the north border is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_N_RESIZE = 19,
-	/**
-	 * resizing: the north-east corner is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NE_RESIZE = 20,
-	/**
-	 * resizing: the north-west corner is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NW_RESIZE = 21,
-	/**
-	 * resizing: the south border is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE = 22,
-	/**
-	 * resizing: the south-east corner is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE = 23,
-	/**
-	 * resizing: the south-west corner is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SW_RESIZE = 24,
-	/**
-	 * resizing: the west border is to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_W_RESIZE = 25,
-	/**
-	 * resizing: the east and west borders are to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE = 26,
-	/**
-	 * resizing: the north and south borders are to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE = 27,
-	/**
-	 * resizing: the north-east and south-west corners are to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE = 28,
-	/**
-	 * resizing: the north-west and south-east corners are to be moved
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE = 29,
-	/**
-	 * resizing: that the item/column can be resized horizontally
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COL_RESIZE = 30,
-	/**
-	 * resizing: that the item/row can be resized vertically
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ROW_RESIZE = 31,
-	/**
-	 * something can be scrolled in any direction
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_SCROLL = 32,
-	/**
-	 * something can be zoomed in
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_IN = 33,
-	/**
-	 * something can be zoomed out
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_OUT = 34,
-	/**
-	 * drag-and-drop: the user will select which action will be carried out (non-css value)
-	 * @since 2
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DND_ASK = 35,
-	/**
-	 * resizing: something can be moved or resized in any direction (non-css value)
-	 * @since 2
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_RESIZE = 36,
+  /**
+   * default cursor
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT = 1,
+  /**
+   * a context menu is available for the object under the cursor
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CONTEXT_MENU = 2,
+  /**
+   * help is available for the object under the cursor
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_HELP = 3,
+  /**
+   * pointer that indicates a link or another interactive element
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER = 4,
+  /**
+   * progress indicator
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_PROGRESS = 5,
+  /**
+   * program is busy, user should wait
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_WAIT = 6,
+  /**
+   * a cell or set of cells may be selected
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CELL = 7,
+  /**
+   * simple crosshair
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR = 8,
+  /**
+   * text may be selected
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT = 9,
+  /**
+   * vertical text may be selected
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_VERTICAL_TEXT = 10,
+  /**
+   * drag-and-drop: alias of/shortcut to something is to be created
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALIAS = 11,
+  /**
+   * drag-and-drop: something is to be copied
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COPY = 12,
+  /**
+   * drag-and-drop: something is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE = 13,
+  /**
+   * drag-and-drop: the dragged item cannot be dropped at the current cursor
+   * location
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NO_DROP = 14,
+  /**
+   * drag-and-drop: the requested action will not be carried out
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED = 15,
+  /**
+   * drag-and-drop: something can be grabbed
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRAB = 16,
+  /**
+   * drag-and-drop: something is being grabbed
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRABBING = 17,
+  /**
+   * resizing: the east border is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE = 18,
+  /**
+   * resizing: the north border is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_N_RESIZE = 19,
+  /**
+   * resizing: the north-east corner is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NE_RESIZE = 20,
+  /**
+   * resizing: the north-west corner is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NW_RESIZE = 21,
+  /**
+   * resizing: the south border is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE = 22,
+  /**
+   * resizing: the south-east corner is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE = 23,
+  /**
+   * resizing: the south-west corner is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SW_RESIZE = 24,
+  /**
+   * resizing: the west border is to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_W_RESIZE = 25,
+  /**
+   * resizing: the east and west borders are to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE = 26,
+  /**
+   * resizing: the north and south borders are to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE = 27,
+  /**
+   * resizing: the north-east and south-west corners are to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE = 28,
+  /**
+   * resizing: the north-west and south-east corners are to be moved
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE = 29,
+  /**
+   * resizing: that the item/column can be resized horizontally
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COL_RESIZE = 30,
+  /**
+   * resizing: that the item/row can be resized vertically
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ROW_RESIZE = 31,
+  /**
+   * something can be scrolled in any direction
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_SCROLL = 32,
+  /**
+   * something can be zoomed in
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_IN = 33,
+  /**
+   * something can be zoomed out
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ZOOM_OUT = 34,
+  /**
+   * drag-and-drop: the user will select which action will be carried out
+   * (non-css value)
+   * @since 2
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DND_ASK = 35,
+  /**
+   * resizing: something can be moved or resized in any direction (non-css
+   * value)
+   * @since 2
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_RESIZE = 36,
 };
 /**
  * @ingroup iface_wp_cursor_shape_device_v1
@@ -362,16 +377,15 @@ enum wp_cursor_shape_device_v1_shape {
 #ifndef WP_CURSOR_SHAPE_DEVICE_V1_ERROR_ENUM
 #define WP_CURSOR_SHAPE_DEVICE_V1_ERROR_ENUM
 enum wp_cursor_shape_device_v1_error {
-	/**
-	 * the specified shape value is invalid
-	 */
-	WP_CURSOR_SHAPE_DEVICE_V1_ERROR_INVALID_SHAPE = 1,
+  /**
+   * the specified shape value is invalid
+   */
+  WP_CURSOR_SHAPE_DEVICE_V1_ERROR_INVALID_SHAPE = 1,
 };
 #endif /* WP_CURSOR_SHAPE_DEVICE_V1_ERROR_ENUM */
 
 #define WP_CURSOR_SHAPE_DEVICE_V1_DESTROY 0
 #define WP_CURSOR_SHAPE_DEVICE_V1_SET_SHAPE 1
-
 
 /**
  * @ingroup iface_wp_cursor_shape_device_v1
@@ -383,23 +397,22 @@ enum wp_cursor_shape_device_v1_error {
 #define WP_CURSOR_SHAPE_DEVICE_V1_SET_SHAPE_SINCE_VERSION 1
 
 /** @ingroup iface_wp_cursor_shape_device_v1 */
-static inline void
-wp_cursor_shape_device_v1_set_user_data(struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) wp_cursor_shape_device_v1, user_data);
+static inline void wp_cursor_shape_device_v1_set_user_data(
+    struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)wp_cursor_shape_device_v1,
+                         user_data);
 }
 
 /** @ingroup iface_wp_cursor_shape_device_v1 */
-static inline void *
-wp_cursor_shape_device_v1_get_user_data(struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) wp_cursor_shape_device_v1);
+static inline void *wp_cursor_shape_device_v1_get_user_data(
+    struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)wp_cursor_shape_device_v1);
 }
 
-static inline uint32_t
-wp_cursor_shape_device_v1_get_version(struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_device_v1);
+static inline uint32_t wp_cursor_shape_device_v1_get_version(
+    struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_device_v1);
 }
 
 /**
@@ -409,11 +422,13 @@ wp_cursor_shape_device_v1_get_version(struct wp_cursor_shape_device_v1 *wp_curso
  *
  * The device cursor shape remains unchanged.
  */
-static inline void
-wp_cursor_shape_device_v1_destroy(struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) wp_cursor_shape_device_v1,
-			 WP_CURSOR_SHAPE_DEVICE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_device_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void wp_cursor_shape_device_v1_destroy(
+    struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)wp_cursor_shape_device_v1,
+      WP_CURSOR_SHAPE_DEVICE_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_device_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -438,14 +453,17 @@ wp_cursor_shape_device_v1_destroy(struct wp_cursor_shape_device_v1 *wp_cursor_sh
  * zwp_tablet_tool_v2.proximity_in serial number sent to the client.
  * Otherwise the request will be ignored.
  */
-static inline void
-wp_cursor_shape_device_v1_set_shape(struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1, uint32_t serial, uint32_t shape)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) wp_cursor_shape_device_v1,
-			 WP_CURSOR_SHAPE_DEVICE_V1_SET_SHAPE, NULL, wl_proxy_get_version((struct wl_proxy *) wp_cursor_shape_device_v1), 0, serial, shape);
+static inline void wp_cursor_shape_device_v1_set_shape(
+    struct wp_cursor_shape_device_v1 *wp_cursor_shape_device_v1,
+    uint32_t serial, uint32_t shape) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)wp_cursor_shape_device_v1,
+      WP_CURSOR_SHAPE_DEVICE_V1_SET_SHAPE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)wp_cursor_shape_device_v1), 0,
+      serial, shape);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

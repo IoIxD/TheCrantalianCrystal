@@ -1,8 +1,8 @@
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #pragma once
 
 #include "../systray_protocol.hpp"
-#include "../lib/dbus_loader.hpp"
+#include "dbus_loader.hpp"
 
 #include <functional>
 #include <map>
@@ -46,7 +46,6 @@ public:
   Mode mode() const { return mMode; }
 
 private:
-  DBusLib *mLib = nullptr;
   DBusConnection *mConn = nullptr;
   Mode mMode = Mode::Disconnected;
   std::string mUniqueName;

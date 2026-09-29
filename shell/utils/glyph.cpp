@@ -12,39 +12,37 @@ FT_Face GlyphManager::FTFaceNormal = nullptr;
 FT_Face GlyphManager::FTFaceBold = nullptr;
 
 void GlyphManager::Init() {
-  auto ft = FreetypeLib::get();
   int error = 0;
-  if ((error = ft->FT_Init_FreeType(&FTLibrary)) != 0) {
+  if ((error = FT_Init_FreeType(&FTLibrary)) != 0) {
     printf("FT_Init_FreeType failed: %d\n", error);
     raise(SIGTRAP);
   };
-  if ((error = ft->FT_New_Memory_Face(FTLibrary, OpenSans_Regular.data(),
-                                      OpenSans_Regular.size(), 0,
-                                      &FTFaceNormal)) != 0) {
+  if ((error = FT_New_Memory_Face(FTLibrary, OpenSans_Regular.data(),
+                                  OpenSans_Regular.size(), 0, &FTFaceNormal)) !=
+      0) {
     printf("FT_New_Memory_Face failed: %d\n", error);
     raise(SIGTRAP);
   };
-  if ((error = ft->FT_New_Memory_Face(FTLibrary, OpenSans_Semibold.data(),
-                                      OpenSans_Semibold.size(), 0,
-                                      &FTFaceBold)) != 0) {
+  if ((error = FT_New_Memory_Face(FTLibrary, OpenSans_Semibold.data(),
+                                  OpenSans_Semibold.size(), 0, &FTFaceBold)) !=
+      0) {
     printf("FT_New_Memory_Face failed: %d\n", error);
     raise(SIGTRAP);
   };
-  if ((error = ft->FT_Set_Pixel_Sizes(FTFaceNormal, 0, 13)) != 0) {
+  if ((error = FT_Set_Pixel_Sizes(FTFaceNormal, 0, 13)) != 0) {
     printf("FT_Set_Pixel_Sizes failed: %d\n", error);
     raise(SIGTRAP);
   };
-  if ((error = ft->FT_Set_Pixel_Sizes(FTFaceBold, 0, 13)) != 0) {
+  if ((error = FT_Set_Pixel_Sizes(FTFaceBold, 0, 13)) != 0) {
     printf("FT_Set_Pixel_Sizes failed: %d\n", error);
     raise(SIGTRAP);
   };
 }
 
 void GlyphManager::Deinit() {
-  auto ft = FreetypeLib::get();
-  assert(ft->FT_Done_Face(FTFaceNormal) == 0);
-  assert(ft->FT_Done_Face(FTFaceBold) == 0);
-  assert(ft->FT_Done_FreeType(FTLibrary) == 0);
+  assert(FT_Done_Face(FTFaceNormal) == 0);
+  assert(FT_Done_Face(FTFaceBold) == 0);
+  assert(FT_Done_FreeType(FTLibrary) == 0);
 }
 
 void GlyphManager::Glyph::destroy() {
@@ -54,7 +52,6 @@ void GlyphManager::Glyph::destroy() {
 // Loads and caches a glyph's texture the first time it's needed
 std::shared_ptr<GlyphManager::Glyph>
 GlyphManager::get_glyph(uint32_t c, bool bold, bool black) {
-  auto ft = FreetypeLib::get();
   FT_Face f = bold ? FTFaceBold : FTFaceNormal;
   auto &cache = bold ? (black ? mGlyphCacheBoldBlack : mGlyphCacheBoldWhite)
                      : (black ? mGlyphCacheBlack : mGlyphCacheWhite);
@@ -72,7 +69,7 @@ GlyphManager::get_glyph(uint32_t c, bool bold, bool black) {
 
   auto g = std::make_shared<Glyph>();
 
-  if (ft->FT_Load_Char(f, c, FT_LOAD_RENDER)) {
+  if (FT_Load_Char(f, c, FT_LOAD_RENDER)) {
     fprintf(stderr, "Failed to load glyph '%c'\n", c);
     return NULL;
   }
@@ -109,13 +106,12 @@ GlyphManager::get_glyph(uint32_t c, bool bold, bool black) {
 void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
                              int32_t width, int32_t height, bool bold,
                              bool black) {
-  auto gl = GLLib::get();
-  gl->glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT);
+  glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT);
 
-  gl->glEnable(GL_TEXTURE_2D);
-  gl->glEnable(GL_BLEND);
-  gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  gl->glDisable(GL_DEPTH_TEST);
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_DEPTH_TEST);
 
   float penX = x;
 
@@ -135,26 +131,25 @@ void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
       // bottom of glyph
       float y1 = 1.0f - ((float)(py0 + g->height) / height) * 2.0f;
 
-      gl->glBindTexture(GL_TEXTURE_2D, g->texture);
-      gl->glBegin(GL_QUADS);
-      gl->glTexCoord2f(0.0f, 0.0f);
-      gl->glVertex2f(x0, y0);
-      gl->glTexCoord2f(1.0f, 0.0f);
-      gl->glVertex2f(x1, y0);
-      gl->glTexCoord2f(1.0f, 1.0f);
-      gl->glVertex2f(x1, y1);
-      gl->glTexCoord2f(0.0f, 1.0f);
-      gl->glVertex2f(x0, y1);
-      gl->glEnd();
+      glBindTexture(GL_TEXTURE_2D, g->texture);
+      glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 0.0f);
+      glVertex2f(x0, y0);
+      glTexCoord2f(1.0f, 0.0f);
+      glVertex2f(x1, y0);
+      glTexCoord2f(1.0f, 1.0f);
+      glVertex2f(x1, y1);
+      glTexCoord2f(0.0f, 1.0f);
+      glVertex2f(x0, y1);
+      glEnd();
     }
 
     penX += g->advance;
   }
 
-  gl->glPopAttrib();
+  glPopAttrib();
 }
 void GlyphManager::set_text_size(size_t size) {
-  auto ft = FreetypeLib::get();
-  assert(ft->FT_Set_Pixel_Sizes(FTFaceNormal, 0, size) == 0);
-  assert(ft->FT_Set_Pixel_Sizes(FTFaceBold, 0, size) == 0);
+  assert(FT_Set_Pixel_Sizes(FTFaceNormal, 0, size) == 0);
+  assert(FT_Set_Pixel_Sizes(FTFaceBold, 0, size) == 0);
 };

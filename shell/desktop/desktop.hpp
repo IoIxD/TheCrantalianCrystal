@@ -3,12 +3,13 @@
 #include "../client/client.hpp"
 #include "../utils/glyph.hpp"
 
+#include "egl_loader.hpp"
+#include "gl_loader.hpp"
+#include "wayland_loader.h"
+
+#include "../protocol/wayland-client-protocol.h"
 #include "../protocol/wlr-layer-shell-unstable-v1-protocol.h"
 #include <functional>
-#include <memory>
-
-#include "../lib/egl_loader.hpp"
-#include "../lib/gl_loader.hpp"
 
 #define ICON_SIZE 64
 #define ICON_MARGIN ICON_SIZE + 32

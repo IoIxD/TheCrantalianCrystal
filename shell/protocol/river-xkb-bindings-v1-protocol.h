@@ -3,11 +3,11 @@
 #ifndef RIVER_XKB_BINDINGS_V1_CLIENT_PROTOCOL_H
 #define RIVER_XKB_BINDINGS_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -26,8 +26,10 @@ extern "C" {
  * document are to be interpreted as described in IETF RFC 2119.
  *
  * @section page_ifaces_river_xkb_bindings_v1 Interfaces
- * - @subpage page_iface_river_xkb_bindings_v1 - xkbcommon bindings global interface
- * - @subpage page_iface_river_xkb_binding_v1 - configure a xkb key binding, receive trigger events
+ * - @subpage page_iface_river_xkb_bindings_v1 - xkbcommon bindings global
+ * interface
+ * - @subpage page_iface_river_xkb_binding_v1 - configure a xkb key binding,
+ * receive trigger events
  * - @subpage page_iface_river_xkb_bindings_seat_v1 - xkb bindings seat
  * @section page_copyright_river_xkb_bindings_v1 Copyright
  * <pre>
@@ -142,7 +144,8 @@ extern const struct wl_interface river_xkb_binding_v1_interface;
  * See @ref iface_river_xkb_bindings_seat_v1.
  */
 /**
- * @defgroup iface_river_xkb_bindings_seat_v1 The river_xkb_bindings_seat_v1 interface
+ * @defgroup iface_river_xkb_bindings_seat_v1 The river_xkb_bindings_seat_v1
+ * interface
  *
  * This object manages xkb bindings state associated with a specific seat.
  */
@@ -152,10 +155,10 @@ extern const struct wl_interface river_xkb_bindings_seat_v1_interface;
 #ifndef RIVER_XKB_BINDINGS_V1_ERROR_ENUM
 #define RIVER_XKB_BINDINGS_V1_ERROR_ENUM
 enum river_xkb_bindings_v1_error {
-	/**
-	 * @since 2
-	 */
-	RIVER_XKB_BINDINGS_V1_ERROR_OBJECT_ALREADY_CREATED = 0,
+  /**
+   * @since 2
+   */
+  RIVER_XKB_BINDINGS_V1_ERROR_OBJECT_ALREADY_CREATED = 0,
 };
 /**
  * @ingroup iface_river_xkb_bindings_v1
@@ -166,7 +169,6 @@ enum river_xkb_bindings_v1_error {
 #define RIVER_XKB_BINDINGS_V1_DESTROY 0
 #define RIVER_XKB_BINDINGS_V1_GET_XKB_BINDING 1
 #define RIVER_XKB_BINDINGS_V1_GET_SEAT 2
-
 
 /**
  * @ingroup iface_river_xkb_bindings_v1
@@ -182,23 +184,20 @@ enum river_xkb_bindings_v1_error {
 #define RIVER_XKB_BINDINGS_V1_GET_SEAT_SINCE_VERSION 2
 
 /** @ingroup iface_river_xkb_bindings_v1 */
-static inline void
-river_xkb_bindings_v1_set_user_data(struct river_xkb_bindings_v1 *river_xkb_bindings_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_bindings_v1, user_data);
+static inline void river_xkb_bindings_v1_set_user_data(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_bindings_v1, user_data);
 }
 
 /** @ingroup iface_river_xkb_bindings_v1 */
-static inline void *
-river_xkb_bindings_v1_get_user_data(struct river_xkb_bindings_v1 *river_xkb_bindings_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_bindings_v1);
+static inline void *river_xkb_bindings_v1_get_user_data(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_bindings_v1);
 }
 
-static inline uint32_t
-river_xkb_bindings_v1_get_version(struct river_xkb_bindings_v1 *river_xkb_bindings_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_v1);
+static inline uint32_t river_xkb_bindings_v1_get_version(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_v1);
 }
 
 /**
@@ -207,11 +206,12 @@ river_xkb_bindings_v1_get_version(struct river_xkb_bindings_v1 *river_xkb_bindin
  * This request indicates that the client will no longer use the
  * river_xkb_bindings_v1 object.
  */
-static inline void
-river_xkb_bindings_v1_destroy(struct river_xkb_bindings_v1 *river_xkb_bindings_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_v1,
-			 RIVER_XKB_BINDINGS_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_xkb_bindings_v1_destroy(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_v1, RIVER_XKB_BINDINGS_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -224,14 +224,18 @@ river_xkb_bindings_v1_destroy(struct river_xkb_bindings_v1 *river_xkb_bindings_v
  * completed and the enable request is made during a manage sequence.
  */
 static inline struct river_xkb_binding_v1 *
-river_xkb_bindings_v1_get_xkb_binding(struct river_xkb_bindings_v1 *river_xkb_bindings_v1, struct river_seat_v1 *seat, uint32_t keysym, uint32_t modifiers)
-{
-	struct wl_proxy *id;
+river_xkb_bindings_v1_get_xkb_binding(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1,
+    struct river_seat_v1 *seat, uint32_t keysym, uint32_t modifiers) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_v1,
-			 RIVER_XKB_BINDINGS_V1_GET_XKB_BINDING, &river_xkb_binding_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_v1), 0, seat, NULL, keysym, modifiers);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_v1,
+      RIVER_XKB_BINDINGS_V1_GET_XKB_BINDING, &river_xkb_binding_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_v1), 0, seat,
+      NULL, keysym, modifiers);
 
-	return (struct river_xkb_binding_v1 *) id;
+  return (struct river_xkb_binding_v1 *)id;
 }
 
 /**
@@ -242,15 +246,18 @@ river_xkb_bindings_v1_get_xkb_binding(struct river_xkb_bindings_v1 *river_xkb_bi
  * It is a protocol error to make this request more than once for a given
  * river_seat_v1 object.
  */
-static inline struct river_xkb_bindings_seat_v1 *
-river_xkb_bindings_v1_get_seat(struct river_xkb_bindings_v1 *river_xkb_bindings_v1, struct river_seat_v1 *seat)
-{
-	struct wl_proxy *id;
+static inline struct river_xkb_bindings_seat_v1 *river_xkb_bindings_v1_get_seat(
+    struct river_xkb_bindings_v1 *river_xkb_bindings_v1,
+    struct river_seat_v1 *seat) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_v1,
-			 RIVER_XKB_BINDINGS_V1_GET_SEAT, &river_xkb_bindings_seat_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_v1), 0, NULL, seat);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_v1, RIVER_XKB_BINDINGS_V1_GET_SEAT,
+      &river_xkb_bindings_seat_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_v1), 0, NULL,
+      seat);
 
-	return (struct river_xkb_bindings_seat_v1 *) id;
+  return (struct river_xkb_bindings_seat_v1 *)id;
 }
 
 /**
@@ -258,78 +265,77 @@ river_xkb_bindings_v1_get_seat(struct river_xkb_bindings_v1 *river_xkb_bindings_
  * @struct river_xkb_binding_v1_listener
  */
 struct river_xkb_binding_v1_listener {
-	/**
-	 * the key triggering the binding has been pressed
-	 *
-	 * This event indicates that the physical key triggering the
-	 * binding has been pressed.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The compositor should wait for the manage sequence to complete
-	 * before processing further input events. This allows the window
-	 * manager client to, for example, modify key bindings and keyboard
-	 * focus without racing against future input events. The window
-	 * manager should of course respond as soon as possible as the
-	 * capacity of the compositor to buffer incoming input events is
-	 * finite.
-	 */
-	void (*pressed)(void *data,
-			struct river_xkb_binding_v1 *river_xkb_binding_v1);
-	/**
-	 * the key triggering the binding has been released
-	 *
-	 * This event indicates that the physical key triggering the
-	 * binding has been released.
-	 *
-	 * Releasing the modifiers for the binding without releasing the
-	 * "main" physical key that produces the bound keysym does not
-	 * trigger the release event. This event is sent when the "main"
-	 * key is released, even if the modifiers have changed since the
-	 * pressed event.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 *
-	 * The compositor should wait for the manage sequence to complete
-	 * before processing further input events. This allows the window
-	 * manager client to, for example, modify key bindings and keyboard
-	 * focus without racing against future input events. The window
-	 * manager should of course respond as soon as possible as the
-	 * capacity of the compositor to buffer incoming input events is
-	 * finite.
-	 */
-	void (*released)(void *data,
-			 struct river_xkb_binding_v1 *river_xkb_binding_v1);
-	/**
-	 * repeating should be stopped
-	 *
-	 * This event indicates that repeating should be stopped for the
-	 * binding if the window manager has been repeating some action
-	 * since the pressed event.
-	 *
-	 * This event is generally sent when some other (possible unbound)
-	 * key is pressed after the pressed event is sent and before the
-	 * released event is sent for this binding.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @since 2
-	 */
-	void (*stop_repeat)(void *data,
-			    struct river_xkb_binding_v1 *river_xkb_binding_v1);
+  /**
+   * the key triggering the binding has been pressed
+   *
+   * This event indicates that the physical key triggering the
+   * binding has been pressed.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The compositor should wait for the manage sequence to complete
+   * before processing further input events. This allows the window
+   * manager client to, for example, modify key bindings and keyboard
+   * focus without racing against future input events. The window
+   * manager should of course respond as soon as possible as the
+   * capacity of the compositor to buffer incoming input events is
+   * finite.
+   */
+  void (*pressed)(void *data,
+                  struct river_xkb_binding_v1 *river_xkb_binding_v1);
+  /**
+   * the key triggering the binding has been released
+   *
+   * This event indicates that the physical key triggering the
+   * binding has been released.
+   *
+   * Releasing the modifiers for the binding without releasing the
+   * "main" physical key that produces the bound keysym does not
+   * trigger the release event. This event is sent when the "main"
+   * key is released, even if the modifiers have changed since the
+   * pressed event.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   *
+   * The compositor should wait for the manage sequence to complete
+   * before processing further input events. This allows the window
+   * manager client to, for example, modify key bindings and keyboard
+   * focus without racing against future input events. The window
+   * manager should of course respond as soon as possible as the
+   * capacity of the compositor to buffer incoming input events is
+   * finite.
+   */
+  void (*released)(void *data,
+                   struct river_xkb_binding_v1 *river_xkb_binding_v1);
+  /**
+   * repeating should be stopped
+   *
+   * This event indicates that repeating should be stopped for the
+   * binding if the window manager has been repeating some action
+   * since the pressed event.
+   *
+   * This event is generally sent when some other (possible unbound)
+   * key is pressed after the pressed event is sent and before the
+   * released event is sent for this binding.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @since 2
+   */
+  void (*stop_repeat)(void *data,
+                      struct river_xkb_binding_v1 *river_xkb_binding_v1);
 };
 
 /**
  * @ingroup iface_river_xkb_binding_v1
  */
-static inline int
-river_xkb_binding_v1_add_listener(struct river_xkb_binding_v1 *river_xkb_binding_v1,
-				  const struct river_xkb_binding_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_xkb_binding_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_xkb_binding_v1_add_listener(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1,
+    const struct river_xkb_binding_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_xkb_binding_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_XKB_BINDING_V1_DESTROY 0
@@ -368,23 +374,20 @@ river_xkb_binding_v1_add_listener(struct river_xkb_binding_v1 *river_xkb_binding
 #define RIVER_XKB_BINDING_V1_DISABLE_SINCE_VERSION 1
 
 /** @ingroup iface_river_xkb_binding_v1 */
-static inline void
-river_xkb_binding_v1_set_user_data(struct river_xkb_binding_v1 *river_xkb_binding_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_binding_v1, user_data);
+static inline void river_xkb_binding_v1_set_user_data(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_binding_v1, user_data);
 }
 
 /** @ingroup iface_river_xkb_binding_v1 */
-static inline void *
-river_xkb_binding_v1_get_user_data(struct river_xkb_binding_v1 *river_xkb_binding_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_binding_v1);
+static inline void *river_xkb_binding_v1_get_user_data(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_binding_v1);
 }
 
-static inline uint32_t
-river_xkb_binding_v1_get_version(struct river_xkb_binding_v1 *river_xkb_binding_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_binding_v1);
+static inline uint32_t river_xkb_binding_v1_get_version(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_binding_v1);
 }
 
 /**
@@ -393,11 +396,12 @@ river_xkb_binding_v1_get_version(struct river_xkb_binding_v1 *river_xkb_binding_
  * This request indicates that the client will no longer use the xkb key
  * binding object and that it may be safely destroyed.
  */
-static inline void
-river_xkb_binding_v1_destroy(struct river_xkb_binding_v1 *river_xkb_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_binding_v1,
-			 RIVER_XKB_BINDING_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_binding_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_xkb_binding_v1_destroy(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_binding_v1, RIVER_XKB_BINDING_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_xkb_binding_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -416,11 +420,12 @@ river_xkb_binding_v1_destroy(struct river_xkb_binding_v1 *river_xkb_binding_v1)
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_xkb_binding_v1_set_layout_override(struct river_xkb_binding_v1 *river_xkb_binding_v1, uint32_t layout)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_binding_v1,
-			 RIVER_XKB_BINDING_V1_SET_LAYOUT_OVERRIDE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_binding_v1), 0, layout);
+static inline void river_xkb_binding_v1_set_layout_override(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1, uint32_t layout) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_binding_v1,
+      RIVER_XKB_BINDING_V1_SET_LAYOUT_OVERRIDE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_binding_v1), 0, layout);
 }
 
 /**
@@ -434,10 +439,10 @@ river_xkb_binding_v1_set_layout_override(struct river_xkb_binding_v1 *river_xkb_
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
 static inline void
-river_xkb_binding_v1_enable(struct river_xkb_binding_v1 *river_xkb_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_binding_v1,
-			 RIVER_XKB_BINDING_V1_ENABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_binding_v1), 0);
+river_xkb_binding_v1_enable(struct river_xkb_binding_v1 *river_xkb_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_binding_v1, RIVER_XKB_BINDING_V1_ENABLE,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_xkb_binding_v1), 0);
 }
 
 /**
@@ -449,11 +454,11 @@ river_xkb_binding_v1_enable(struct river_xkb_binding_v1 *river_xkb_binding_v1)
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_xkb_binding_v1_disable(struct river_xkb_binding_v1 *river_xkb_binding_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_binding_v1,
-			 RIVER_XKB_BINDING_V1_DISABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_binding_v1), 0);
+static inline void river_xkb_binding_v1_disable(
+    struct river_xkb_binding_v1 *river_xkb_binding_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_binding_v1, RIVER_XKB_BINDING_V1_DISABLE,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_xkb_binding_v1), 0);
 }
 
 /**
@@ -461,29 +466,29 @@ river_xkb_binding_v1_disable(struct river_xkb_binding_v1 *river_xkb_binding_v1)
  * @struct river_xkb_bindings_seat_v1_listener
  */
 struct river_xkb_bindings_seat_v1_listener {
-	/**
-	 * an unbound key press event was eaten
-	 *
-	 * An unbound key press event was eaten due to the
-	 * ensure_next_key_eaten request.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @since 2
-	 */
-	void (*ate_unbound_key)(void *data,
-				struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1);
+  /**
+   * an unbound key press event was eaten
+   *
+   * An unbound key press event was eaten due to the
+   * ensure_next_key_eaten request.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @since 2
+   */
+  void (*ate_unbound_key)(
+      void *data,
+      struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1);
 };
 
 /**
  * @ingroup iface_river_xkb_bindings_seat_v1
  */
-static inline int
-river_xkb_bindings_seat_v1_add_listener(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1,
-					const struct river_xkb_bindings_seat_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_xkb_bindings_seat_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_xkb_bindings_seat_v1_add_listener(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1,
+    const struct river_xkb_bindings_seat_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_xkb_bindings_seat_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_XKB_BINDINGS_SEAT_V1_DESTROY 0
@@ -509,23 +514,22 @@ river_xkb_bindings_seat_v1_add_listener(struct river_xkb_bindings_seat_v1 *river
 #define RIVER_XKB_BINDINGS_SEAT_V1_CANCEL_ENSURE_NEXT_KEY_EATEN_SINCE_VERSION 2
 
 /** @ingroup iface_river_xkb_bindings_seat_v1 */
-static inline void
-river_xkb_bindings_seat_v1_set_user_data(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_bindings_seat_v1, user_data);
+static inline void river_xkb_bindings_seat_v1_set_user_data(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_bindings_seat_v1,
+                         user_data);
 }
 
 /** @ingroup iface_river_xkb_bindings_seat_v1 */
-static inline void *
-river_xkb_bindings_seat_v1_get_user_data(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_bindings_seat_v1);
+static inline void *river_xkb_bindings_seat_v1_get_user_data(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_bindings_seat_v1);
 }
 
-static inline uint32_t
-river_xkb_bindings_seat_v1_get_version(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_seat_v1);
+static inline uint32_t river_xkb_bindings_seat_v1_get_version(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_seat_v1);
 }
 
 /**
@@ -534,11 +538,13 @@ river_xkb_bindings_seat_v1_get_version(struct river_xkb_bindings_seat_v1 *river_
  * This request indicates that the client will no longer use the object and
  * that it may be safely destroyed.
  */
-static inline void
-river_xkb_bindings_seat_v1_destroy(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_seat_v1,
-			 RIVER_XKB_BINDINGS_SEAT_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_seat_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_xkb_bindings_seat_v1_destroy(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_seat_v1,
+      RIVER_XKB_BINDINGS_SEAT_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_seat_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -564,11 +570,12 @@ river_xkb_bindings_seat_v1_destroy(struct river_xkb_bindings_seat_v1 *river_xkb_
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_xkb_bindings_seat_v1_ensure_next_key_eaten(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_seat_v1,
-			 RIVER_XKB_BINDINGS_SEAT_V1_ENSURE_NEXT_KEY_EATEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_seat_v1), 0);
+static inline void river_xkb_bindings_seat_v1_ensure_next_key_eaten(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_seat_v1,
+      RIVER_XKB_BINDINGS_SEAT_V1_ENSURE_NEXT_KEY_EATEN, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_seat_v1), 0);
 }
 
 /**
@@ -589,14 +596,15 @@ river_xkb_bindings_seat_v1_ensure_next_key_eaten(struct river_xkb_bindings_seat_
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_xkb_bindings_seat_v1_cancel_ensure_next_key_eaten(struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_bindings_seat_v1,
-			 RIVER_XKB_BINDINGS_SEAT_V1_CANCEL_ENSURE_NEXT_KEY_EATEN, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_bindings_seat_v1), 0);
+static inline void river_xkb_bindings_seat_v1_cancel_ensure_next_key_eaten(
+    struct river_xkb_bindings_seat_v1 *river_xkb_bindings_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_bindings_seat_v1,
+      RIVER_XKB_BINDINGS_SEAT_V1_CANCEL_ENSURE_NEXT_KEY_EATEN, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_bindings_seat_v1), 0);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

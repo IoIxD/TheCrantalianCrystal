@@ -1,4 +1,4 @@
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #pragma once
 
 #include "../systray_protocol.hpp"

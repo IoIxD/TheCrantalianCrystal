@@ -3,11 +3,11 @@
 #ifndef TABLET_V2_CLIENT_PROTOCOL_H
 #define TABLET_V2_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -95,14 +95,18 @@ extern "C" {
  * tool was used on are removed.
  *
  * @section page_ifaces_tablet_v2 Interfaces
- * - @subpage page_iface_zwp_tablet_manager_v2 - controller object for graphic tablet devices
- * - @subpage page_iface_zwp_tablet_seat_v2 - controller object for graphic tablet devices of a seat
+ * - @subpage page_iface_zwp_tablet_manager_v2 - controller object for graphic
+ * tablet devices
+ * - @subpage page_iface_zwp_tablet_seat_v2 - controller object for graphic
+ * tablet devices of a seat
  * - @subpage page_iface_zwp_tablet_tool_v2 - a physical tablet tool
  * - @subpage page_iface_zwp_tablet_v2 - graphics tablet device
  * - @subpage page_iface_zwp_tablet_pad_ring_v2 - pad ring
  * - @subpage page_iface_zwp_tablet_pad_strip_v2 - pad strip
- * - @subpage page_iface_zwp_tablet_pad_group_v2 - a set of buttons, rings and strips
- * - @subpage page_iface_zwp_tablet_pad_v2 - a set of buttons, rings, strips and dials
+ * - @subpage page_iface_zwp_tablet_pad_group_v2 - a set of buttons, rings and
+ * strips
+ * - @subpage page_iface_zwp_tablet_pad_v2 - a set of buttons, rings, strips and
+ * dials
  * - @subpage page_iface_zwp_tablet_pad_dial_v2 - pad dial
  * @section page_copyright_tablet_v2 Copyright
  * <pre>
@@ -335,9 +339,9 @@ extern const struct wl_interface zwp_tablet_pad_strip_v2_interface;
  * change on the fly.
  *
  * Pad groups will announce their features during pad initialization. Between
- * the corresponding zwp_tablet_pad_v2.group event and zwp_tablet_pad_group_v2.done, the
- * pad group will announce the buttons, rings and strips contained in it,
- * plus the number of supported modes.
+ * the corresponding zwp_tablet_pad_v2.group event and
+ * zwp_tablet_pad_group_v2.done, the pad group will announce the buttons, rings
+ * and strips contained in it, plus the number of supported modes.
  *
  * Modes are a mechanism to allow multiple groups of actions for every element
  * in the pad group. The number of groups and available modes in each is
@@ -348,7 +352,8 @@ extern const struct wl_interface zwp_tablet_pad_strip_v2_interface;
  * The current mode logically applies to all elements in the pad group,
  * although it is at clients' discretion whether to actually perform different
  * actions, and/or issue the respective .set_feedback requests to notify the
- * compositor. See the zwp_tablet_pad_group_v2.mode_switch event for more details.
+ * compositor. See the zwp_tablet_pad_group_v2.mode_switch event for more
+ * details.
  * @section page_iface_zwp_tablet_pad_group_v2_api API
  * See @ref iface_zwp_tablet_pad_group_v2.
  */
@@ -362,9 +367,9 @@ extern const struct wl_interface zwp_tablet_pad_strip_v2_interface;
  * change on the fly.
  *
  * Pad groups will announce their features during pad initialization. Between
- * the corresponding zwp_tablet_pad_v2.group event and zwp_tablet_pad_group_v2.done, the
- * pad group will announce the buttons, rings and strips contained in it,
- * plus the number of supported modes.
+ * the corresponding zwp_tablet_pad_v2.group event and
+ * zwp_tablet_pad_group_v2.done, the pad group will announce the buttons, rings
+ * and strips contained in it, plus the number of supported modes.
  *
  * Modes are a mechanism to allow multiple groups of actions for every element
  * in the pad group. The number of groups and available modes in each is
@@ -375,7 +380,8 @@ extern const struct wl_interface zwp_tablet_pad_strip_v2_interface;
  * The current mode logically applies to all elements in the pad group,
  * although it is at clients' discretion whether to actually perform different
  * actions, and/or issue the respective .set_feedback requests to notify the
- * compositor. See the zwp_tablet_pad_group_v2.mode_switch event for more details.
+ * compositor. See the zwp_tablet_pad_group_v2.mode_switch event for more
+ * details.
  */
 extern const struct wl_interface zwp_tablet_pad_group_v2_interface;
 #endif
@@ -399,8 +405,8 @@ extern const struct wl_interface zwp_tablet_pad_group_v2_interface;
  * This initial event sequence is terminated by a zwp_tablet_pad_v2.done
  * event.
  *
- * All pad features (buttons, rings, strips and dials) are logically divided into
- * groups and all pads have at least one group. The available groups are
+ * All pad features (buttons, rings, strips and dials) are logically divided
+ * into groups and all pads have at least one group. The available groups are
  * notified through the zwp_tablet_pad_v2.group event; the compositor will
  * emit one event per group before emitting zwp_tablet_pad_v2.done.
  *
@@ -427,8 +433,8 @@ extern const struct wl_interface zwp_tablet_pad_group_v2_interface;
  * This initial event sequence is terminated by a zwp_tablet_pad_v2.done
  * event.
  *
- * All pad features (buttons, rings, strips and dials) are logically divided into
- * groups and all pads have at least one group. The available groups are
+ * All pad features (buttons, rings, strips and dials) are logically divided
+ * into groups and all pads have at least one group. The available groups are
  * notified through the zwp_tablet_pad_v2.group event; the compositor will
  * emit one event per group before emitting zwp_tablet_pad_v2.done.
  *
@@ -465,7 +471,6 @@ extern const struct wl_interface zwp_tablet_pad_dial_v2_interface;
 #define ZWP_TABLET_MANAGER_V2_GET_TABLET_SEAT 0
 #define ZWP_TABLET_MANAGER_V2_DESTROY 1
 
-
 /**
  * @ingroup iface_zwp_tablet_manager_v2
  */
@@ -476,23 +481,20 @@ extern const struct wl_interface zwp_tablet_pad_dial_v2_interface;
 #define ZWP_TABLET_MANAGER_V2_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_zwp_tablet_manager_v2 */
-static inline void
-zwp_tablet_manager_v2_set_user_data(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_manager_v2, user_data);
+static inline void zwp_tablet_manager_v2_set_user_data(
+    struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_manager_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_manager_v2 */
-static inline void *
-zwp_tablet_manager_v2_get_user_data(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_manager_v2);
+static inline void *zwp_tablet_manager_v2_get_user_data(
+    struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_manager_v2);
 }
 
-static inline uint32_t
-zwp_tablet_manager_v2_get_version(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_manager_v2);
+static inline uint32_t zwp_tablet_manager_v2_get_version(
+    struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_manager_v2);
 }
 
 /**
@@ -501,15 +503,17 @@ zwp_tablet_manager_v2_get_version(struct zwp_tablet_manager_v2 *zwp_tablet_manag
  * Get the zwp_tablet_seat_v2 object for the given seat. This object
  * provides access to all graphics tablets in this seat.
  */
-static inline struct zwp_tablet_seat_v2 *
-zwp_tablet_manager_v2_get_tablet_seat(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2, struct wl_seat *seat)
-{
-	struct wl_proxy *tablet_seat;
+static inline struct zwp_tablet_seat_v2 *zwp_tablet_manager_v2_get_tablet_seat(
+    struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2, struct wl_seat *seat) {
+  struct wl_proxy *tablet_seat;
 
-	tablet_seat = wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_manager_v2,
-			 ZWP_TABLET_MANAGER_V2_GET_TABLET_SEAT, &zwp_tablet_seat_v2_interface, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_manager_v2), 0, NULL, seat);
+  tablet_seat = wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_manager_v2,
+      ZWP_TABLET_MANAGER_V2_GET_TABLET_SEAT, &zwp_tablet_seat_v2_interface,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_manager_v2), 0, NULL,
+      seat);
 
-	return (struct zwp_tablet_seat_v2 *) tablet_seat;
+  return (struct zwp_tablet_seat_v2 *)tablet_seat;
 }
 
 /**
@@ -518,11 +522,12 @@ zwp_tablet_manager_v2_get_tablet_seat(struct zwp_tablet_manager_v2 *zwp_tablet_m
  * Destroy the zwp_tablet_manager_v2 object. Objects created from this
  * object are unaffected and should be destroyed separately.
  */
-static inline void
-zwp_tablet_manager_v2_destroy(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_manager_v2,
-			 ZWP_TABLET_MANAGER_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_manager_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_manager_v2_destroy(
+    struct zwp_tablet_manager_v2 *zwp_tablet_manager_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_manager_v2, ZWP_TABLET_MANAGER_V2_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)zwp_tablet_manager_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -530,61 +535,58 @@ zwp_tablet_manager_v2_destroy(struct zwp_tablet_manager_v2 *zwp_tablet_manager_v
  * @struct zwp_tablet_seat_v2_listener
  */
 struct zwp_tablet_seat_v2_listener {
-	/**
-	 * new device notification
-	 *
-	 * This event is sent whenever a new tablet becomes available on
-	 * this seat. This event only provides the object id of the tablet,
-	 * any static information about the tablet (device name, vid/pid,
-	 * etc.) is sent through the zwp_tablet_v2 interface.
-	 * @param id the newly added graphics tablet
-	 */
-	void (*tablet_added)(void *data,
-			     struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
-			     struct zwp_tablet_v2 *id);
-	/**
-	 * a new tool has been used with a tablet
-	 *
-	 * This event is sent whenever a tool that has not previously
-	 * been used with a tablet comes into use. This event only provides
-	 * the object id of the tool; any static information about the tool
-	 * (capabilities, type, etc.) is sent through the
-	 * zwp_tablet_tool_v2 interface.
-	 * @param id the newly added tablet tool
-	 */
-	void (*tool_added)(void *data,
-			   struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
-			   struct zwp_tablet_tool_v2 *id);
-	/**
-	 * new pad notification
-	 *
-	 * This event is sent whenever a new pad is known to the system.
-	 * Typically, pads are physically attached to tablets and a
-	 * pad_added event is sent immediately after the
-	 * zwp_tablet_seat_v2.tablet_added. However, some standalone pad
-	 * devices logically attach to tablets at runtime, and the client
-	 * must wait for zwp_tablet_pad_v2.enter to know the tablet a pad
-	 * is attached to.
-	 *
-	 * This event only provides the object id of the pad. All further
-	 * features (buttons, strips, rings) are sent through the
-	 * zwp_tablet_pad_v2 interface.
-	 * @param id the newly added pad
-	 */
-	void (*pad_added)(void *data,
-			  struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
-			  struct zwp_tablet_pad_v2 *id);
+  /**
+   * new device notification
+   *
+   * This event is sent whenever a new tablet becomes available on
+   * this seat. This event only provides the object id of the tablet,
+   * any static information about the tablet (device name, vid/pid,
+   * etc.) is sent through the zwp_tablet_v2 interface.
+   * @param id the newly added graphics tablet
+   */
+  void (*tablet_added)(void *data,
+                       struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
+                       struct zwp_tablet_v2 *id);
+  /**
+   * a new tool has been used with a tablet
+   *
+   * This event is sent whenever a tool that has not previously
+   * been used with a tablet comes into use. This event only provides
+   * the object id of the tool; any static information about the tool
+   * (capabilities, type, etc.) is sent through the
+   * zwp_tablet_tool_v2 interface.
+   * @param id the newly added tablet tool
+   */
+  void (*tool_added)(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
+                     struct zwp_tablet_tool_v2 *id);
+  /**
+   * new pad notification
+   *
+   * This event is sent whenever a new pad is known to the system.
+   * Typically, pads are physically attached to tablets and a
+   * pad_added event is sent immediately after the
+   * zwp_tablet_seat_v2.tablet_added. However, some standalone pad
+   * devices logically attach to tablets at runtime, and the client
+   * must wait for zwp_tablet_pad_v2.enter to know the tablet a pad
+   * is attached to.
+   *
+   * This event only provides the object id of the pad. All further
+   * features (buttons, strips, rings) are sent through the
+   * zwp_tablet_pad_v2 interface.
+   * @param id the newly added pad
+   */
+  void (*pad_added)(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
+                    struct zwp_tablet_pad_v2 *id);
 };
 
 /**
  * @ingroup iface_zwp_tablet_seat_v2
  */
-static inline int
-zwp_tablet_seat_v2_add_listener(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
-				const struct zwp_tablet_seat_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_seat_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_seat_v2_add_listener(
+    struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
+    const struct zwp_tablet_seat_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_seat_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_SEAT_V2_DESTROY 0
@@ -609,22 +611,20 @@ zwp_tablet_seat_v2_add_listener(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
 
 /** @ingroup iface_zwp_tablet_seat_v2 */
 static inline void
-zwp_tablet_seat_v2_set_user_data(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_seat_v2, user_data);
+zwp_tablet_seat_v2_set_user_data(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2,
+                                 void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_seat_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_seat_v2 */
-static inline void *
-zwp_tablet_seat_v2_get_user_data(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_seat_v2);
+static inline void *zwp_tablet_seat_v2_get_user_data(
+    struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_seat_v2);
 }
 
 static inline uint32_t
-zwp_tablet_seat_v2_get_version(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_seat_v2);
+zwp_tablet_seat_v2_get_version(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_seat_v2);
 }
 
 /**
@@ -634,10 +634,11 @@ zwp_tablet_seat_v2_get_version(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2)
  * object are unaffected and should be destroyed separately.
  */
 static inline void
-zwp_tablet_seat_v2_destroy(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_seat_v2,
-			 ZWP_TABLET_SEAT_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_seat_v2), WL_MARSHAL_FLAG_DESTROY);
+zwp_tablet_seat_v2_destroy(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_seat_v2, ZWP_TABLET_SEAT_V2_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_seat_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef ZWP_TABLET_TOOL_V2_TYPE_ENUM
@@ -657,38 +658,38 @@ zwp_tablet_seat_v2_destroy(struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2)
  * provide precision focus.
  */
 enum zwp_tablet_tool_v2_type {
-	/**
-	 * Pen
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_PEN = 0x140,
-	/**
-	 * Eraser
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_ERASER = 0x141,
-	/**
-	 * Brush
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_BRUSH = 0x142,
-	/**
-	 * Pencil
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_PENCIL = 0x143,
-	/**
-	 * Airbrush
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_AIRBRUSH = 0x144,
-	/**
-	 * Finger
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_FINGER = 0x145,
-	/**
-	 * Mouse
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_MOUSE = 0x146,
-	/**
-	 * Lens
-	 */
-	ZWP_TABLET_TOOL_V2_TYPE_LENS = 0x147,
+  /**
+   * Pen
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_PEN = 0x140,
+  /**
+   * Eraser
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_ERASER = 0x141,
+  /**
+   * Brush
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_BRUSH = 0x142,
+  /**
+   * Pencil
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_PENCIL = 0x143,
+  /**
+   * Airbrush
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_AIRBRUSH = 0x144,
+  /**
+   * Finger
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_FINGER = 0x145,
+  /**
+   * Mouse
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_MOUSE = 0x146,
+  /**
+   * Lens
+   */
+  ZWP_TABLET_TOOL_V2_TYPE_LENS = 0x147,
 };
 #endif /* ZWP_TABLET_TOOL_V2_TYPE_ENUM */
 
@@ -704,30 +705,30 @@ enum zwp_tablet_tool_v2_type {
  * device-specific.
  */
 enum zwp_tablet_tool_v2_capability {
-	/**
-	 * Tilt axes
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_TILT = 1,
-	/**
-	 * Pressure axis
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_PRESSURE = 2,
-	/**
-	 * Distance axis
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_DISTANCE = 3,
-	/**
-	 * Z-rotation axis
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_ROTATION = 4,
-	/**
-	 * Slider axis
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_SLIDER = 5,
-	/**
-	 * Wheel axis
-	 */
-	ZWP_TABLET_TOOL_V2_CAPABILITY_WHEEL = 6,
+  /**
+   * Tilt axes
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_TILT = 1,
+  /**
+   * Pressure axis
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_PRESSURE = 2,
+  /**
+   * Distance axis
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_DISTANCE = 3,
+  /**
+   * Z-rotation axis
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_ROTATION = 4,
+  /**
+   * Slider axis
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_SLIDER = 5,
+  /**
+   * Wheel axis
+   */
+  ZWP_TABLET_TOOL_V2_CAPABILITY_WHEEL = 6,
 };
 #endif /* ZWP_TABLET_TOOL_V2_CAPABILITY_ENUM */
 
@@ -740,24 +741,24 @@ enum zwp_tablet_tool_v2_capability {
  * Describes the physical state of a button that produced the button event.
  */
 enum zwp_tablet_tool_v2_button_state {
-	/**
-	 * button is not pressed
-	 */
-	ZWP_TABLET_TOOL_V2_BUTTON_STATE_RELEASED = 0,
-	/**
-	 * button is pressed
-	 */
-	ZWP_TABLET_TOOL_V2_BUTTON_STATE_PRESSED = 1,
+  /**
+   * button is not pressed
+   */
+  ZWP_TABLET_TOOL_V2_BUTTON_STATE_RELEASED = 0,
+  /**
+   * button is pressed
+   */
+  ZWP_TABLET_TOOL_V2_BUTTON_STATE_PRESSED = 1,
 };
 #endif /* ZWP_TABLET_TOOL_V2_BUTTON_STATE_ENUM */
 
 #ifndef ZWP_TABLET_TOOL_V2_ERROR_ENUM
 #define ZWP_TABLET_TOOL_V2_ERROR_ENUM
 enum zwp_tablet_tool_v2_error {
-	/**
-	 * given wl_surface has another role
-	 */
-	ZWP_TABLET_TOOL_V2_ERROR_ROLE = 0,
+  /**
+   * given wl_surface has another role
+   */
+  ZWP_TABLET_TOOL_V2_ERROR_ROLE = 0,
 };
 #endif /* ZWP_TABLET_TOOL_V2_ERROR_ENUM */
 
@@ -766,331 +767,310 @@ enum zwp_tablet_tool_v2_error {
  * @struct zwp_tablet_tool_v2_listener
  */
 struct zwp_tablet_tool_v2_listener {
-	/**
-	 * tool type
-	 *
-	 * The tool type is the high-level type of the tool and usually
-	 * decides the interaction expected from this tool.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_tool_v2.done event.
-	 * @param tool_type the physical tool type
-	 */
-	void (*type)(void *data,
-		     struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		     uint32_t tool_type);
-	/**
-	 * unique hardware serial number of the tool
-	 *
-	 * If the physical tool can be identified by a unique 64-bit
-	 * serial number, this event notifies the client of this serial
-	 * number.
-	 *
-	 * If multiple tablets are available in the same seat and the tool
-	 * is uniquely identifiable by the serial number, that tool may
-	 * move between tablets.
-	 *
-	 * Otherwise, if the tool has no serial number and this event is
-	 * missing, the tool is tied to the tablet it first comes into
-	 * proximity with. Even if the physical tool is used on multiple
-	 * tablets, separate zwp_tablet_tool_v2 objects will be created,
-	 * one per tablet.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_tool_v2.done event.
-	 * @param hardware_serial_hi the unique serial number of the tool, most significant bits
-	 * @param hardware_serial_lo the unique serial number of the tool, least significant bits
-	 */
-	void (*hardware_serial)(void *data,
-				struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-				uint32_t hardware_serial_hi,
-				uint32_t hardware_serial_lo);
-	/**
-	 * hardware id notification in Wacom's format
-	 *
-	 * This event notifies the client of a hardware id available on
-	 * this tool.
-	 *
-	 * The hardware id is a device-specific 64-bit id that provides
-	 * extra information about the tool in use, beyond the wl_tool.type
-	 * enumeration. The format of the id is specific to tablets made by
-	 * Wacom Inc. For example, the hardware id of a Wacom Grip Pen (a
-	 * stylus) is 0x802.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_tool_v2.done event.
-	 * @param hardware_id_hi the hardware id, most significant bits
-	 * @param hardware_id_lo the hardware id, least significant bits
-	 */
-	void (*hardware_id_wacom)(void *data,
-				  struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-				  uint32_t hardware_id_hi,
-				  uint32_t hardware_id_lo);
-	/**
-	 * tool capability notification
-	 *
-	 * This event notifies the client of any capabilities of this
-	 * tool, beyond the main set of x/y axes and tip up/down detection.
-	 *
-	 * One event is sent for each extra capability available on this
-	 * tool.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_tool_v2.done event.
-	 * @param capability the capability
-	 */
-	void (*capability)(void *data,
-			   struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-			   uint32_t capability);
-	/**
-	 * tool description events sequence complete
-	 *
-	 * This event signals the end of the initial burst of descriptive
-	 * events. A client may consider the static description of the tool
-	 * to be complete and finalize initialization of the tool.
-	 */
-	void (*done)(void *data,
-		     struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
-	/**
-	 * tool removed
-	 *
-	 * This event is sent when the tool is removed from the system
-	 * and will send no further events. Should the physical tool come
-	 * back into proximity later, a new zwp_tablet_tool_v2 object will
-	 * be created.
-	 *
-	 * It is compositor-dependent when a tool is removed. A compositor
-	 * may remove a tool on proximity out, tablet removal or any other
-	 * reason. A compositor may also keep a tool alive until shutdown.
-	 *
-	 * If the tool is currently in proximity, a proximity_out event
-	 * will be sent before the removed event. See
-	 * zwp_tablet_tool_v2.proximity_out for the handling of any buttons
-	 * logically down.
-	 *
-	 * When this event is received, the client must
-	 * zwp_tablet_tool_v2.destroy the object.
-	 */
-	void (*removed)(void *data,
-			struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
-	/**
-	 * proximity in event
-	 *
-	 * Notification that this tool is focused on a certain surface.
-	 *
-	 * This event can be received when the tool has moved from one
-	 * surface to another, or when the tool has come back into
-	 * proximity above the surface.
-	 *
-	 * If any button is logically down when the tool comes into
-	 * proximity, the respective button event is sent after the
-	 * proximity_in event but within the same frame as the proximity_in
-	 * event.
-	 * @param tablet The tablet the tool is in proximity of
-	 * @param surface The current surface the tablet tool is over
-	 */
-	void (*proximity_in)(void *data,
-			     struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-			     uint32_t serial,
-			     struct zwp_tablet_v2 *tablet,
-			     struct wl_surface *surface);
-	/**
-	 * proximity out event
-	 *
-	 * Notification that this tool has either left proximity, or is
-	 * no longer focused on a certain surface.
-	 *
-	 * When the tablet tool leaves proximity of the tablet, button
-	 * release events are sent for each button that was held down at
-	 * the time of leaving proximity. These events are sent before the
-	 * proximity_out event but within the same zwp_tablet_v2.frame.
-	 *
-	 * If the tool stays within proximity of the tablet, but the focus
-	 * changes from one surface to another, a button release event may
-	 * not be sent until the button is actually released or the tool
-	 * leaves the proximity of the tablet.
-	 */
-	void (*proximity_out)(void *data,
-			      struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
-	/**
-	 * tablet tool is making contact
-	 *
-	 * Sent whenever the tablet tool comes in contact with the
-	 * surface of the tablet.
-	 *
-	 * If the tool is already in contact with the tablet when entering
-	 * the input region, the client owning said region will receive a
-	 * zwp_tablet_v2.proximity_in event, followed by a
-	 * zwp_tablet_v2.down event and a zwp_tablet_v2.frame event.
-	 *
-	 * Note that this event describes logical contact, not physical
-	 * contact. On some devices, a compositor may not consider a tool
-	 * in logical contact until a minimum physical pressure threshold
-	 * is exceeded.
-	 */
-	void (*down)(void *data,
-		     struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		     uint32_t serial);
-	/**
-	 * tablet tool is no longer making contact
-	 *
-	 * Sent whenever the tablet tool stops making contact with the
-	 * surface of the tablet, or when the tablet tool moves out of the
-	 * input region and the compositor grab (if any) is dismissed.
-	 *
-	 * If the tablet tool moves out of the input region while in
-	 * contact with the surface of the tablet and the compositor does
-	 * not have an ongoing grab on the surface, the client owning said
-	 * region will receive a zwp_tablet_v2.up event, followed by a
-	 * zwp_tablet_v2.proximity_out event and a zwp_tablet_v2.frame
-	 * event. If the compositor has an ongoing grab on this device,
-	 * this event sequence is sent whenever the grab is dismissed in
-	 * the future.
-	 *
-	 * Note that this event describes logical contact, not physical
-	 * contact. On some devices, a compositor may not consider a tool
-	 * out of logical contact until physical pressure falls below a
-	 * specific threshold.
-	 */
-	void (*up)(void *data,
-		   struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
-	/**
-	 * motion event
-	 *
-	 * Sent whenever a tablet tool moves.
-	 * @param x surface-local x coordinate
-	 * @param y surface-local y coordinate
-	 */
-	void (*motion)(void *data,
-		       struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		       wl_fixed_t x,
-		       wl_fixed_t y);
-	/**
-	 * pressure change event
-	 *
-	 * Sent whenever the pressure axis on a tool changes. The value
-	 * of this event is normalized to a value between 0 and 65535.
-	 *
-	 * Note that pressure may be nonzero even when a tool is not in
-	 * logical contact. See the down and up events for more details.
-	 * @param pressure The current pressure value
-	 */
-	void (*pressure)(void *data,
-			 struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-			 uint32_t pressure);
-	/**
-	 * distance change event
-	 *
-	 * Sent whenever the distance axis on a tool changes. The value
-	 * of this event is normalized to a value between 0 and 65535.
-	 *
-	 * Note that distance may be nonzero even when a tool is not in
-	 * logical contact. See the down and up events for more details.
-	 * @param distance The current distance value
-	 */
-	void (*distance)(void *data,
-			 struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-			 uint32_t distance);
-	/**
-	 * tilt change event
-	 *
-	 * Sent whenever one or both of the tilt axes on a tool change.
-	 * Each tilt value is in degrees, relative to the z-axis of the
-	 * tablet. The angle is positive when the top of a tool tilts along
-	 * the positive x or y axis.
-	 * @param tilt_x The current value of the X tilt axis
-	 * @param tilt_y The current value of the Y tilt axis
-	 */
-	void (*tilt)(void *data,
-		     struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		     wl_fixed_t tilt_x,
-		     wl_fixed_t tilt_y);
-	/**
-	 * z-rotation change event
-	 *
-	 * Sent whenever the z-rotation axis on the tool changes. The
-	 * rotation value is in degrees clockwise from the tool's logical
-	 * neutral position.
-	 * @param degrees The current rotation of the Z axis
-	 */
-	void (*rotation)(void *data,
-			 struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-			 wl_fixed_t degrees);
-	/**
-	 * Slider position change event
-	 *
-	 * Sent whenever the slider position on the tool changes. The
-	 * value is normalized between -65535 and 65535, with 0 as the
-	 * logical neutral position of the slider.
-	 *
-	 * The slider is available on e.g. the Wacom Airbrush tool.
-	 * @param position The current position of slider
-	 */
-	void (*slider)(void *data,
-		       struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		       int32_t position);
-	/**
-	 * Wheel delta event
-	 *
-	 * Sent whenever the wheel on the tool emits an event. This event
-	 * contains two values for the same axis change. The degrees value
-	 * is in the same orientation as the wl_pointer.vertical_scroll
-	 * axis. The clicks value is in discrete logical clicks of the
-	 * mouse wheel. This value may be zero if the movement of the wheel
-	 * was less than one logical click.
-	 *
-	 * Clients should choose either value and avoid mixing degrees and
-	 * clicks. The compositor may accumulate values smaller than a
-	 * logical click and emulate click events when a certain threshold
-	 * is met. Thus, zwp_tablet_tool_v2.wheel events with non-zero
-	 * clicks values may have different degrees values.
-	 * @param degrees The wheel delta in degrees
-	 * @param clicks The wheel delta in discrete clicks
-	 */
-	void (*wheel)(void *data,
-		      struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		      wl_fixed_t degrees,
-		      int32_t clicks);
-	/**
-	 * button event
-	 *
-	 * Sent whenever a button on the tool is pressed or released.
-	 *
-	 * If a button is held down when the tool moves in or out of
-	 * proximity, button events are generated by the compositor. See
-	 * zwp_tablet_tool_v2.proximity_in and
-	 * zwp_tablet_tool_v2.proximity_out for details.
-	 * @param button The button whose state has changed
-	 * @param state Whether the button was pressed or released
-	 */
-	void (*button)(void *data,
-		       struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		       uint32_t serial,
-		       uint32_t button,
-		       uint32_t state);
-	/**
-	 * frame event
-	 *
-	 * Marks the end of a series of axis and/or button updates from
-	 * the tablet. The Wayland protocol requires axis updates to be
-	 * sent sequentially, however all events within a frame should be
-	 * considered one hardware event.
-	 * @param time The time of the event with millisecond granularity
-	 */
-	void (*frame)(void *data,
-		      struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-		      uint32_t time);
+  /**
+   * tool type
+   *
+   * The tool type is the high-level type of the tool and usually
+   * decides the interaction expected from this tool.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_tool_v2.done event.
+   * @param tool_type the physical tool type
+   */
+  void (*type)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+               uint32_t tool_type);
+  /**
+   * unique hardware serial number of the tool
+   *
+   * If the physical tool can be identified by a unique 64-bit
+   * serial number, this event notifies the client of this serial
+   * number.
+   *
+   * If multiple tablets are available in the same seat and the tool
+   * is uniquely identifiable by the serial number, that tool may
+   * move between tablets.
+   *
+   * Otherwise, if the tool has no serial number and this event is
+   * missing, the tool is tied to the tablet it first comes into
+   * proximity with. Even if the physical tool is used on multiple
+   * tablets, separate zwp_tablet_tool_v2 objects will be created,
+   * one per tablet.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_tool_v2.done event.
+   * @param hardware_serial_hi the unique serial number of the tool, most
+   * significant bits
+   * @param hardware_serial_lo the unique serial number of the tool, least
+   * significant bits
+   */
+  void (*hardware_serial)(void *data,
+                          struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                          uint32_t hardware_serial_hi,
+                          uint32_t hardware_serial_lo);
+  /**
+   * hardware id notification in Wacom's format
+   *
+   * This event notifies the client of a hardware id available on
+   * this tool.
+   *
+   * The hardware id is a device-specific 64-bit id that provides
+   * extra information about the tool in use, beyond the wl_tool.type
+   * enumeration. The format of the id is specific to tablets made by
+   * Wacom Inc. For example, the hardware id of a Wacom Grip Pen (a
+   * stylus) is 0x802.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_tool_v2.done event.
+   * @param hardware_id_hi the hardware id, most significant bits
+   * @param hardware_id_lo the hardware id, least significant bits
+   */
+  void (*hardware_id_wacom)(void *data,
+                            struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                            uint32_t hardware_id_hi, uint32_t hardware_id_lo);
+  /**
+   * tool capability notification
+   *
+   * This event notifies the client of any capabilities of this
+   * tool, beyond the main set of x/y axes and tip up/down detection.
+   *
+   * One event is sent for each extra capability available on this
+   * tool.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_tool_v2.done event.
+   * @param capability the capability
+   */
+  void (*capability)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                     uint32_t capability);
+  /**
+   * tool description events sequence complete
+   *
+   * This event signals the end of the initial burst of descriptive
+   * events. A client may consider the static description of the tool
+   * to be complete and finalize initialization of the tool.
+   */
+  void (*done)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
+  /**
+   * tool removed
+   *
+   * This event is sent when the tool is removed from the system
+   * and will send no further events. Should the physical tool come
+   * back into proximity later, a new zwp_tablet_tool_v2 object will
+   * be created.
+   *
+   * It is compositor-dependent when a tool is removed. A compositor
+   * may remove a tool on proximity out, tablet removal or any other
+   * reason. A compositor may also keep a tool alive until shutdown.
+   *
+   * If the tool is currently in proximity, a proximity_out event
+   * will be sent before the removed event. See
+   * zwp_tablet_tool_v2.proximity_out for the handling of any buttons
+   * logically down.
+   *
+   * When this event is received, the client must
+   * zwp_tablet_tool_v2.destroy the object.
+   */
+  void (*removed)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
+  /**
+   * proximity in event
+   *
+   * Notification that this tool is focused on a certain surface.
+   *
+   * This event can be received when the tool has moved from one
+   * surface to another, or when the tool has come back into
+   * proximity above the surface.
+   *
+   * If any button is logically down when the tool comes into
+   * proximity, the respective button event is sent after the
+   * proximity_in event but within the same frame as the proximity_in
+   * event.
+   * @param tablet The tablet the tool is in proximity of
+   * @param surface The current surface the tablet tool is over
+   */
+  void (*proximity_in)(void *data,
+                       struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                       uint32_t serial, struct zwp_tablet_v2 *tablet,
+                       struct wl_surface *surface);
+  /**
+   * proximity out event
+   *
+   * Notification that this tool has either left proximity, or is
+   * no longer focused on a certain surface.
+   *
+   * When the tablet tool leaves proximity of the tablet, button
+   * release events are sent for each button that was held down at
+   * the time of leaving proximity. These events are sent before the
+   * proximity_out event but within the same zwp_tablet_v2.frame.
+   *
+   * If the tool stays within proximity of the tablet, but the focus
+   * changes from one surface to another, a button release event may
+   * not be sent until the button is actually released or the tool
+   * leaves the proximity of the tablet.
+   */
+  void (*proximity_out)(void *data,
+                        struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
+  /**
+   * tablet tool is making contact
+   *
+   * Sent whenever the tablet tool comes in contact with the
+   * surface of the tablet.
+   *
+   * If the tool is already in contact with the tablet when entering
+   * the input region, the client owning said region will receive a
+   * zwp_tablet_v2.proximity_in event, followed by a
+   * zwp_tablet_v2.down event and a zwp_tablet_v2.frame event.
+   *
+   * Note that this event describes logical contact, not physical
+   * contact. On some devices, a compositor may not consider a tool
+   * in logical contact until a minimum physical pressure threshold
+   * is exceeded.
+   */
+  void (*down)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+               uint32_t serial);
+  /**
+   * tablet tool is no longer making contact
+   *
+   * Sent whenever the tablet tool stops making contact with the
+   * surface of the tablet, or when the tablet tool moves out of the
+   * input region and the compositor grab (if any) is dismissed.
+   *
+   * If the tablet tool moves out of the input region while in
+   * contact with the surface of the tablet and the compositor does
+   * not have an ongoing grab on the surface, the client owning said
+   * region will receive a zwp_tablet_v2.up event, followed by a
+   * zwp_tablet_v2.proximity_out event and a zwp_tablet_v2.frame
+   * event. If the compositor has an ongoing grab on this device,
+   * this event sequence is sent whenever the grab is dismissed in
+   * the future.
+   *
+   * Note that this event describes logical contact, not physical
+   * contact. On some devices, a compositor may not consider a tool
+   * out of logical contact until physical pressure falls below a
+   * specific threshold.
+   */
+  void (*up)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2);
+  /**
+   * motion event
+   *
+   * Sent whenever a tablet tool moves.
+   * @param x surface-local x coordinate
+   * @param y surface-local y coordinate
+   */
+  void (*motion)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                 wl_fixed_t x, wl_fixed_t y);
+  /**
+   * pressure change event
+   *
+   * Sent whenever the pressure axis on a tool changes. The value
+   * of this event is normalized to a value between 0 and 65535.
+   *
+   * Note that pressure may be nonzero even when a tool is not in
+   * logical contact. See the down and up events for more details.
+   * @param pressure The current pressure value
+   */
+  void (*pressure)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                   uint32_t pressure);
+  /**
+   * distance change event
+   *
+   * Sent whenever the distance axis on a tool changes. The value
+   * of this event is normalized to a value between 0 and 65535.
+   *
+   * Note that distance may be nonzero even when a tool is not in
+   * logical contact. See the down and up events for more details.
+   * @param distance The current distance value
+   */
+  void (*distance)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                   uint32_t distance);
+  /**
+   * tilt change event
+   *
+   * Sent whenever one or both of the tilt axes on a tool change.
+   * Each tilt value is in degrees, relative to the z-axis of the
+   * tablet. The angle is positive when the top of a tool tilts along
+   * the positive x or y axis.
+   * @param tilt_x The current value of the X tilt axis
+   * @param tilt_y The current value of the Y tilt axis
+   */
+  void (*tilt)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+               wl_fixed_t tilt_x, wl_fixed_t tilt_y);
+  /**
+   * z-rotation change event
+   *
+   * Sent whenever the z-rotation axis on the tool changes. The
+   * rotation value is in degrees clockwise from the tool's logical
+   * neutral position.
+   * @param degrees The current rotation of the Z axis
+   */
+  void (*rotation)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                   wl_fixed_t degrees);
+  /**
+   * Slider position change event
+   *
+   * Sent whenever the slider position on the tool changes. The
+   * value is normalized between -65535 and 65535, with 0 as the
+   * logical neutral position of the slider.
+   *
+   * The slider is available on e.g. the Wacom Airbrush tool.
+   * @param position The current position of slider
+   */
+  void (*slider)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                 int32_t position);
+  /**
+   * Wheel delta event
+   *
+   * Sent whenever the wheel on the tool emits an event. This event
+   * contains two values for the same axis change. The degrees value
+   * is in the same orientation as the wl_pointer.vertical_scroll
+   * axis. The clicks value is in discrete logical clicks of the
+   * mouse wheel. This value may be zero if the movement of the wheel
+   * was less than one logical click.
+   *
+   * Clients should choose either value and avoid mixing degrees and
+   * clicks. The compositor may accumulate values smaller than a
+   * logical click and emulate click events when a certain threshold
+   * is met. Thus, zwp_tablet_tool_v2.wheel events with non-zero
+   * clicks values may have different degrees values.
+   * @param degrees The wheel delta in degrees
+   * @param clicks The wheel delta in discrete clicks
+   */
+  void (*wheel)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                wl_fixed_t degrees, int32_t clicks);
+  /**
+   * button event
+   *
+   * Sent whenever a button on the tool is pressed or released.
+   *
+   * If a button is held down when the tool moves in or out of
+   * proximity, button events are generated by the compositor. See
+   * zwp_tablet_tool_v2.proximity_in and
+   * zwp_tablet_tool_v2.proximity_out for details.
+   * @param button The button whose state has changed
+   * @param state Whether the button was pressed or released
+   */
+  void (*button)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                 uint32_t serial, uint32_t button, uint32_t state);
+  /**
+   * frame event
+   *
+   * Marks the end of a series of axis and/or button updates from
+   * the tablet. The Wayland protocol requires axis updates to be
+   * sent sequentially, however all events within a frame should be
+   * considered one hardware event.
+   * @param time The time of the event with millisecond granularity
+   */
+  void (*frame)(void *data, struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                uint32_t time);
 };
 
 /**
  * @ingroup iface_zwp_tablet_tool_v2
  */
-static inline int
-zwp_tablet_tool_v2_add_listener(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
-				const struct zwp_tablet_tool_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_tool_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_tool_v2_add_listener(
+    struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+    const struct zwp_tablet_tool_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_tool_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_TOOL_V2_SET_CURSOR 0
@@ -1184,22 +1164,20 @@ zwp_tablet_tool_v2_add_listener(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
 
 /** @ingroup iface_zwp_tablet_tool_v2 */
 static inline void
-zwp_tablet_tool_v2_set_user_data(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_tool_v2, user_data);
+zwp_tablet_tool_v2_set_user_data(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                                 void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_tool_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_tool_v2 */
-static inline void *
-zwp_tablet_tool_v2_get_user_data(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_tool_v2);
+static inline void *zwp_tablet_tool_v2_get_user_data(
+    struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_tool_v2);
 }
 
 static inline uint32_t
-zwp_tablet_tool_v2_get_version(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_tool_v2);
+zwp_tablet_tool_v2_get_version(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_tool_v2);
 }
 
 /**
@@ -1237,10 +1215,13 @@ zwp_tablet_tool_v2_get_version(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2)
  * protocol error is raised.
  */
 static inline void
-zwp_tablet_tool_v2_set_cursor(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2, uint32_t serial, struct wl_surface *surface, int32_t hotspot_x, int32_t hotspot_y)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_tool_v2,
-			 ZWP_TABLET_TOOL_V2_SET_CURSOR, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_tool_v2), 0, serial, surface, hotspot_x, hotspot_y);
+zwp_tablet_tool_v2_set_cursor(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2,
+                              uint32_t serial, struct wl_surface *surface,
+                              int32_t hotspot_x, int32_t hotspot_y) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_tool_v2, ZWP_TABLET_TOOL_V2_SET_CURSOR,
+      NULL, wl_proxy_get_version((struct wl_proxy *)zwp_tablet_tool_v2), 0,
+      serial, surface, hotspot_x, hotspot_y);
 }
 
 /**
@@ -1249,41 +1230,42 @@ zwp_tablet_tool_v2_set_cursor(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2, uin
  * This destroys the client's resource for this tool object.
  */
 static inline void
-zwp_tablet_tool_v2_destroy(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_tool_v2,
-			 ZWP_TABLET_TOOL_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_tool_v2), WL_MARSHAL_FLAG_DESTROY);
+zwp_tablet_tool_v2_destroy(struct zwp_tablet_tool_v2 *zwp_tablet_tool_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_tool_v2, ZWP_TABLET_TOOL_V2_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_tool_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef ZWP_TABLET_V2_BUSTYPE_ENUM
 #define ZWP_TABLET_V2_BUSTYPE_ENUM
 /**
  * @ingroup iface_zwp_tablet_v2
- * bus type 
+ * bus type
  *
  * Describes the bus types this tablet is connected to.
  */
 enum zwp_tablet_v2_bustype {
-	/**
-	 * USB
-	 */
-	ZWP_TABLET_V2_BUSTYPE_USB = 3,
-	/**
-	 * Bluetooth
-	 */
-	ZWP_TABLET_V2_BUSTYPE_BLUETOOTH = 5,
-	/**
-	 * Virtual
-	 */
-	ZWP_TABLET_V2_BUSTYPE_VIRTUAL = 6,
-	/**
-	 * Serial
-	 */
-	ZWP_TABLET_V2_BUSTYPE_SERIAL = 17,
-	/**
-	 * I2C
-	 */
-	ZWP_TABLET_V2_BUSTYPE_I2C = 24,
+  /**
+   * USB
+   */
+  ZWP_TABLET_V2_BUSTYPE_USB = 3,
+  /**
+   * Bluetooth
+   */
+  ZWP_TABLET_V2_BUSTYPE_BLUETOOTH = 5,
+  /**
+   * Virtual
+   */
+  ZWP_TABLET_V2_BUSTYPE_VIRTUAL = 6,
+  /**
+   * Serial
+   */
+  ZWP_TABLET_V2_BUSTYPE_SERIAL = 17,
+  /**
+   * I2C
+   */
+  ZWP_TABLET_V2_BUSTYPE_I2C = 24,
 };
 #endif /* ZWP_TABLET_V2_BUSTYPE_ENUM */
 
@@ -1292,106 +1274,99 @@ enum zwp_tablet_v2_bustype {
  * @struct zwp_tablet_v2_listener
  */
 struct zwp_tablet_v2_listener {
-	/**
-	 * tablet device name
-	 *
-	 * A descriptive name for the tablet device.
-	 *
-	 * If the device has no descriptive name, this event is not sent.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_v2.done event.
-	 * @param name the device name
-	 */
-	void (*name)(void *data,
-		     struct zwp_tablet_v2 *zwp_tablet_v2,
-		     const char *name);
-	/**
-	 * tablet device vendor/product id
-	 *
-	 * The vendor and product IDs for the tablet device.
-	 *
-	 * The interpretation of the id depends on the
-	 * zwp_tablet_v2.bustype. Prior to version v2 of this protocol, the
-	 * id was implied to be a USB vendor and product ID. If no
-	 * zwp_tablet_v2.bustype is sent, the ID is to be interpreted as
-	 * USB vendor and product ID.
-	 *
-	 * If the device has no vendor/product ID, this event is not sent.
-	 * This can happen for virtual devices or non-USB devices, for
-	 * instance.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_v2.done event.
-	 * @param vid vendor id
-	 * @param pid product id
-	 */
-	void (*id)(void *data,
-		   struct zwp_tablet_v2 *zwp_tablet_v2,
-		   uint32_t vid,
-		   uint32_t pid);
-	/**
-	 * path to the device
-	 *
-	 * A system-specific device path that indicates which device is
-	 * behind this zwp_tablet_v2. This information may be used to
-	 * gather additional information about the device, e.g. through
-	 * libwacom.
-	 *
-	 * A device may have more than one device path. If so, multiple
-	 * zwp_tablet_v2.path events are sent. A device may be emulated and
-	 * not have a device path, and in that case this event will not be
-	 * sent.
-	 *
-	 * The format of the path is unspecified, it may be a device node,
-	 * a sysfs path, or some other identifier. It is up to the client
-	 * to identify the string provided.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_v2.done event.
-	 * @param path path to local device
-	 */
-	void (*path)(void *data,
-		     struct zwp_tablet_v2 *zwp_tablet_v2,
-		     const char *path);
-	/**
-	 * tablet description events sequence complete
-	 *
-	 * This event is sent immediately to signal the end of the
-	 * initial burst of descriptive events. A client may consider the
-	 * static description of the tablet to be complete and finalize
-	 * initialization of the tablet.
-	 */
-	void (*done)(void *data,
-		     struct zwp_tablet_v2 *zwp_tablet_v2);
-	/**
-	 * tablet removed event
-	 *
-	 * Sent when the tablet has been removed from the system. When a
-	 * tablet is removed, some tools may be removed.
-	 *
-	 * When this event is received, the client must
-	 * zwp_tablet_v2.destroy the object.
-	 */
-	void (*removed)(void *data,
-			struct zwp_tablet_v2 *zwp_tablet_v2);
-	/**
-	 * tablet device bus type
-	 *
-	 * The bustype argument is one of the BUS_ defines in the Linux
-	 * kernel's linux/input.h
-	 *
-	 * If the device has no known bustype or the bustype cannot be
-	 * queried, this event is not sent.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_v2.done event.
-	 * @param bustype bus type
-	 * @since 2
-	 */
-	void (*bustype)(void *data,
-			struct zwp_tablet_v2 *zwp_tablet_v2,
-			uint32_t bustype);
+  /**
+   * tablet device name
+   *
+   * A descriptive name for the tablet device.
+   *
+   * If the device has no descriptive name, this event is not sent.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_v2.done event.
+   * @param name the device name
+   */
+  void (*name)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2,
+               const char *name);
+  /**
+   * tablet device vendor/product id
+   *
+   * The vendor and product IDs for the tablet device.
+   *
+   * The interpretation of the id depends on the
+   * zwp_tablet_v2.bustype. Prior to version v2 of this protocol, the
+   * id was implied to be a USB vendor and product ID. If no
+   * zwp_tablet_v2.bustype is sent, the ID is to be interpreted as
+   * USB vendor and product ID.
+   *
+   * If the device has no vendor/product ID, this event is not sent.
+   * This can happen for virtual devices or non-USB devices, for
+   * instance.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_v2.done event.
+   * @param vid vendor id
+   * @param pid product id
+   */
+  void (*id)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2, uint32_t vid,
+             uint32_t pid);
+  /**
+   * path to the device
+   *
+   * A system-specific device path that indicates which device is
+   * behind this zwp_tablet_v2. This information may be used to
+   * gather additional information about the device, e.g. through
+   * libwacom.
+   *
+   * A device may have more than one device path. If so, multiple
+   * zwp_tablet_v2.path events are sent. A device may be emulated and
+   * not have a device path, and in that case this event will not be
+   * sent.
+   *
+   * The format of the path is unspecified, it may be a device node,
+   * a sysfs path, or some other identifier. It is up to the client
+   * to identify the string provided.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_v2.done event.
+   * @param path path to local device
+   */
+  void (*path)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2,
+               const char *path);
+  /**
+   * tablet description events sequence complete
+   *
+   * This event is sent immediately to signal the end of the
+   * initial burst of descriptive events. A client may consider the
+   * static description of the tablet to be complete and finalize
+   * initialization of the tablet.
+   */
+  void (*done)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2);
+  /**
+   * tablet removed event
+   *
+   * Sent when the tablet has been removed from the system. When a
+   * tablet is removed, some tools may be removed.
+   *
+   * When this event is received, the client must
+   * zwp_tablet_v2.destroy the object.
+   */
+  void (*removed)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2);
+  /**
+   * tablet device bus type
+   *
+   * The bustype argument is one of the BUS_ defines in the Linux
+   * kernel's linux/input.h
+   *
+   * If the device has no known bustype or the bustype cannot be
+   * queried, this event is not sent.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_v2.done event.
+   * @param bustype bus type
+   * @since 2
+   */
+  void (*bustype)(void *data, struct zwp_tablet_v2 *zwp_tablet_v2,
+                  uint32_t bustype);
 };
 
 /**
@@ -1399,10 +1374,10 @@ struct zwp_tablet_v2_listener {
  */
 static inline int
 zwp_tablet_v2_add_listener(struct zwp_tablet_v2 *zwp_tablet_v2,
-			   const struct zwp_tablet_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_v2,
-				     (void (**)(void)) listener, data);
+                           const struct zwp_tablet_v2_listener *listener,
+                           void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_V2_DESTROY 0
@@ -1439,22 +1414,20 @@ zwp_tablet_v2_add_listener(struct zwp_tablet_v2 *zwp_tablet_v2,
 
 /** @ingroup iface_zwp_tablet_v2 */
 static inline void
-zwp_tablet_v2_set_user_data(struct zwp_tablet_v2 *zwp_tablet_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_v2, user_data);
+zwp_tablet_v2_set_user_data(struct zwp_tablet_v2 *zwp_tablet_v2,
+                            void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_v2 */
 static inline void *
-zwp_tablet_v2_get_user_data(struct zwp_tablet_v2 *zwp_tablet_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_v2);
+zwp_tablet_v2_get_user_data(struct zwp_tablet_v2 *zwp_tablet_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_v2);
 }
 
 static inline uint32_t
-zwp_tablet_v2_get_version(struct zwp_tablet_v2 *zwp_tablet_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_v2);
+zwp_tablet_v2_get_version(struct zwp_tablet_v2 *zwp_tablet_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_v2);
 }
 
 /**
@@ -1462,11 +1435,11 @@ zwp_tablet_v2_get_version(struct zwp_tablet_v2 *zwp_tablet_v2)
  *
  * This destroys the client's resource for this tablet object.
  */
-static inline void
-zwp_tablet_v2_destroy(struct zwp_tablet_v2 *zwp_tablet_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_v2,
-			 ZWP_TABLET_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_v2_destroy(struct zwp_tablet_v2 *zwp_tablet_v2) {
+  wl_proxy_marshal_flags((struct wl_proxy *)zwp_tablet_v2,
+                         ZWP_TABLET_V2_DESTROY, NULL,
+                         wl_proxy_get_version((struct wl_proxy *)zwp_tablet_v2),
+                         WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef ZWP_TABLET_PAD_RING_V2_SOURCE_ENUM
@@ -1481,10 +1454,10 @@ zwp_tablet_v2_destroy(struct zwp_tablet_v2 *zwp_tablet_v2)
  * from a "finger" source may trigger kinetic scrolling.
  */
 enum zwp_tablet_pad_ring_v2_source {
-	/**
-	 * finger
-	 */
-	ZWP_TABLET_PAD_RING_V2_SOURCE_FINGER = 1,
+  /**
+   * finger
+   */
+  ZWP_TABLET_PAD_RING_V2_SOURCE_FINGER = 1,
 };
 #endif /* ZWP_TABLET_PAD_RING_V2_SOURCE_ENUM */
 
@@ -1493,91 +1466,90 @@ enum zwp_tablet_pad_ring_v2_source {
  * @struct zwp_tablet_pad_ring_v2_listener
  */
 struct zwp_tablet_pad_ring_v2_listener {
-	/**
-	 * ring event source
-	 *
-	 * Source information for ring events.
-	 *
-	 * This event does not occur on its own. It is sent before a
-	 * zwp_tablet_pad_ring_v2.frame event and carries the source
-	 * information for all events within that frame.
-	 *
-	 * The source specifies how this event was generated. If the source
-	 * is zwp_tablet_pad_ring_v2.source.finger, a
-	 * zwp_tablet_pad_ring_v2.stop event will be sent when the user
-	 * lifts the finger off the device.
-	 *
-	 * This event is optional. If the source is unknown for an
-	 * interaction, no event is sent.
-	 * @param source the event source
-	 */
-	void (*source)(void *data,
-		       struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
-		       uint32_t source);
-	/**
-	 * angle changed
-	 *
-	 * Sent whenever the angle on a ring changes.
-	 *
-	 * The angle is provided in degrees clockwise from the logical
-	 * north of the ring in the pad's current rotation.
-	 * @param degrees the current angle in degrees
-	 */
-	void (*angle)(void *data,
-		      struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
-		      wl_fixed_t degrees);
-	/**
-	 * interaction stopped
-	 *
-	 * Stop notification for ring events.
-	 *
-	 * For some zwp_tablet_pad_ring_v2.source types, a
-	 * zwp_tablet_pad_ring_v2.stop event is sent to notify a client
-	 * that the interaction with the ring has terminated. This enables
-	 * the client to implement kinetic scrolling. See the
-	 * zwp_tablet_pad_ring_v2.source documentation for information on
-	 * when this event may be generated.
-	 *
-	 * Any zwp_tablet_pad_ring_v2.angle events with the same source
-	 * after this event should be considered as the start of a new
-	 * interaction.
-	 */
-	void (*stop)(void *data,
-		     struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2);
-	/**
-	 * end of a ring event sequence
-	 *
-	 * Indicates the end of a set of ring events that logically
-	 * belong together. A client is expected to accumulate the data in
-	 * all events within the frame before proceeding.
-	 *
-	 * All zwp_tablet_pad_ring_v2 events before a
-	 * zwp_tablet_pad_ring_v2.frame event belong logically together.
-	 * For example, on termination of a finger interaction on a ring
-	 * the compositor will send a zwp_tablet_pad_ring_v2.source event,
-	 * a zwp_tablet_pad_ring_v2.stop event and a
-	 * zwp_tablet_pad_ring_v2.frame event.
-	 *
-	 * A zwp_tablet_pad_ring_v2.frame event is sent for every logical
-	 * event group, even if the group only contains a single
-	 * zwp_tablet_pad_ring_v2 event. Specifically, a client may get a
-	 * sequence: angle, frame, angle, frame, etc.
-	 * @param time timestamp with millisecond granularity
-	 */
-	void (*frame)(void *data,
-		      struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
-		      uint32_t time);
+  /**
+   * ring event source
+   *
+   * Source information for ring events.
+   *
+   * This event does not occur on its own. It is sent before a
+   * zwp_tablet_pad_ring_v2.frame event and carries the source
+   * information for all events within that frame.
+   *
+   * The source specifies how this event was generated. If the source
+   * is zwp_tablet_pad_ring_v2.source.finger, a
+   * zwp_tablet_pad_ring_v2.stop event will be sent when the user
+   * lifts the finger off the device.
+   *
+   * This event is optional. If the source is unknown for an
+   * interaction, no event is sent.
+   * @param source the event source
+   */
+  void (*source)(void *data,
+                 struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
+                 uint32_t source);
+  /**
+   * angle changed
+   *
+   * Sent whenever the angle on a ring changes.
+   *
+   * The angle is provided in degrees clockwise from the logical
+   * north of the ring in the pad's current rotation.
+   * @param degrees the current angle in degrees
+   */
+  void (*angle)(void *data,
+                struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
+                wl_fixed_t degrees);
+  /**
+   * interaction stopped
+   *
+   * Stop notification for ring events.
+   *
+   * For some zwp_tablet_pad_ring_v2.source types, a
+   * zwp_tablet_pad_ring_v2.stop event is sent to notify a client
+   * that the interaction with the ring has terminated. This enables
+   * the client to implement kinetic scrolling. See the
+   * zwp_tablet_pad_ring_v2.source documentation for information on
+   * when this event may be generated.
+   *
+   * Any zwp_tablet_pad_ring_v2.angle events with the same source
+   * after this event should be considered as the start of a new
+   * interaction.
+   */
+  void (*stop)(void *data,
+               struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2);
+  /**
+   * end of a ring event sequence
+   *
+   * Indicates the end of a set of ring events that logically
+   * belong together. A client is expected to accumulate the data in
+   * all events within the frame before proceeding.
+   *
+   * All zwp_tablet_pad_ring_v2 events before a
+   * zwp_tablet_pad_ring_v2.frame event belong logically together.
+   * For example, on termination of a finger interaction on a ring
+   * the compositor will send a zwp_tablet_pad_ring_v2.source event,
+   * a zwp_tablet_pad_ring_v2.stop event and a
+   * zwp_tablet_pad_ring_v2.frame event.
+   *
+   * A zwp_tablet_pad_ring_v2.frame event is sent for every logical
+   * event group, even if the group only contains a single
+   * zwp_tablet_pad_ring_v2 event. Specifically, a client may get a
+   * sequence: angle, frame, angle, frame, etc.
+   * @param time timestamp with millisecond granularity
+   */
+  void (*frame)(void *data,
+                struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
+                uint32_t time);
 };
 
 /**
  * @ingroup iface_zwp_tablet_pad_ring_v2
  */
-static inline int
-zwp_tablet_pad_ring_v2_add_listener(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
-				    const struct zwp_tablet_pad_ring_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_pad_ring_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_pad_ring_v2_add_listener(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
+    const struct zwp_tablet_pad_ring_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_pad_ring_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_PAD_RING_V2_SET_FEEDBACK 0
@@ -1610,23 +1582,20 @@ zwp_tablet_pad_ring_v2_add_listener(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pa
 #define ZWP_TABLET_PAD_RING_V2_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_zwp_tablet_pad_ring_v2 */
-static inline void
-zwp_tablet_pad_ring_v2_set_user_data(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_pad_ring_v2, user_data);
+static inline void zwp_tablet_pad_ring_v2_set_user_data(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_pad_ring_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_pad_ring_v2 */
-static inline void *
-zwp_tablet_pad_ring_v2_get_user_data(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_pad_ring_v2);
+static inline void *zwp_tablet_pad_ring_v2_get_user_data(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_pad_ring_v2);
 }
 
-static inline uint32_t
-zwp_tablet_pad_ring_v2_get_version(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_ring_v2);
+static inline uint32_t zwp_tablet_pad_ring_v2_get_version(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_ring_v2);
 }
 
 /**
@@ -1652,11 +1621,14 @@ zwp_tablet_pad_ring_v2_get_version(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad
  * ring. Requests providing other serials than the most recent one will be
  * ignored.
  */
-static inline void
-zwp_tablet_pad_ring_v2_set_feedback(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2, const char *description, uint32_t serial)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_ring_v2,
-			 ZWP_TABLET_PAD_RING_V2_SET_FEEDBACK, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_ring_v2), 0, description, serial);
+static inline void zwp_tablet_pad_ring_v2_set_feedback(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2,
+    const char *description, uint32_t serial) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_ring_v2,
+      ZWP_TABLET_PAD_RING_V2_SET_FEEDBACK, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_ring_v2), 0,
+      description, serial);
 }
 
 /**
@@ -1664,11 +1636,12 @@ zwp_tablet_pad_ring_v2_set_feedback(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pa
  *
  * This destroys the client's resource for this ring object.
  */
-static inline void
-zwp_tablet_pad_ring_v2_destroy(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_ring_v2,
-			 ZWP_TABLET_PAD_RING_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_ring_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_pad_ring_v2_destroy(
+    struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_ring_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_ring_v2, ZWP_TABLET_PAD_RING_V2_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_ring_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef ZWP_TABLET_PAD_STRIP_V2_SOURCE_ENUM
@@ -1683,10 +1656,10 @@ zwp_tablet_pad_ring_v2_destroy(struct zwp_tablet_pad_ring_v2 *zwp_tablet_pad_rin
  * from a "finger" source may trigger kinetic scrolling.
  */
 enum zwp_tablet_pad_strip_v2_source {
-	/**
-	 * finger
-	 */
-	ZWP_TABLET_PAD_STRIP_V2_SOURCE_FINGER = 1,
+  /**
+   * finger
+   */
+  ZWP_TABLET_PAD_STRIP_V2_SOURCE_FINGER = 1,
 };
 #endif /* ZWP_TABLET_PAD_STRIP_V2_SOURCE_ENUM */
 
@@ -1695,92 +1668,91 @@ enum zwp_tablet_pad_strip_v2_source {
  * @struct zwp_tablet_pad_strip_v2_listener
  */
 struct zwp_tablet_pad_strip_v2_listener {
-	/**
-	 * strip event source
-	 *
-	 * Source information for strip events.
-	 *
-	 * This event does not occur on its own. It is sent before a
-	 * zwp_tablet_pad_strip_v2.frame event and carries the source
-	 * information for all events within that frame.
-	 *
-	 * The source specifies how this event was generated. If the source
-	 * is zwp_tablet_pad_strip_v2.source.finger, a
-	 * zwp_tablet_pad_strip_v2.stop event will be sent when the user
-	 * lifts their finger off the device.
-	 *
-	 * This event is optional. If the source is unknown for an
-	 * interaction, no event is sent.
-	 * @param source the event source
-	 */
-	void (*source)(void *data,
-		       struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
-		       uint32_t source);
-	/**
-	 * position changed
-	 *
-	 * Sent whenever the position on a strip changes.
-	 *
-	 * The position is normalized to a range of [0, 65535], the 0-value
-	 * represents the top-most and/or left-most position of the strip
-	 * in the pad's current rotation.
-	 * @param position the current position
-	 */
-	void (*position)(void *data,
-			 struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
-			 uint32_t position);
-	/**
-	 * interaction stopped
-	 *
-	 * Stop notification for strip events.
-	 *
-	 * For some zwp_tablet_pad_strip_v2.source types, a
-	 * zwp_tablet_pad_strip_v2.stop event is sent to notify a client
-	 * that the interaction with the strip has terminated. This enables
-	 * the client to implement kinetic scrolling. See the
-	 * zwp_tablet_pad_strip_v2.source documentation for information on
-	 * when this event may be generated.
-	 *
-	 * Any zwp_tablet_pad_strip_v2.position events with the same source
-	 * after this event should be considered as the start of a new
-	 * interaction.
-	 */
-	void (*stop)(void *data,
-		     struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2);
-	/**
-	 * end of a strip event sequence
-	 *
-	 * Indicates the end of a set of events that represent one
-	 * logical hardware strip event. A client is expected to accumulate
-	 * the data in all events within the frame before proceeding.
-	 *
-	 * All zwp_tablet_pad_strip_v2 events before a
-	 * zwp_tablet_pad_strip_v2.frame event belong logically together.
-	 * For example, on termination of a finger interaction on a strip
-	 * the compositor will send a zwp_tablet_pad_strip_v2.source event,
-	 * a zwp_tablet_pad_strip_v2.stop event and a
-	 * zwp_tablet_pad_strip_v2.frame event.
-	 *
-	 * A zwp_tablet_pad_strip_v2.frame event is sent for every logical
-	 * event group, even if the group only contains a single
-	 * zwp_tablet_pad_strip_v2 event. Specifically, a client may get a
-	 * sequence: position, frame, position, frame, etc.
-	 * @param time timestamp with millisecond granularity
-	 */
-	void (*frame)(void *data,
-		      struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
-		      uint32_t time);
+  /**
+   * strip event source
+   *
+   * Source information for strip events.
+   *
+   * This event does not occur on its own. It is sent before a
+   * zwp_tablet_pad_strip_v2.frame event and carries the source
+   * information for all events within that frame.
+   *
+   * The source specifies how this event was generated. If the source
+   * is zwp_tablet_pad_strip_v2.source.finger, a
+   * zwp_tablet_pad_strip_v2.stop event will be sent when the user
+   * lifts their finger off the device.
+   *
+   * This event is optional. If the source is unknown for an
+   * interaction, no event is sent.
+   * @param source the event source
+   */
+  void (*source)(void *data,
+                 struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
+                 uint32_t source);
+  /**
+   * position changed
+   *
+   * Sent whenever the position on a strip changes.
+   *
+   * The position is normalized to a range of [0, 65535], the 0-value
+   * represents the top-most and/or left-most position of the strip
+   * in the pad's current rotation.
+   * @param position the current position
+   */
+  void (*position)(void *data,
+                   struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
+                   uint32_t position);
+  /**
+   * interaction stopped
+   *
+   * Stop notification for strip events.
+   *
+   * For some zwp_tablet_pad_strip_v2.source types, a
+   * zwp_tablet_pad_strip_v2.stop event is sent to notify a client
+   * that the interaction with the strip has terminated. This enables
+   * the client to implement kinetic scrolling. See the
+   * zwp_tablet_pad_strip_v2.source documentation for information on
+   * when this event may be generated.
+   *
+   * Any zwp_tablet_pad_strip_v2.position events with the same source
+   * after this event should be considered as the start of a new
+   * interaction.
+   */
+  void (*stop)(void *data,
+               struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2);
+  /**
+   * end of a strip event sequence
+   *
+   * Indicates the end of a set of events that represent one
+   * logical hardware strip event. A client is expected to accumulate
+   * the data in all events within the frame before proceeding.
+   *
+   * All zwp_tablet_pad_strip_v2 events before a
+   * zwp_tablet_pad_strip_v2.frame event belong logically together.
+   * For example, on termination of a finger interaction on a strip
+   * the compositor will send a zwp_tablet_pad_strip_v2.source event,
+   * a zwp_tablet_pad_strip_v2.stop event and a
+   * zwp_tablet_pad_strip_v2.frame event.
+   *
+   * A zwp_tablet_pad_strip_v2.frame event is sent for every logical
+   * event group, even if the group only contains a single
+   * zwp_tablet_pad_strip_v2 event. Specifically, a client may get a
+   * sequence: position, frame, position, frame, etc.
+   * @param time timestamp with millisecond granularity
+   */
+  void (*frame)(void *data,
+                struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
+                uint32_t time);
 };
 
 /**
  * @ingroup iface_zwp_tablet_pad_strip_v2
  */
-static inline int
-zwp_tablet_pad_strip_v2_add_listener(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
-				     const struct zwp_tablet_pad_strip_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_pad_strip_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_pad_strip_v2_add_listener(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
+    const struct zwp_tablet_pad_strip_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_pad_strip_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_PAD_STRIP_V2_SET_FEEDBACK 0
@@ -1813,23 +1785,20 @@ zwp_tablet_pad_strip_v2_add_listener(struct zwp_tablet_pad_strip_v2 *zwp_tablet_
 #define ZWP_TABLET_PAD_STRIP_V2_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_zwp_tablet_pad_strip_v2 */
-static inline void
-zwp_tablet_pad_strip_v2_set_user_data(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_pad_strip_v2, user_data);
+static inline void zwp_tablet_pad_strip_v2_set_user_data(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_pad_strip_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_pad_strip_v2 */
-static inline void *
-zwp_tablet_pad_strip_v2_get_user_data(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_pad_strip_v2);
+static inline void *zwp_tablet_pad_strip_v2_get_user_data(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_pad_strip_v2);
 }
 
-static inline uint32_t
-zwp_tablet_pad_strip_v2_get_version(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_strip_v2);
+static inline uint32_t zwp_tablet_pad_strip_v2_get_version(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_strip_v2);
 }
 
 /**
@@ -1855,11 +1824,14 @@ zwp_tablet_pad_strip_v2_get_version(struct zwp_tablet_pad_strip_v2 *zwp_tablet_p
  * strip. Requests providing other serials than the most recent one will be
  * ignored.
  */
-static inline void
-zwp_tablet_pad_strip_v2_set_feedback(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2, const char *description, uint32_t serial)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_strip_v2,
-			 ZWP_TABLET_PAD_STRIP_V2_SET_FEEDBACK, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_strip_v2), 0, description, serial);
+static inline void zwp_tablet_pad_strip_v2_set_feedback(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2,
+    const char *description, uint32_t serial) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_strip_v2,
+      ZWP_TABLET_PAD_STRIP_V2_SET_FEEDBACK, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_strip_v2), 0,
+      description, serial);
 }
 
 /**
@@ -1867,11 +1839,13 @@ zwp_tablet_pad_strip_v2_set_feedback(struct zwp_tablet_pad_strip_v2 *zwp_tablet_
  *
  * This destroys the client's resource for this strip object.
  */
-static inline void
-zwp_tablet_pad_strip_v2_destroy(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_strip_v2,
-			 ZWP_TABLET_PAD_STRIP_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_strip_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_pad_strip_v2_destroy(
+    struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_strip_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_strip_v2,
+      ZWP_TABLET_PAD_STRIP_V2_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_strip_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -1879,148 +1853,145 @@ zwp_tablet_pad_strip_v2_destroy(struct zwp_tablet_pad_strip_v2 *zwp_tablet_pad_s
  * @struct zwp_tablet_pad_group_v2_listener
  */
 struct zwp_tablet_pad_group_v2_listener {
-	/**
-	 * buttons announced
-	 *
-	 * Sent on zwp_tablet_pad_group_v2 initialization to announce the
-	 * available buttons in the group. Button indices start at 0, a
-	 * button may only be in one group at a time.
-	 *
-	 * This event is first sent in the initial burst of events before
-	 * the zwp_tablet_pad_group_v2.done event.
-	 *
-	 * Some buttons are reserved by the compositor. These buttons may
-	 * not be assigned to any zwp_tablet_pad_group_v2. Compositors may
-	 * broadcast this event in the case of changes to the mapping of
-	 * these reserved buttons. If the compositor happens to reserve all
-	 * buttons in a group, this event will be sent with an empty array.
-	 * @param buttons buttons in this group
-	 */
-	void (*buttons)(void *data,
-			struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-			struct wl_array *buttons);
-	/**
-	 * ring announced
-	 *
-	 * Sent on zwp_tablet_pad_group_v2 initialization to announce
-	 * available rings. One event is sent for each ring available on
-	 * this pad group.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_group_v2.done event.
-	 */
-	void (*ring)(void *data,
-		     struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-		     struct zwp_tablet_pad_ring_v2 *ring);
-	/**
-	 * strip announced
-	 *
-	 * Sent on zwp_tablet_pad_v2 initialization to announce available
-	 * strips. One event is sent for each strip available on this pad
-	 * group.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_group_v2.done event.
-	 */
-	void (*strip)(void *data,
-		      struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-		      struct zwp_tablet_pad_strip_v2 *strip);
-	/**
-	 * mode-switch ability announced
-	 *
-	 * Sent on zwp_tablet_pad_group_v2 initialization to announce
-	 * that the pad group may switch between modes. A client may use a
-	 * mode to store a specific configuration for buttons, rings and
-	 * strips and use the zwp_tablet_pad_group_v2.mode_switch event to
-	 * toggle between these configurations. Mode indices start at 0.
-	 *
-	 * Switching modes is compositor-dependent. See the
-	 * zwp_tablet_pad_group_v2.mode_switch event for more details.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_group_v2.done event. This event is only sent when
-	 * more than one mode is available.
-	 * @param modes the number of modes
-	 */
-	void (*modes)(void *data,
-		      struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-		      uint32_t modes);
-	/**
-	 * tablet group description events sequence complete
-	 *
-	 * This event is sent immediately to signal the end of the
-	 * initial burst of descriptive events. A client may consider the
-	 * static description of the tablet to be complete and finalize
-	 * initialization of the tablet group.
-	 */
-	void (*done)(void *data,
-		     struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2);
-	/**
-	 * mode switch event
-	 *
-	 * Notification that the mode was switched.
-	 *
-	 * A mode applies to all buttons, rings, strips and dials in a
-	 * group simultaneously, but a client is not required to assign
-	 * different actions for each mode. For example, a client may have
-	 * mode-specific button mappings but map the ring to vertical
-	 * scrolling in all modes. Mode indices start at 0.
-	 *
-	 * Switching modes is compositor-dependent. The compositor may
-	 * provide visual cues to the user about the mode, e.g. by toggling
-	 * LEDs on the tablet device. Mode-switching may be
-	 * software-controlled or controlled by one or more physical
-	 * buttons. For example, on a Wacom Intuos Pro, the button inside
-	 * the ring may be assigned to switch between modes.
-	 *
-	 * The compositor will also send this event after
-	 * zwp_tablet_pad_v2.enter on each group in order to notify of the
-	 * current mode. Groups that only feature one mode will use mode=0
-	 * when emitting this event.
-	 *
-	 * If a button action in the new mode differs from the action in
-	 * the previous mode, the client should immediately issue a
-	 * zwp_tablet_pad_v2.set_feedback request for each changed button.
-	 *
-	 * If a ring, strip or dial action in the new mode differs from the
-	 * action in the previous mode, the client should immediately issue
-	 * a zwp_tablet_ring_v2.set_feedback,
-	 * zwp_tablet_strip_v2.set_feedback or
-	 * zwp_tablet_dial_v2.set_feedback request for each changed ring,
-	 * strip or dial.
-	 * @param time the time of the event with millisecond granularity
-	 * @param mode the new mode of the pad
-	 */
-	void (*mode_switch)(void *data,
-			    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-			    uint32_t time,
-			    uint32_t serial,
-			    uint32_t mode);
-	/**
-	 * dial announced
-	 *
-	 * Sent on zwp_tablet_pad_v2 initialization to announce available
-	 * dials. One event is sent for each dial available on this pad
-	 * group.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_group_v2.done event.
-	 * @since 2
-	 */
-	void (*dial)(void *data,
-		     struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-		     struct zwp_tablet_pad_dial_v2 *dial);
+  /**
+   * buttons announced
+   *
+   * Sent on zwp_tablet_pad_group_v2 initialization to announce the
+   * available buttons in the group. Button indices start at 0, a
+   * button may only be in one group at a time.
+   *
+   * This event is first sent in the initial burst of events before
+   * the zwp_tablet_pad_group_v2.done event.
+   *
+   * Some buttons are reserved by the compositor. These buttons may
+   * not be assigned to any zwp_tablet_pad_group_v2. Compositors may
+   * broadcast this event in the case of changes to the mapping of
+   * these reserved buttons. If the compositor happens to reserve all
+   * buttons in a group, this event will be sent with an empty array.
+   * @param buttons buttons in this group
+   */
+  void (*buttons)(void *data,
+                  struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+                  struct wl_array *buttons);
+  /**
+   * ring announced
+   *
+   * Sent on zwp_tablet_pad_group_v2 initialization to announce
+   * available rings. One event is sent for each ring available on
+   * this pad group.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_group_v2.done event.
+   */
+  void (*ring)(void *data,
+               struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+               struct zwp_tablet_pad_ring_v2 *ring);
+  /**
+   * strip announced
+   *
+   * Sent on zwp_tablet_pad_v2 initialization to announce available
+   * strips. One event is sent for each strip available on this pad
+   * group.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_group_v2.done event.
+   */
+  void (*strip)(void *data,
+                struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+                struct zwp_tablet_pad_strip_v2 *strip);
+  /**
+   * mode-switch ability announced
+   *
+   * Sent on zwp_tablet_pad_group_v2 initialization to announce
+   * that the pad group may switch between modes. A client may use a
+   * mode to store a specific configuration for buttons, rings and
+   * strips and use the zwp_tablet_pad_group_v2.mode_switch event to
+   * toggle between these configurations. Mode indices start at 0.
+   *
+   * Switching modes is compositor-dependent. See the
+   * zwp_tablet_pad_group_v2.mode_switch event for more details.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_group_v2.done event. This event is only sent when
+   * more than one mode is available.
+   * @param modes the number of modes
+   */
+  void (*modes)(void *data,
+                struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+                uint32_t modes);
+  /**
+   * tablet group description events sequence complete
+   *
+   * This event is sent immediately to signal the end of the
+   * initial burst of descriptive events. A client may consider the
+   * static description of the tablet to be complete and finalize
+   * initialization of the tablet group.
+   */
+  void (*done)(void *data,
+               struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2);
+  /**
+   * mode switch event
+   *
+   * Notification that the mode was switched.
+   *
+   * A mode applies to all buttons, rings, strips and dials in a
+   * group simultaneously, but a client is not required to assign
+   * different actions for each mode. For example, a client may have
+   * mode-specific button mappings but map the ring to vertical
+   * scrolling in all modes. Mode indices start at 0.
+   *
+   * Switching modes is compositor-dependent. The compositor may
+   * provide visual cues to the user about the mode, e.g. by toggling
+   * LEDs on the tablet device. Mode-switching may be
+   * software-controlled or controlled by one or more physical
+   * buttons. For example, on a Wacom Intuos Pro, the button inside
+   * the ring may be assigned to switch between modes.
+   *
+   * The compositor will also send this event after
+   * zwp_tablet_pad_v2.enter on each group in order to notify of the
+   * current mode. Groups that only feature one mode will use mode=0
+   * when emitting this event.
+   *
+   * If a button action in the new mode differs from the action in
+   * the previous mode, the client should immediately issue a
+   * zwp_tablet_pad_v2.set_feedback request for each changed button.
+   *
+   * If a ring, strip or dial action in the new mode differs from the
+   * action in the previous mode, the client should immediately issue
+   * a zwp_tablet_ring_v2.set_feedback,
+   * zwp_tablet_strip_v2.set_feedback or
+   * zwp_tablet_dial_v2.set_feedback request for each changed ring,
+   * strip or dial.
+   * @param time the time of the event with millisecond granularity
+   * @param mode the new mode of the pad
+   */
+  void (*mode_switch)(void *data,
+                      struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+                      uint32_t time, uint32_t serial, uint32_t mode);
+  /**
+   * dial announced
+   *
+   * Sent on zwp_tablet_pad_v2 initialization to announce available
+   * dials. One event is sent for each dial available on this pad
+   * group.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_group_v2.done event.
+   * @since 2
+   */
+  void (*dial)(void *data,
+               struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+               struct zwp_tablet_pad_dial_v2 *dial);
 };
 
 /**
  * @ingroup iface_zwp_tablet_pad_group_v2
  */
-static inline int
-zwp_tablet_pad_group_v2_add_listener(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
-				     const struct zwp_tablet_pad_group_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_pad_group_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_pad_group_v2_add_listener(
+    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2,
+    const struct zwp_tablet_pad_group_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_pad_group_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_PAD_GROUP_V2_DESTROY 0
@@ -2060,23 +2031,20 @@ zwp_tablet_pad_group_v2_add_listener(struct zwp_tablet_pad_group_v2 *zwp_tablet_
 #define ZWP_TABLET_PAD_GROUP_V2_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_zwp_tablet_pad_group_v2 */
-static inline void
-zwp_tablet_pad_group_v2_set_user_data(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_pad_group_v2, user_data);
+static inline void zwp_tablet_pad_group_v2_set_user_data(
+    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_pad_group_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_pad_group_v2 */
-static inline void *
-zwp_tablet_pad_group_v2_get_user_data(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_pad_group_v2);
+static inline void *zwp_tablet_pad_group_v2_get_user_data(
+    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_pad_group_v2);
 }
 
-static inline uint32_t
-zwp_tablet_pad_group_v2_get_version(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_group_v2);
+static inline uint32_t zwp_tablet_pad_group_v2_get_version(
+    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_group_v2);
 }
 
 /**
@@ -2085,11 +2053,13 @@ zwp_tablet_pad_group_v2_get_version(struct zwp_tablet_pad_group_v2 *zwp_tablet_p
  * Destroy the zwp_tablet_pad_group_v2 object. Objects created from this object
  * are unaffected and should be destroyed separately.
  */
-static inline void
-zwp_tablet_pad_group_v2_destroy(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_group_v2,
-			 ZWP_TABLET_PAD_GROUP_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_group_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_pad_group_v2_destroy(
+    struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_group_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_group_v2,
+      ZWP_TABLET_PAD_GROUP_V2_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_group_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef ZWP_TABLET_PAD_V2_BUTTON_STATE_ENUM
@@ -2102,14 +2072,14 @@ zwp_tablet_pad_group_v2_destroy(struct zwp_tablet_pad_group_v2 *zwp_tablet_pad_g
  * event.
  */
 enum zwp_tablet_pad_v2_button_state {
-	/**
-	 * the button is not pressed
-	 */
-	ZWP_TABLET_PAD_V2_BUTTON_STATE_RELEASED = 0,
-	/**
-	 * the button is pressed
-	 */
-	ZWP_TABLET_PAD_V2_BUTTON_STATE_PRESSED = 1,
+  /**
+   * the button is not pressed
+   */
+  ZWP_TABLET_PAD_V2_BUTTON_STATE_RELEASED = 0,
+  /**
+   * the button is pressed
+   */
+  ZWP_TABLET_PAD_V2_BUTTON_STATE_PRESSED = 1,
 };
 #endif /* ZWP_TABLET_PAD_V2_BUTTON_STATE_ENUM */
 
@@ -2118,122 +2088,109 @@ enum zwp_tablet_pad_v2_button_state {
  * @struct zwp_tablet_pad_v2_listener
  */
 struct zwp_tablet_pad_v2_listener {
-	/**
-	 * group announced
-	 *
-	 * Sent on zwp_tablet_pad_v2 initialization to announce available
-	 * groups. One event is sent for each pad group available.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_v2.done event. At least one group will be
-	 * announced.
-	 */
-	void (*group)(void *data,
-		      struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-		      struct zwp_tablet_pad_group_v2 *pad_group);
-	/**
-	 * path to the device
-	 *
-	 * A system-specific device path that indicates which device is
-	 * behind this zwp_tablet_pad_v2. This information may be used to
-	 * gather additional information about the device, e.g. through
-	 * libwacom.
-	 *
-	 * The format of the path is unspecified, it may be a device node,
-	 * a sysfs path, or some other identifier. It is up to the client
-	 * to identify the string provided.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_v2.done event.
-	 * @param path path to local device
-	 */
-	void (*path)(void *data,
-		     struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-		     const char *path);
-	/**
-	 * buttons announced
-	 *
-	 * Sent on zwp_tablet_pad_v2 initialization to announce the
-	 * available buttons.
-	 *
-	 * This event is sent in the initial burst of events before the
-	 * zwp_tablet_pad_v2.done event. This event is only sent when at
-	 * least one button is available.
-	 * @param buttons the number of buttons
-	 */
-	void (*buttons)(void *data,
-			struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-			uint32_t buttons);
-	/**
-	 * pad description event sequence complete
-	 *
-	 * This event signals the end of the initial burst of descriptive
-	 * events. A client may consider the static description of the pad
-	 * to be complete and finalize initialization of the pad.
-	 */
-	void (*done)(void *data,
-		     struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2);
-	/**
-	 * physical button state
-	 *
-	 * Sent whenever the physical state of a button changes.
-	 * @param time the time of the event with millisecond granularity
-	 * @param button the index of the button that changed state
-	 */
-	void (*button)(void *data,
-		       struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-		       uint32_t time,
-		       uint32_t button,
-		       uint32_t state);
-	/**
-	 * enter event
-	 *
-	 * Notification that this pad is focused on the specified
-	 * surface.
-	 * @param serial serial number of the enter event
-	 * @param tablet the tablet the pad is attached to
-	 * @param surface surface the pad is focused on
-	 */
-	void (*enter)(void *data,
-		      struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-		      uint32_t serial,
-		      struct zwp_tablet_v2 *tablet,
-		      struct wl_surface *surface);
-	/**
-	 * leave event
-	 *
-	 * Notification that this pad is no longer focused on the
-	 * specified surface.
-	 * @param serial serial number of the leave event
-	 * @param surface surface the pad is no longer focused on
-	 */
-	void (*leave)(void *data,
-		      struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-		      uint32_t serial,
-		      struct wl_surface *surface);
-	/**
-	 * pad removed event
-	 *
-	 * Sent when the pad has been removed from the system. When a
-	 * tablet is removed its pad(s) will be removed too.
-	 *
-	 * When this event is received, the client must destroy all rings,
-	 * strips and groups that were offered by this pad, and issue
-	 * zwp_tablet_pad_v2.destroy the pad itself.
-	 */
-	void (*removed)(void *data,
-			struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2);
+  /**
+   * group announced
+   *
+   * Sent on zwp_tablet_pad_v2 initialization to announce available
+   * groups. One event is sent for each pad group available.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_v2.done event. At least one group will be
+   * announced.
+   */
+  void (*group)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                struct zwp_tablet_pad_group_v2 *pad_group);
+  /**
+   * path to the device
+   *
+   * A system-specific device path that indicates which device is
+   * behind this zwp_tablet_pad_v2. This information may be used to
+   * gather additional information about the device, e.g. through
+   * libwacom.
+   *
+   * The format of the path is unspecified, it may be a device node,
+   * a sysfs path, or some other identifier. It is up to the client
+   * to identify the string provided.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_v2.done event.
+   * @param path path to local device
+   */
+  void (*path)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+               const char *path);
+  /**
+   * buttons announced
+   *
+   * Sent on zwp_tablet_pad_v2 initialization to announce the
+   * available buttons.
+   *
+   * This event is sent in the initial burst of events before the
+   * zwp_tablet_pad_v2.done event. This event is only sent when at
+   * least one button is available.
+   * @param buttons the number of buttons
+   */
+  void (*buttons)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                  uint32_t buttons);
+  /**
+   * pad description event sequence complete
+   *
+   * This event signals the end of the initial burst of descriptive
+   * events. A client may consider the static description of the pad
+   * to be complete and finalize initialization of the pad.
+   */
+  void (*done)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2);
+  /**
+   * physical button state
+   *
+   * Sent whenever the physical state of a button changes.
+   * @param time the time of the event with millisecond granularity
+   * @param button the index of the button that changed state
+   */
+  void (*button)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                 uint32_t time, uint32_t button, uint32_t state);
+  /**
+   * enter event
+   *
+   * Notification that this pad is focused on the specified
+   * surface.
+   * @param serial serial number of the enter event
+   * @param tablet the tablet the pad is attached to
+   * @param surface surface the pad is focused on
+   */
+  void (*enter)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                uint32_t serial, struct zwp_tablet_v2 *tablet,
+                struct wl_surface *surface);
+  /**
+   * leave event
+   *
+   * Notification that this pad is no longer focused on the
+   * specified surface.
+   * @param serial serial number of the leave event
+   * @param surface surface the pad is no longer focused on
+   */
+  void (*leave)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                uint32_t serial, struct wl_surface *surface);
+  /**
+   * pad removed event
+   *
+   * Sent when the pad has been removed from the system. When a
+   * tablet is removed its pad(s) will be removed too.
+   *
+   * When this event is received, the client must destroy all rings,
+   * strips and groups that were offered by this pad, and issue
+   * zwp_tablet_pad_v2.destroy the pad itself.
+   */
+  void (*removed)(void *data, struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2);
 };
 
 /**
  * @ingroup iface_zwp_tablet_pad_v2
  */
-static inline int
-zwp_tablet_pad_v2_add_listener(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
-			       const struct zwp_tablet_pad_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_pad_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_pad_v2_add_listener(
+    struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+    const struct zwp_tablet_pad_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_pad_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_PAD_V2_SET_FEEDBACK 0
@@ -2283,22 +2240,20 @@ zwp_tablet_pad_v2_add_listener(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
 
 /** @ingroup iface_zwp_tablet_pad_v2 */
 static inline void
-zwp_tablet_pad_v2_set_user_data(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_pad_v2, user_data);
+zwp_tablet_pad_v2_set_user_data(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                                void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_pad_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_pad_v2 */
 static inline void *
-zwp_tablet_pad_v2_get_user_data(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_pad_v2);
+zwp_tablet_pad_v2_get_user_data(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_pad_v2);
 }
 
 static inline uint32_t
-zwp_tablet_pad_v2_get_version(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_v2);
+zwp_tablet_pad_v2_get_version(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_v2);
 }
 
 /**
@@ -2330,10 +2285,13 @@ zwp_tablet_pad_v2_get_version(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2)
  * be ignored.
  */
 static inline void
-zwp_tablet_pad_v2_set_feedback(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2, uint32_t button, const char *description, uint32_t serial)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_v2,
-			 ZWP_TABLET_PAD_V2_SET_FEEDBACK, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_v2), 0, button, description, serial);
+zwp_tablet_pad_v2_set_feedback(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2,
+                               uint32_t button, const char *description,
+                               uint32_t serial) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_v2, ZWP_TABLET_PAD_V2_SET_FEEDBACK,
+      NULL, wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_v2), 0,
+      button, description, serial);
 }
 
 /**
@@ -2343,10 +2301,11 @@ zwp_tablet_pad_v2_set_feedback(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2, uint
  * are unaffected and should be destroyed separately.
  */
 static inline void
-zwp_tablet_pad_v2_destroy(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_v2,
-			 ZWP_TABLET_PAD_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_v2), WL_MARSHAL_FLAG_DESTROY);
+zwp_tablet_pad_v2_destroy(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_v2, ZWP_TABLET_PAD_V2_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2354,55 +2313,54 @@ zwp_tablet_pad_v2_destroy(struct zwp_tablet_pad_v2 *zwp_tablet_pad_v2)
  * @struct zwp_tablet_pad_dial_v2_listener
  */
 struct zwp_tablet_pad_dial_v2_listener {
-	/**
-	 * delta movement
-	 *
-	 * Sent whenever the position on a dial changes.
-	 *
-	 * This event carries the wheel delta as multiples or fractions of
-	 * 120 with each multiple of 120 representing one logical wheel
-	 * detent. For example, an axis_value120 of 30 is one quarter of a
-	 * logical wheel step in the positive direction, a value120 of -240
-	 * are two logical wheel steps in the negative direction within the
-	 * same hardware event. See the wl_pointer.axis_value120 for more
-	 * details.
-	 *
-	 * The value120 must not be zero.
-	 * @param value120 rotation distance as fraction of 120
-	 */
-	void (*delta)(void *data,
-		      struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
-		      int32_t value120);
-	/**
-	 * end of a dial event sequence
-	 *
-	 * Indicates the end of a set of events that represent one
-	 * logical hardware dial event. A client is expected to accumulate
-	 * the data in all events within the frame before proceeding.
-	 *
-	 * All zwp_tablet_pad_dial_v2 events before a
-	 * zwp_tablet_pad_dial_v2.frame event belong logically together.
-	 *
-	 * A zwp_tablet_pad_dial_v2.frame event is sent for every logical
-	 * event group, even if the group only contains a single
-	 * zwp_tablet_pad_dial_v2 event. Specifically, a client may get a
-	 * sequence: delta, frame, delta, frame, etc.
-	 * @param time timestamp with millisecond granularity
-	 */
-	void (*frame)(void *data,
-		      struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
-		      uint32_t time);
+  /**
+   * delta movement
+   *
+   * Sent whenever the position on a dial changes.
+   *
+   * This event carries the wheel delta as multiples or fractions of
+   * 120 with each multiple of 120 representing one logical wheel
+   * detent. For example, an axis_value120 of 30 is one quarter of a
+   * logical wheel step in the positive direction, a value120 of -240
+   * are two logical wheel steps in the negative direction within the
+   * same hardware event. See the wl_pointer.axis_value120 for more
+   * details.
+   *
+   * The value120 must not be zero.
+   * @param value120 rotation distance as fraction of 120
+   */
+  void (*delta)(void *data,
+                struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
+                int32_t value120);
+  /**
+   * end of a dial event sequence
+   *
+   * Indicates the end of a set of events that represent one
+   * logical hardware dial event. A client is expected to accumulate
+   * the data in all events within the frame before proceeding.
+   *
+   * All zwp_tablet_pad_dial_v2 events before a
+   * zwp_tablet_pad_dial_v2.frame event belong logically together.
+   *
+   * A zwp_tablet_pad_dial_v2.frame event is sent for every logical
+   * event group, even if the group only contains a single
+   * zwp_tablet_pad_dial_v2 event. Specifically, a client may get a
+   * sequence: delta, frame, delta, frame, etc.
+   * @param time timestamp with millisecond granularity
+   */
+  void (*frame)(void *data,
+                struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
+                uint32_t time);
 };
 
 /**
  * @ingroup iface_zwp_tablet_pad_dial_v2
  */
-static inline int
-zwp_tablet_pad_dial_v2_add_listener(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
-				    const struct zwp_tablet_pad_dial_v2_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_tablet_pad_dial_v2,
-				     (void (**)(void)) listener, data);
+static inline int zwp_tablet_pad_dial_v2_add_listener(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
+    const struct zwp_tablet_pad_dial_v2_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)zwp_tablet_pad_dial_v2,
+                               (void (**)(void))listener, data);
 }
 
 #define ZWP_TABLET_PAD_DIAL_V2_SET_FEEDBACK 0
@@ -2427,23 +2385,20 @@ zwp_tablet_pad_dial_v2_add_listener(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pa
 #define ZWP_TABLET_PAD_DIAL_V2_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_zwp_tablet_pad_dial_v2 */
-static inline void
-zwp_tablet_pad_dial_v2_set_user_data(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_tablet_pad_dial_v2, user_data);
+static inline void zwp_tablet_pad_dial_v2_set_user_data(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)zwp_tablet_pad_dial_v2, user_data);
 }
 
 /** @ingroup iface_zwp_tablet_pad_dial_v2 */
-static inline void *
-zwp_tablet_pad_dial_v2_get_user_data(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_tablet_pad_dial_v2);
+static inline void *zwp_tablet_pad_dial_v2_get_user_data(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2) {
+  return wl_proxy_get_user_data((struct wl_proxy *)zwp_tablet_pad_dial_v2);
 }
 
-static inline uint32_t
-zwp_tablet_pad_dial_v2_get_version(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2)
-{
-	return wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_dial_v2);
+static inline uint32_t zwp_tablet_pad_dial_v2_get_version(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2) {
+  return wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_dial_v2);
 }
 
 /**
@@ -2469,11 +2424,14 @@ zwp_tablet_pad_dial_v2_get_version(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad
  * dial. Requests providing other serials than the most recent one will be
  * ignored.
  */
-static inline void
-zwp_tablet_pad_dial_v2_set_feedback(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2, const char *description, uint32_t serial)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_dial_v2,
-			 ZWP_TABLET_PAD_DIAL_V2_SET_FEEDBACK, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_dial_v2), 0, description, serial);
+static inline void zwp_tablet_pad_dial_v2_set_feedback(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2,
+    const char *description, uint32_t serial) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_dial_v2,
+      ZWP_TABLET_PAD_DIAL_V2_SET_FEEDBACK, NULL,
+      wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_dial_v2), 0,
+      description, serial);
 }
 
 /**
@@ -2481,14 +2439,15 @@ zwp_tablet_pad_dial_v2_set_feedback(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pa
  *
  * This destroys the client's resource for this dial object.
  */
-static inline void
-zwp_tablet_pad_dial_v2_destroy(struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_tablet_pad_dial_v2,
-			 ZWP_TABLET_PAD_DIAL_V2_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_tablet_pad_dial_v2), WL_MARSHAL_FLAG_DESTROY);
+static inline void zwp_tablet_pad_dial_v2_destroy(
+    struct zwp_tablet_pad_dial_v2 *zwp_tablet_pad_dial_v2) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)zwp_tablet_pad_dial_v2, ZWP_TABLET_PAD_DIAL_V2_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)zwp_tablet_pad_dial_v2),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

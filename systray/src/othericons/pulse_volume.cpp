@@ -1,4 +1,4 @@
-#ifdef TCC_SYSTRAY_PULSE
+#ifdef TCC_HAS_PULSE
 #include "pulse_volume.hpp"
 
 #include <algorithm>
@@ -26,15 +26,12 @@ PulseVolume::~PulseVolume() {
   setItemsChangedCallback(nullptr);
   destroyContext();
   if (mMainloop)
-    mLib->pa_mainloop_free(mMainloop);
+    pa_mainloop_free(mMainloop);
 }
 
 bool PulseVolume::connect() {
-  mLib = PulseLib::get();
-  if (!mLib)
-    return false;
 
-  mMainloop = mLib->pa_mainloop_new();
+  mMainloop = pa_mainloop_new();
   if (!mMainloop)
     return false;
   createContext();
@@ -42,25 +39,23 @@ bool PulseVolume::connect() {
 }
 
 void PulseVolume::createContext() {
-  mContext = mLib->pa_context_new(mLib->pa_mainloop_get_api(mMainloop),
-                                  "tcc_systray");
+  mContext = pa_context_new(pa_mainloop_get_api(mMainloop), "tcc_systray");
   if (!mContext)
     return;
-  mLib->pa_context_set_state_callback(mContext, stateCallback, this);
+  pa_context_set_state_callback(mContext, stateCallback, this);
   // NOFAIL waits for the server to appear instead of failing if it isn't
   // running yet.
-  if (mLib->pa_context_connect(mContext, nullptr, PA_CONTEXT_NOFAIL,
-                               nullptr) < 0)
+  if (pa_context_connect(mContext, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0)
     destroyContext();
 }
 
 void PulseVolume::destroyContext() {
   if (!mContext)
     return;
-  mLib->pa_context_set_state_callback(mContext, nullptr, nullptr);
-  mLib->pa_context_set_subscribe_callback(mContext, nullptr, nullptr);
-  mLib->pa_context_disconnect(mContext);
-  mLib->pa_context_unref(mContext);
+  pa_context_set_state_callback(mContext, nullptr, nullptr);
+  pa_context_set_subscribe_callback(mContext, nullptr, nullptr);
+  pa_context_disconnect(mContext);
+  pa_context_unref(mContext);
   mContext = nullptr;
   mRefreshing = false;
   mRefreshAgain = false;
@@ -73,7 +68,7 @@ void PulseVolume::poll() {
   // Dispatches whatever is ready, without blocking. Bounded, in case events
   // keep arriving.
   for (int i = 0; i < 64; i++) {
-    if (mLib->pa_mainloop_iterate(mMainloop, 0, nullptr) <= 0)
+    if (pa_mainloop_iterate(mMainloop, 0, nullptr) <= 0)
       break;
   }
 
@@ -86,19 +81,19 @@ void PulseVolume::poll() {
 
 void PulseVolume::stateCallback(pa_context *context, void *data) {
   auto *self = static_cast<PulseVolume *>(data);
-  PulseLib *p = self->mLib;
 
-  switch (p->pa_context_get_state(context)) {
+  switch (pa_context_get_state(context)) {
   case PA_CONTEXT_READY: {
     // The server's events tell us when the default device changes. For
     // inputs, source outputs are the streams apps record with.
-    auto devices = self->mDirection == Direction::Output
-                       ? (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK |
-                                                  PA_SUBSCRIPTION_MASK_SINK_INPUT)
-                       : (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SOURCE |
-                                                  PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT);
-    p->pa_context_set_subscribe_callback(context, subscribeCallback, self);
-    self->finish(p->pa_context_subscribe(
+    auto devices =
+        self->mDirection == Direction::Output
+            ? (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK |
+                                       PA_SUBSCRIPTION_MASK_SINK_INPUT)
+            : (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SOURCE |
+                                       PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT);
+    pa_context_set_subscribe_callback(context, subscribeCallback, self);
+    self->finish(pa_context_subscribe(
         context,
         (pa_subscription_mask_t)(devices | PA_SUBSCRIPTION_MASK_SERVER),
         nullptr, nullptr));
@@ -136,13 +131,12 @@ void PulseVolume::refresh() {
   }
   mRefreshing = true;
   mRefreshAgain = false;
-  finish(mLib->pa_context_get_server_info(mContext, serverInfoCallback, this));
+  finish(pa_context_get_server_info(mContext, serverInfoCallback, this));
 }
 
 void PulseVolume::serverInfoCallback(pa_context *context,
                                      const pa_server_info *info, void *data) {
   auto *self = static_cast<PulseVolume *>(data);
-  PulseLib *p = self->mLib;
   bool output = self->mDirection == Direction::Output;
 
   const char *name = nullptr;
@@ -153,10 +147,10 @@ void PulseVolume::serverInfoCallback(pa_context *context,
 
   if (output)
     self->finish(
-        p->pa_context_get_sink_info_list(context, sinkInfoCallback, self));
+        pa_context_get_sink_info_list(context, sinkInfoCallback, self));
   else
     self->finish(
-        p->pa_context_get_source_info_list(context, sourceInfoCallback, self));
+        pa_context_get_source_info_list(context, sourceInfoCallback, self));
 }
 
 void PulseVolume::sinkInfoCallback(pa_context *, const pa_sink_info *info,
@@ -197,8 +191,7 @@ void PulseVolume::sourceOutputInfoCallback(pa_context *,
   static constexpr const char *METERS[] = {
       "org.PulseAudio.pavucontrol", "org.kde.plasma-pa", "org.kde.kmixd",
       "org.gnome.VolumeControl", "org.gnome.Settings"};
-  const char *app =
-      self->mLib->pa_proplist_gets(info->proplist, PA_PROP_APPLICATION_ID);
+  const char *app = pa_proplist_gets(info->proplist, PA_PROP_APPLICATION_ID);
   bool meter = app && std::any_of(std::begin(METERS), std::end(METERS),
                                   [&](const char *m) {
                                     return std::string_view(app) == m;
@@ -232,12 +225,12 @@ void PulseVolume::devicesDone() {
   pa_operation *op = nullptr;
   if (mContext && mDirection == Direction::Output) {
     mNewStreams.clear();
-    op = mLib->pa_context_get_sink_input_info_list(mContext,
-                                                   sinkInputInfoCallback, this);
+    op = pa_context_get_sink_input_info_list(mContext, sinkInputInfoCallback,
+                                             this);
   } else if (mContext) {
     mNewRecording = false;
-    op = mLib->pa_context_get_source_output_info_list(
-        mContext, sourceOutputInfoCallback, this);
+    op = pa_context_get_source_output_info_list(mContext,
+                                                sourceOutputInfoCallback, this);
   }
   if (op) {
     finish(op);
@@ -263,8 +256,7 @@ void PulseVolume::sinkInputInfoCallback(pa_context *,
 
   Stream stream;
   stream.index = info->index;
-  const char *app =
-      self->mLib->pa_proplist_gets(info->proplist, PA_PROP_APPLICATION_NAME);
+  const char *app = pa_proplist_gets(info->proplist, PA_PROP_APPLICATION_NAME);
   stream.label = app && *app ? app : (info->name ? info->name : "Unknown");
   stream.volume = info->volume;
   stream.muted = info->mute;
@@ -284,7 +276,7 @@ void PulseVolume::refreshDone() {
 void PulseVolume::finish(pa_operation *op) {
   // Operations complete on their own; we only need to drop our reference.
   if (op)
-    mLib->pa_operation_unref(op);
+    pa_operation_unref(op);
 }
 
 const PulseVolume::Device *PulseVolume::defaultDevice() const {
@@ -297,13 +289,12 @@ const PulseVolume::Device *PulseVolume::defaultDevice() const {
 }
 
 int PulseVolume::percent(const pa_cvolume &volume) const {
-  return (int)std::lround(mLib->pa_cvolume_avg(&volume) * 100.0 /
-                          PA_VOLUME_NORM);
+  return (int)std::lround(pa_cvolume_avg(&volume) * 100.0 / PA_VOLUME_NORM);
 }
 
 pa_cvolume PulseVolume::scaled(pa_cvolume volume, int percent) const {
-  mLib->pa_cvolume_scale(&volume,
-                         (pa_volume_t)((uint64_t)PA_VOLUME_NORM * percent / 100));
+  pa_cvolume_scale(&volume,
+                   (pa_volume_t)((uint64_t)PA_VOLUME_NORM * percent / 100));
   return volume;
 }
 
@@ -361,11 +352,11 @@ void PulseVolume::setMuted(bool muted) {
     return;
   const char *name = device->name.c_str();
   if (mDirection == Direction::Output)
-    finish(mLib->pa_context_set_sink_mute_by_name(mContext, name, muted,
-                                                  nullptr, nullptr));
+    finish(pa_context_set_sink_mute_by_name(mContext, name, muted, nullptr,
+                                            nullptr));
   else
-    finish(mLib->pa_context_set_source_mute_by_name(mContext, name, muted,
-                                                    nullptr, nullptr));
+    finish(pa_context_set_source_mute_by_name(mContext, name, muted, nullptr,
+                                              nullptr));
 }
 
 void PulseVolume::setPercent(int percent) {
@@ -375,22 +366,22 @@ void PulseVolume::setPercent(int percent) {
   pa_cvolume volume = scaled(device->volume, percent);
   const char *name = device->name.c_str();
   if (mDirection == Direction::Output)
-    finish(mLib->pa_context_set_sink_volume_by_name(mContext, name, &volume,
-                                                    nullptr, nullptr));
+    finish(pa_context_set_sink_volume_by_name(mContext, name, &volume, nullptr,
+                                              nullptr));
   else
-    finish(mLib->pa_context_set_source_volume_by_name(mContext, name, &volume,
-                                                      nullptr, nullptr));
+    finish(pa_context_set_source_volume_by_name(mContext, name, &volume,
+                                                nullptr, nullptr));
 }
 
 void PulseVolume::setDefault(const std::string &name) {
   if (!mContext)
     return;
   if (mDirection == Direction::Output)
-    finish(mLib->pa_context_set_default_sink(mContext, name.c_str(), nullptr,
-                                             nullptr));
+    finish(
+        pa_context_set_default_sink(mContext, name.c_str(), nullptr, nullptr));
   else
-    finish(mLib->pa_context_set_default_source(mContext, name.c_str(), nullptr,
-                                               nullptr));
+    finish(pa_context_set_default_source(mContext, name.c_str(), nullptr,
+                                         nullptr));
 }
 
 void PulseVolume::activate(const std::string &id, int x, int y) {
@@ -417,8 +408,8 @@ void PulseVolume::scroll(const std::string &id, int delta, bool horizontal) {
     return;
   // Scrolling stops at 100%, going over it has to be deliberate.
   int current = percent(*device);
-  int target = std::clamp(current + delta * SCROLL_STEP, 0,
-                          std::max(current, 100));
+  int target =
+      std::clamp(current + delta * SCROLL_STEP, 0, std::max(current, 100));
   if (target != current)
     setPercent(target);
 }
@@ -463,8 +454,8 @@ void PulseVolume::mixerVolumeChanged(const std::string &id, int channel,
   for (const Stream &stream : mStreams) {
     if (stream.index == index) {
       pa_cvolume scaledVolume = scaled(stream.volume, volume);
-      finish(mLib->pa_context_set_sink_input_volume(
-          mContext, index, &scaledVolume, nullptr, nullptr));
+      finish(pa_context_set_sink_input_volume(mContext, index, &scaledVolume,
+                                              nullptr, nullptr));
       return;
     }
   }
@@ -478,9 +469,9 @@ void PulseVolume::mixerMuteChanged(const std::string &id, int channel,
   if (channel == MASTER_CHANNEL)
     setMuted(muted);
   else
-    finish(mLib->pa_context_set_sink_input_mute(
-        mContext, (uint32_t)(channel - STREAM_CHANNEL), muted, nullptr,
-        nullptr));
+    finish(pa_context_set_sink_input_mute(mContext,
+                                          (uint32_t)(channel - STREAM_CHANNEL),
+                                          muted, nullptr, nullptr));
 }
 
 void PulseVolume::mixerClosed(const std::string &id) {

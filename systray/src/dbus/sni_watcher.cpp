@@ -1,4 +1,4 @@
-#ifdef TCC_SYSTRAY_DBUS
+#ifdef TCC_HAS_DBUS
 #include "sni_watcher.hpp"
 
 #include <algorithm>
@@ -69,49 +69,43 @@ bool StatusNotifierWatcher::connect() {
   if (mConn)
     return true;
 
-  mLib = DBusLib::get();
-  if (!mLib)
-    return false;
-  DBusLib *d = mLib;
+  dbus_error_init(&mDBusErr);
 
-  d->dbus_error_init(&mDBusErr);
-
-  mConn = d->dbus_bus_get_private(DBUS_BUS_SESSION, &mDBusErr);
+  mConn = dbus_bus_get_private(DBUS_BUS_SESSION, &mDBusErr);
   if (!mConn) {
     fprintf(stderr, "tcc_systray: could not connect to session bus: %s\n",
-            d->dbus_error_is_set(&mDBusErr) ? mDBusErr.message
-                                            : "unknown error");
-    d->dbus_error_free(&mDBusErr);
+            dbus_error_is_set(&mDBusErr) ? mDBusErr.message : "unknown error");
+    dbus_error_free(&mDBusErr);
     return false;
   }
-  d->dbus_connection_set_exit_on_disconnect(mConn, false);
-  mUniqueName = d->dbus_bus_get_unique_name(mConn);
+  dbus_connection_set_exit_on_disconnect(mConn, false);
+  mUniqueName = dbus_bus_get_unique_name(mConn);
 
-  d->dbus_connection_add_filter(mConn, filterThunk, this, nullptr);
-  d->dbus_bus_add_match(mConn,
-                        "type='signal',sender='org.freedesktop.DBus',"
-                        "interface='org.freedesktop.DBus',"
-                        "member='NameOwnerChanged'",
-                        nullptr);
-  d->dbus_bus_add_match(
-      mConn, "type='signal',interface='org.kde.StatusNotifierWatcher'",
-      nullptr);
-  d->dbus_bus_add_match(
+  dbus_connection_add_filter(mConn, filterThunk, this, nullptr);
+  dbus_bus_add_match(mConn,
+                     "type='signal',sender='org.freedesktop.DBus',"
+                     "interface='org.freedesktop.DBus',"
+                     "member='NameOwnerChanged'",
+                     nullptr);
+  dbus_bus_add_match(mConn,
+                     "type='signal',interface='org.kde.StatusNotifierWatcher'",
+                     nullptr);
+  dbus_bus_add_match(
       mConn, "type='signal',interface='org.kde.StatusNotifierItem'", nullptr);
 
   // Every host owns a name of this form so that the watcher (and items) can
   // tell when it goes away.
   mHostName = HOST_NAME_PREFIX + std::to_string(getpid());
-  d->dbus_bus_request_name(mConn, mHostName.c_str(),
-                           DBUS_NAME_FLAG_DO_NOT_QUEUE, nullptr);
+  dbus_bus_request_name(mConn, mHostName.c_str(), DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                        nullptr);
 
   // No DO_NOT_QUEUE: if someone else is the watcher we wait in line and the
   // bus hands us the name (via NameAcquired) once they exit.
-  int ret = d->dbus_bus_request_name(mConn, WATCHER_NAME, 0, &mDBusErr);
-  if (d->dbus_error_is_set(&mDBusErr)) {
+  int ret = dbus_bus_request_name(mConn, WATCHER_NAME, 0, &mDBusErr);
+  if (dbus_error_is_set(&mDBusErr)) {
     fprintf(stderr, "tcc_systray: could not request %s: %s\n", WATCHER_NAME,
             mDBusErr.message);
-    d->dbus_error_free(&mDBusErr);
+    dbus_error_free(&mDBusErr);
     disconnect();
     return false;
   }
@@ -131,12 +125,12 @@ void StatusNotifierWatcher::disconnect() {
   bool hadItems = !mItems.empty();
   clearItems();
   for (DBusPendingCall *pending : mItemCalls) {
-    mLib->dbus_pending_call_cancel(pending);
-    mLib->dbus_pending_call_unref(pending);
+    dbus_pending_call_cancel(pending);
+    dbus_pending_call_unref(pending);
   }
   mItemCalls.clear();
-  mLib->dbus_connection_close(mConn);
-  mLib->dbus_connection_unref(mConn);
+  dbus_connection_close(mConn);
+  dbus_connection_unref(mConn);
   mConn = nullptr;
   mMode = Mode::Disconnected;
   mHosts.clear();
@@ -147,7 +141,7 @@ void StatusNotifierWatcher::disconnect() {
 int StatusNotifierWatcher::fd() const {
   int fd = -1;
   if (mConn)
-    mLib->dbus_connection_get_unix_fd(mConn, &fd);
+    dbus_connection_get_unix_fd(mConn, &fd);
   return fd;
 }
 
@@ -155,15 +149,13 @@ void StatusNotifierWatcher::poll() {
   if (!mConn)
     return;
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
 
-  if (!d->dbus_connection_read_write(mConn, 0)) {
+  if (!dbus_connection_read_write(mConn, 0)) {
     fprintf(stderr, "tcc_systray: lost connection to session bus\n");
     disconnect();
     return;
   }
-  while (d->dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
+  while (dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
   }
 
   // Done outside of dispatch since it makes a blocking call.
@@ -200,49 +192,47 @@ void StatusNotifierWatcher::refreshFromWatcher() {
   if (mMode != Mode::Host)
     return;
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
 
-  DBusMessage *msg = d->dbus_message_new_method_call(
+  DBusMessage *msg = dbus_message_new_method_call(
       WATCHER_NAME, WATCHER_PATH, WATCHER_IFACE, "RegisterStatusNotifierHost");
   const char *host = mHostName.c_str();
-  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &host, DBUS_TYPE_INVALID);
-  d->dbus_message_set_no_reply(msg, true);
-  d->dbus_connection_send(mConn, msg, nullptr);
-  d->dbus_message_unref(msg);
+  dbus_message_append_args(msg, DBUS_TYPE_STRING, &host, DBUS_TYPE_INVALID);
+  dbus_message_set_no_reply(msg, true);
+  dbus_connection_send(mConn, msg, nullptr);
+  dbus_message_unref(msg);
 
-  msg = d->dbus_message_new_method_call(WATCHER_NAME, WATCHER_PATH, PROPS_IFACE,
-                                        "Get");
+  msg = dbus_message_new_method_call(WATCHER_NAME, WATCHER_PATH, PROPS_IFACE,
+                                     "Get");
   const char *iface = WATCHER_IFACE;
   const char *prop = "RegisteredStatusNotifierItems";
-  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_STRING,
-                              &prop, DBUS_TYPE_INVALID);
+  dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_STRING,
+                           &prop, DBUS_TYPE_INVALID);
 
   DBusMessage *reply =
-      d->dbus_connection_send_with_reply_and_block(mConn, msg, 1000, &mDBusErr);
-  d->dbus_message_unref(msg);
+      dbus_connection_send_with_reply_and_block(mConn, msg, 1000, &mDBusErr);
+  dbus_message_unref(msg);
 
   std::vector<std::string> ids;
   if (!reply) {
     fprintf(stderr, "tcc_systray: could not get items from %s: %s\n",
             WATCHER_NAME, mDBusErr.message);
-    d->dbus_error_free(&mDBusErr);
+    dbus_error_free(&mDBusErr);
   } else {
     DBusMessageIter iter, variant, array;
-    if (d->dbus_message_iter_init(reply, &iter) &&
-        d->dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_VARIANT) {
-      d->dbus_message_iter_recurse(&iter, &variant);
-      if (d->dbus_message_iter_get_arg_type(&variant) == DBUS_TYPE_ARRAY) {
-        d->dbus_message_iter_recurse(&variant, &array);
-        while (d->dbus_message_iter_get_arg_type(&array) == DBUS_TYPE_STRING) {
+    if (dbus_message_iter_init(reply, &iter) &&
+        dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_VARIANT) {
+      dbus_message_iter_recurse(&iter, &variant);
+      if (dbus_message_iter_get_arg_type(&variant) == DBUS_TYPE_ARRAY) {
+        dbus_message_iter_recurse(&variant, &array);
+        while (dbus_message_iter_get_arg_type(&array) == DBUS_TYPE_STRING) {
           const char *item;
-          d->dbus_message_iter_get_basic(&array, &item);
+          dbus_message_iter_get_basic(&array, &item);
           ids.emplace_back(item);
-          d->dbus_message_iter_next(&array);
+          dbus_message_iter_next(&array);
         }
       }
     }
-    d->dbus_message_unref(reply);
+    dbus_message_unref(reply);
   }
 
   bool removed = false;
@@ -266,30 +256,28 @@ DBusHandlerResult StatusNotifierWatcher::filterThunk(DBusConnection *,
 
 DBusHandlerResult StatusNotifierWatcher::filter(DBusMessage *msg) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   const char *arg = nullptr;
 
-  if (d->dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
+  if (dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
     const char *name, *oldOwner, *newOwner;
-    if (d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &name,
-                                 DBUS_TYPE_STRING, &oldOwner, DBUS_TYPE_STRING,
-                                 &newOwner, DBUS_TYPE_INVALID))
+    if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &name,
+                              DBUS_TYPE_STRING, &oldOwner, DBUS_TYPE_STRING,
+                              &newOwner, DBUS_TYPE_INVALID))
       handleNameOwnerChanged(name, oldOwner, newOwner);
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
 
-  if (d->dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameAcquired")) {
-    if (d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
-                                 DBUS_TYPE_INVALID) &&
+  if (dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameAcquired")) {
+    if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
+                              DBUS_TYPE_INVALID) &&
         eq(arg, WATCHER_NAME))
       becomeWatcher();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
 
-  if (d->dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameLost")) {
-    if (d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
-                                 DBUS_TYPE_INVALID) &&
+  if (dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameLost")) {
+    if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
+                              DBUS_TYPE_INVALID) &&
         eq(arg, WATCHER_NAME) && mMode == Mode::Watcher)
       becomeHost();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -298,13 +286,13 @@ DBusHandlerResult StatusNotifierWatcher::filter(DBusMessage *msg) {
   // While we are the watcher our own signals are echoed back to us; ignore
   // them.
   if (mMode == Mode::Host) {
-    bool registered = d->dbus_message_is_signal(msg, WATCHER_IFACE,
-                                                "StatusNotifierItemRegistered");
-    bool unregistered = d->dbus_message_is_signal(
+    bool registered = dbus_message_is_signal(msg, WATCHER_IFACE,
+                                             "StatusNotifierItemRegistered");
+    bool unregistered = dbus_message_is_signal(
         msg, WATCHER_IFACE, "StatusNotifierItemUnregistered");
     if ((registered || unregistered) &&
-        d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
-                                 DBUS_TYPE_INVALID)) {
+        dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
+                              DBUS_TYPE_INVALID)) {
       if (registered) {
         addItem(arg);
       } else if (findItem(arg)) {
@@ -319,8 +307,8 @@ DBusHandlerResult StatusNotifierWatcher::filter(DBusMessage *msg) {
     return DBUS_HANDLER_RESULT_HANDLED;
 
   if (mMode == Mode::Watcher &&
-      d->dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_METHOD_CALL &&
-      eq(d->dbus_message_get_path(msg), WATCHER_PATH))
+      dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_METHOD_CALL &&
+      eq(dbus_message_get_path(msg), WATCHER_PATH))
     return handleWatcherCall(msg);
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -371,8 +359,8 @@ void StatusNotifierWatcher::handleNameOwnerChanged(const char *name,
 }
 
 DBusHandlerResult StatusNotifierWatcher::handleWatcherCall(DBusMessage *msg) {
-  const char *iface = mLib->dbus_message_get_interface(msg);
-  const char *member = mLib->dbus_message_get_member(msg);
+  const char *iface = dbus_message_get_interface(msg);
+  const char *member = dbus_message_get_member(msg);
 
   if (eq(iface, WATCHER_IFACE) && eq(member, "RegisterStatusNotifierItem"))
     registerItem(msg);
@@ -392,13 +380,11 @@ DBusHandlerResult StatusNotifierWatcher::handleWatcherCall(DBusMessage *msg) {
 
 void StatusNotifierWatcher::registerItem(DBusMessage *msg) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   const char *arg;
-  if (!d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
-                                DBUS_TYPE_INVALID)) {
-    sendReply(d->dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
-                                        "Expected a single string argument"));
+  if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
+                             DBUS_TYPE_INVALID)) {
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
+                                     "Expected a single string argument"));
     return;
   }
 
@@ -406,7 +392,7 @@ void StatusNotifierWatcher::registerItem(DBusMessage *msg) {
   // or with just an object path on their own connection.
   std::string service, path;
   if (arg[0] == '/') {
-    const char *sender = d->dbus_message_get_sender(msg);
+    const char *sender = dbus_message_get_sender(msg);
     service = sender ? sender : "";
     path = arg;
   } else {
@@ -415,13 +401,13 @@ void StatusNotifierWatcher::registerItem(DBusMessage *msg) {
   }
 
   if (service.empty() ||
-      !d->dbus_bus_name_has_owner(mConn, service.c_str(), nullptr)) {
-    sendReply(d->dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
-                                        "Service is not on the bus"));
+      !dbus_bus_name_has_owner(mConn, service.c_str(), nullptr)) {
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
+                                     "Service is not on the bus"));
     return;
   }
 
-  sendReply(d->dbus_message_new_method_return(msg));
+  sendReply(dbus_message_new_method_return(msg));
 
   std::string id = service + path;
   if (findItem(id))
@@ -432,17 +418,15 @@ void StatusNotifierWatcher::registerItem(DBusMessage *msg) {
 
 void StatusNotifierWatcher::registerHost(DBusMessage *msg) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   const char *arg;
-  if (!d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
-                                DBUS_TYPE_INVALID)) {
-    sendReply(d->dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
-                                        "Expected a single string argument"));
+  if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &arg,
+                             DBUS_TYPE_INVALID)) {
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
+                                     "Expected a single string argument"));
     return;
   }
 
-  sendReply(d->dbus_message_new_method_return(msg));
+  sendReply(dbus_message_new_method_return(msg));
 
   if (std::find(mHosts.begin(), mHosts.end(), arg) != mHosts.end())
     return;
@@ -453,95 +437,87 @@ void StatusNotifierWatcher::registerHost(DBusMessage *msg) {
 void StatusNotifierWatcher::appendPropertyValue(DBusMessageIter *iter,
                                                 const std::string &prop) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   DBusMessageIter variant, array;
 
   if (prop == "RegisteredStatusNotifierItems") {
-    d->dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "as",
-                                        &variant);
-    d->dbus_message_iter_open_container(&variant, DBUS_TYPE_ARRAY, "s", &array);
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "as", &variant);
+    dbus_message_iter_open_container(&variant, DBUS_TYPE_ARRAY, "s", &array);
     for (const auto &item : mItems) {
       const char *str = item.id.c_str();
-      d->dbus_message_iter_append_basic(&array, DBUS_TYPE_STRING, &str);
+      dbus_message_iter_append_basic(&array, DBUS_TYPE_STRING, &str);
     }
-    d->dbus_message_iter_close_container(&variant, &array);
+    dbus_message_iter_close_container(&variant, &array);
   } else if (prop == "IsStatusNotifierHostRegistered") {
     // We are always a host ourselves.
     dbus_bool_t value = true;
-    d->dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "b", &variant);
-    d->dbus_message_iter_append_basic(&variant, DBUS_TYPE_BOOLEAN, &value);
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "b", &variant);
+    dbus_message_iter_append_basic(&variant, DBUS_TYPE_BOOLEAN, &value);
   } else {
     dbus_int32_t value = 0;
-    d->dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "i", &variant);
-    d->dbus_message_iter_append_basic(&variant, DBUS_TYPE_INT32, &value);
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "i", &variant);
+    dbus_message_iter_append_basic(&variant, DBUS_TYPE_INT32, &value);
   }
-  d->dbus_message_iter_close_container(iter, &variant);
+  dbus_message_iter_close_container(iter, &variant);
 }
 
 void StatusNotifierWatcher::getProperty(DBusMessage *msg) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   const char *iface, *prop;
-  if (!d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &iface,
-                                DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID)) {
-    sendReply(d->dbus_message_new_error(
-        msg, DBUS_ERROR_INVALID_ARGS, "Expected interface and property name"));
+  if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &iface,
+                             DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID)) {
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
+                                     "Expected interface and property name"));
     return;
   }
   if (!eq(iface, WATCHER_IFACE) ||
       !(eq(prop, "RegisteredStatusNotifierItems") ||
         eq(prop, "IsStatusNotifierHostRegistered") ||
         eq(prop, "ProtocolVersion"))) {
-    sendReply(d->dbus_message_new_error(msg, DBUS_ERROR_UNKNOWN_PROPERTY,
-                                        "No such property"));
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_UNKNOWN_PROPERTY,
+                                     "No such property"));
     return;
   }
 
-  DBusMessage *reply = d->dbus_message_new_method_return(msg);
+  DBusMessage *reply = dbus_message_new_method_return(msg);
   DBusMessageIter iter;
-  d->dbus_message_iter_init_append(reply, &iter);
+  dbus_message_iter_init_append(reply, &iter);
   appendPropertyValue(&iter, prop);
   sendReply(reply);
 }
 
 void StatusNotifierWatcher::getAllProperties(DBusMessage *msg) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   const char *iface;
-  if (!d->dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &iface,
-                                DBUS_TYPE_INVALID)) {
-    sendReply(d->dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
-                                        "Expected interface name"));
+  if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &iface,
+                             DBUS_TYPE_INVALID)) {
+    sendReply(dbus_message_new_error(msg, DBUS_ERROR_INVALID_ARGS,
+                                     "Expected interface name"));
     return;
   }
 
-  DBusMessage *reply = d->dbus_message_new_method_return(msg);
+  DBusMessage *reply = dbus_message_new_method_return(msg);
   DBusMessageIter iter, dict, entry;
-  d->dbus_message_iter_init_append(reply, &iter);
-  d->dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "{sv}", &dict);
+  dbus_message_iter_init_append(reply, &iter);
+  dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "{sv}", &dict);
   if (eq(iface, WATCHER_IFACE)) {
     for (const char *prop :
          {"RegisteredStatusNotifierItems", "IsStatusNotifierHostRegistered",
           "ProtocolVersion"}) {
-      d->dbus_message_iter_open_container(&dict, DBUS_TYPE_DICT_ENTRY, nullptr,
-                                          &entry);
-      d->dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &prop);
+      dbus_message_iter_open_container(&dict, DBUS_TYPE_DICT_ENTRY, nullptr,
+                                       &entry);
+      dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &prop);
       appendPropertyValue(&entry, prop);
-      d->dbus_message_iter_close_container(&dict, &entry);
+      dbus_message_iter_close_container(&dict, &entry);
     }
   }
-  d->dbus_message_iter_close_container(&iter, &dict);
+  dbus_message_iter_close_container(&iter, &dict);
   sendReply(reply);
 }
 
 void StatusNotifierWatcher::introspect(DBusMessage *msg) {
-  DBusMessage *reply = mLib->dbus_message_new_method_return(msg);
+  DBusMessage *reply = dbus_message_new_method_return(msg);
   const char *xml = INTROSPECT_XML;
-  mLib->dbus_message_append_args(reply, DBUS_TYPE_STRING, &xml,
-                                 DBUS_TYPE_INVALID);
+  dbus_message_append_args(reply, DBUS_TYPE_STRING, &xml, DBUS_TYPE_INVALID);
   sendReply(reply);
 }
 
@@ -550,23 +526,21 @@ void StatusNotifierWatcher::emitSignal(const char *member,
   if (!mConn)
     return;
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   DBusMessage *sig =
-      d->dbus_message_new_signal(WATCHER_PATH, WATCHER_IFACE, member);
+      dbus_message_new_signal(WATCHER_PATH, WATCHER_IFACE, member);
   if (!arg.empty()) {
     const char *str = arg.c_str();
-    d->dbus_message_append_args(sig, DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID);
+    dbus_message_append_args(sig, DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID);
   }
-  d->dbus_connection_send(mConn, sig, nullptr);
-  d->dbus_message_unref(sig);
+  dbus_connection_send(mConn, sig, nullptr);
+  dbus_message_unref(sig);
 }
 
 void StatusNotifierWatcher::sendReply(DBusMessage *reply) {
   if (!reply)
     return;
-  mLib->dbus_connection_send(mConn, reply, nullptr);
-  mLib->dbus_message_unref(reply);
+  dbus_connection_send(mConn, reply, nullptr);
+  dbus_message_unref(reply);
 }
 
 SystrayItem *StatusNotifierWatcher::findItem(const std::string &id) {
@@ -605,8 +579,8 @@ void StatusNotifierWatcher::removeItem(const std::string &id) {
   auto conn = mItemConns.find(id);
   if (conn != mItemConns.end()) {
     if (conn->second.pending) {
-      mLib->dbus_pending_call_cancel(conn->second.pending);
-      mLib->dbus_pending_call_unref(conn->second.pending);
+      dbus_pending_call_cancel(conn->second.pending);
+      dbus_pending_call_unref(conn->second.pending);
     }
     mItemConns.erase(conn);
   }
@@ -627,62 +601,56 @@ struct PendingProperties {
 
 void StatusNotifierWatcher::fetchItemProperties(const std::string &id) {
   DBusLib *d;
-  if ((d = mLib) == nullptr || !mConn)
-    return;
   auto &conn = mItemConns.at(id);
 
   // A newer fetch supersedes an older one.
   if (conn.pending) {
-    d->dbus_pending_call_cancel(conn.pending);
-    d->dbus_pending_call_unref(conn.pending);
+    dbus_pending_call_cancel(conn.pending);
+    dbus_pending_call_unref(conn.pending);
     conn.pending = nullptr;
   }
 
-  DBusMessage *msg = d->dbus_message_new_method_call(
+  DBusMessage *msg = dbus_message_new_method_call(
       conn.service.c_str(), conn.path.c_str(), PROPS_IFACE, "GetAll");
   const char *iface = ITEM_IFACE;
-  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_INVALID);
+  dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_INVALID);
 
   // Asynchronous, so an unresponsive item can't hang the tray.
   DBusPendingCall *pending = nullptr;
-  if (d->dbus_connection_send_with_reply(mConn, msg, &pending, 5000) &&
-      pending) {
+  if (dbus_connection_send_with_reply(mConn, msg, &pending, 5000) && pending) {
     conn.pending = pending;
-    d->dbus_pending_call_set_notify(
+    dbus_pending_call_set_notify(
         pending, propertiesReplyThunk, new PendingProperties{this, id},
         [](void *data) { delete static_cast<PendingProperties *>(data); });
   }
-  d->dbus_message_unref(msg);
+  dbus_message_unref(msg);
 }
 
 void StatusNotifierWatcher::propertiesReplyThunk(DBusPendingCall *pending,
                                                  void *data) {
   // Copied out, since releasing the pending call frees data.
   auto [self, id] = *static_cast<PendingProperties *>(data);
-  DBusLib *d = self->mLib;
 
-  DBusMessage *reply = d->dbus_pending_call_steal_reply(pending);
+  DBusMessage *reply = dbus_pending_call_steal_reply(pending);
   auto conn = self->mItemConns.find(id);
   if (conn != self->mItemConns.end() && conn->second.pending == pending)
     conn->second.pending = nullptr;
-  d->dbus_pending_call_unref(pending);
+  dbus_pending_call_unref(pending);
 
   if (reply) {
     self->propertiesReply(id, reply);
-    d->dbus_message_unref(reply);
+    dbus_message_unref(reply);
   }
 }
 
 void StatusNotifierWatcher::propertiesReply(const std::string &id,
                                             DBusMessage *reply) {
   DBusLib *d;
-  if ((d = mLib) == nullptr)
-    return;
   SystrayItem *item = findItem(id);
   if (!item)
     return;
 
-  if (d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
+  if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
     // Still show the item, with whatever we knew before.
     fprintf(stderr, "tcc_systray: could not get properties of %s\n",
             id.c_str());
@@ -690,32 +658,32 @@ void StatusNotifierWatcher::propertiesReply(const std::string &id,
     return;
   }
 
-  if (const char *sender = d->dbus_message_get_sender(reply))
+  if (const char *sender = dbus_message_get_sender(reply))
     mItemConns[id].owner = sender;
 
   SystrayItem updated;
   updated.id = id;
 
   DBusMessageIter iter, dict, entry, value;
-  if (d->dbus_message_iter_init(reply, &iter) &&
-      d->dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY) {
-    d->dbus_message_iter_recurse(&iter, &dict);
-    while (d->dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY) {
+  if (dbus_message_iter_init(reply, &iter) &&
+      dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY) {
+    dbus_message_iter_recurse(&iter, &dict);
+    while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY) {
       const char *prop;
-      d->dbus_message_iter_recurse(&dict, &entry);
-      d->dbus_message_iter_get_basic(&entry, &prop);
-      d->dbus_message_iter_next(&entry);
-      d->dbus_message_iter_recurse(&entry, &value);
+      dbus_message_iter_recurse(&dict, &entry);
+      dbus_message_iter_get_basic(&entry, &prop);
+      dbus_message_iter_next(&entry);
+      dbus_message_iter_recurse(&entry, &value);
       if (eq(prop, "Menu") &&
-          d->dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_OBJECT_PATH) {
+          dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_OBJECT_PATH) {
         const char *path;
-        d->dbus_message_iter_get_basic(&value, &path);
+        dbus_message_iter_get_basic(&value, &path);
         // Some items use these to say they have no menu.
         mItemConns[id].menuPath =
             eq(path, "/") || eq(path, "/NO_DBUSMENU") ? "" : path;
       }
       readItemProperty(updated, prop, &value);
-      d->dbus_message_iter_next(&dict);
+      dbus_message_iter_next(&dict);
     }
   }
 
@@ -732,12 +700,11 @@ void StatusNotifierWatcher::propertiesReply(const std::string &id,
 void StatusNotifierWatcher::readItemProperty(SystrayItem &item,
                                              const char *prop,
                                              DBusMessageIter *value) {
-  DBusLib *d = mLib;
-  int type = d->dbus_message_iter_get_arg_type(value);
+  int type = dbus_message_iter_get_arg_type(value);
 
   if (type == DBUS_TYPE_STRING) {
     const char *str;
-    d->dbus_message_iter_get_basic(value, &str);
+    dbus_message_iter_get_basic(value, &str);
     if (eq(prop, "Title"))
       item.title = str;
     else if (eq(prop, "Status"))
@@ -755,7 +722,7 @@ void StatusNotifierWatcher::readItemProperty(SystrayItem &item,
       item.overlayIcon.name = str;
   } else if (type == DBUS_TYPE_BOOLEAN) {
     dbus_bool_t b;
-    d->dbus_message_iter_get_basic(value, &b);
+    dbus_message_iter_get_basic(value, &b);
     if (eq(prop, "ItemIsMenu"))
       item.itemIsMenu = b;
   } else if (type == DBUS_TYPE_ARRAY) {
@@ -772,31 +739,30 @@ void StatusNotifierWatcher::readItemProperty(SystrayItem &item,
 // mIconSize: the smallest that is at least that big, or else the largest.
 void StatusNotifierWatcher::readPixmaps(SystrayIcon &icon,
                                         DBusMessageIter *value) {
-  DBusLib *d = mLib;
   DBusMessageIter array, strct, bytes;
   const unsigned char *best = nullptr;
   int bestWidth = 0, bestHeight = 0;
 
-  d->dbus_message_iter_recurse(value, &array);
-  while (d->dbus_message_iter_get_arg_type(&array) == DBUS_TYPE_STRUCT) {
+  dbus_message_iter_recurse(value, &array);
+  while (dbus_message_iter_get_arg_type(&array) == DBUS_TYPE_STRUCT) {
     dbus_int32_t width, height;
     const unsigned char *data = nullptr;
     int len = 0;
 
-    d->dbus_message_iter_recurse(&array, &strct);
-    d->dbus_message_iter_next(&array);
-    if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
+    dbus_message_iter_recurse(&array, &strct);
+    dbus_message_iter_next(&array);
+    if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
       continue;
-    d->dbus_message_iter_get_basic(&strct, &width);
-    d->dbus_message_iter_next(&strct);
-    if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
+    dbus_message_iter_get_basic(&strct, &width);
+    dbus_message_iter_next(&strct);
+    if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
       continue;
-    d->dbus_message_iter_get_basic(&strct, &height);
-    d->dbus_message_iter_next(&strct);
-    if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
+    dbus_message_iter_get_basic(&strct, &height);
+    dbus_message_iter_next(&strct);
+    if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
       continue;
-    d->dbus_message_iter_recurse(&strct, &bytes);
-    d->dbus_message_iter_get_fixed_array(&bytes, &data, &len);
+    dbus_message_iter_recurse(&strct, &bytes);
+    dbus_message_iter_get_fixed_array(&bytes, &data, &len);
 
     if (width <= 0 || height <= 0 || !data ||
         (long)len != (long)width * height * 4)
@@ -829,19 +795,18 @@ void StatusNotifierWatcher::readPixmaps(SystrayIcon &icon,
 
 // Refetches an item's properties when it says they changed.
 bool StatusNotifierWatcher::handleItemSignal(DBusMessage *msg) {
-  DBusLib *d = mLib;
-  if (d->dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL ||
-      !eq(d->dbus_message_get_interface(msg), ITEM_IFACE))
+  if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL ||
+      !eq(dbus_message_get_interface(msg), ITEM_IFACE))
     return false;
 
-  const char *member = d->dbus_message_get_member(msg);
+  const char *member = dbus_message_get_member(msg);
   if (!(eq(member, "NewIcon") || eq(member, "NewAttentionIcon") ||
         eq(member, "NewOverlayIcon") || eq(member, "NewStatus") ||
         eq(member, "NewTitle")))
     return false;
 
-  const char *sender = d->dbus_message_get_sender(msg);
-  const char *path = d->dbus_message_get_path(msg);
+  const char *sender = dbus_message_get_sender(msg);
+  const char *path = dbus_message_get_path(msg);
   for (auto &[id, conn] : mItemConns) {
     if (eq(conn.owner.c_str(), sender) && eq(conn.path.c_str(), path)) {
       fetchItemProperties(id);
@@ -858,12 +823,10 @@ struct StatusNotifierWatcher::ItemCall {
 
 void StatusNotifierWatcher::callAsync(
     DBusMessage *msg, std::function<void(DBusMessage *reply)> onReply) {
-  DBusLib *d = mLib;
   DBusPendingCall *pending = nullptr;
-  if (d->dbus_connection_send_with_reply(mConn, msg, &pending, 5000) &&
-      pending) {
+  if (dbus_connection_send_with_reply(mConn, msg, &pending, 5000) && pending) {
     mItemCalls.push_back(pending);
-    d->dbus_pending_call_set_notify(
+    dbus_pending_call_set_notify(
         pending, itemCallReplyThunk, new ItemCall{this, std::move(onReply)},
         [](void *data) { delete static_cast<ItemCall *>(data); });
   }
@@ -874,44 +837,43 @@ void StatusNotifierWatcher::itemCallReplyThunk(DBusPendingCall *pending,
   // Copied out, since releasing the pending call frees data.
   ItemCall call = *static_cast<ItemCall *>(data);
   StatusNotifierWatcher *self = call.self;
-  DBusLib *d = self->mLib;
 
-  DBusMessage *reply = d->dbus_pending_call_steal_reply(pending);
+  DBusMessage *reply = dbus_pending_call_steal_reply(pending);
   std::erase(self->mItemCalls, pending);
-  d->dbus_pending_call_unref(pending);
+  dbus_pending_call_unref(pending);
 
   call.onReply(reply);
   if (reply)
-    d->dbus_message_unref(reply);
+    dbus_message_unref(reply);
 }
 
 void StatusNotifierWatcher::callItemMethod(const std::string &id,
                                            const char *method, int x, int y,
                                            std::function<void()> onError) {
   DBusLib *d;
-  if ((d = mLib) == nullptr || !mConn)
+  if (!mConn)
     return;
   auto conn = mItemConns.find(id);
   if (conn == mItemConns.end())
     return;
 
-  DBusMessage *msg = d->dbus_message_new_method_call(
-      conn->second.service.c_str(), conn->second.path.c_str(), ITEM_IFACE,
-      method);
+  DBusMessage *msg = dbus_message_new_method_call(conn->second.service.c_str(),
+                                                  conn->second.path.c_str(),
+                                                  ITEM_IFACE, method);
   dbus_int32_t dx = x, dy = y;
-  d->dbus_message_append_args(msg, DBUS_TYPE_INT32, &dx, DBUS_TYPE_INT32, &dy,
-                              DBUS_TYPE_INVALID);
+  dbus_message_append_args(msg, DBUS_TYPE_INT32, &dx, DBUS_TYPE_INT32, &dy,
+                           DBUS_TYPE_INVALID);
 
   if (!onError) {
-    d->dbus_message_set_no_reply(msg, true);
-    d->dbus_connection_send(mConn, msg, nullptr);
+    dbus_message_set_no_reply(msg, true);
+    dbus_connection_send(mConn, msg, nullptr);
   } else {
     callAsync(msg, [d, onError](DBusMessage *reply) {
-      if (!reply || d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR)
+      if (!reply || dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR)
         onError();
     });
   }
-  d->dbus_message_unref(msg);
+  dbus_message_unref(msg);
 }
 
 void StatusNotifierWatcher::activate(const std::string &id, int x, int y) {
@@ -951,34 +913,31 @@ void StatusNotifierWatcher::contextMenu(const std::string &id, int x, int y) {
 }
 
 void StatusNotifierWatcher::fetchMenu(const std::string &id) {
-  DBusLib *d;
-  if ((d = mLib) == nullptr || !mConn)
-    return;
   const ItemConn &conn = mItemConns.at(id);
 
   // Lets the item update the menu before we fetch it.
-  DBusMessage *msg = d->dbus_message_new_method_call(
+  DBusMessage *msg = dbus_message_new_method_call(
       conn.service.c_str(), conn.menuPath.c_str(), MENU_IFACE, "AboutToShow");
   dbus_int32_t root = 0;
-  d->dbus_message_append_args(msg, DBUS_TYPE_INT32, &root, DBUS_TYPE_INVALID);
-  d->dbus_message_set_no_reply(msg, true);
-  d->dbus_connection_send(mConn, msg, nullptr);
-  d->dbus_message_unref(msg);
+  dbus_message_append_args(msg, DBUS_TYPE_INT32, &root, DBUS_TYPE_INVALID);
+  dbus_message_set_no_reply(msg, true);
+  dbus_connection_send(mConn, msg, nullptr);
+  dbus_message_unref(msg);
 
   // GetLayout(parentId, recursionDepth, propertyNames): the whole tree, with
   // all properties.
-  msg = d->dbus_message_new_method_call(
+  msg = dbus_message_new_method_call(
       conn.service.c_str(), conn.menuPath.c_str(), MENU_IFACE, "GetLayout");
   dbus_int32_t depth = -1;
   DBusMessageIter iter, props;
-  d->dbus_message_iter_init_append(msg, &iter);
-  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &root);
-  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &depth);
-  d->dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "s", &props);
-  d->dbus_message_iter_close_container(&iter, &props);
+  dbus_message_iter_init_append(msg, &iter);
+  dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &root);
+  dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &depth);
+  dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "s", &props);
+  dbus_message_iter_close_container(&iter, &props);
 
-  callAsync(msg, [this, d, id](DBusMessage *reply) {
-    if (!reply || d->dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
+  callAsync(msg, [this, id](DBusMessage *reply) {
+    if (!reply || dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
       fprintf(stderr, "tcc_systray: could not get the menu of %s\n",
               id.c_str());
       return;
@@ -990,11 +949,11 @@ void StatusNotifierWatcher::fetchMenu(const std::string &id) {
     DBusMessageIter iter;
     SystrayMenuEntry root;
     bool visible;
-    if (!d->dbus_message_iter_init(reply, &iter) ||
-        d->dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_UINT32)
+    if (!dbus_message_iter_init(reply, &iter) ||
+        dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_UINT32)
       return;
-    d->dbus_message_iter_next(&iter);
-    if (d->dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRUCT)
+    dbus_message_iter_next(&iter);
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRUCT)
       return;
     readMenuLayout(&iter, root, &visible);
     if (root.children.empty())
@@ -1003,39 +962,38 @@ void StatusNotifierWatcher::fetchMenu(const std::string &id) {
     sendMenuEvent(id, 0, "opened");
     showMenu(id, root.children);
   });
-  d->dbus_message_unref(msg);
+  dbus_message_unref(msg);
 }
 
 // Reads one (ia{sv}av) node of a dbusmenu layout, and its children.
 void StatusNotifierWatcher::readMenuLayout(DBusMessageIter *layout,
                                            SystrayMenuEntry &entry,
                                            bool *visible) {
-  DBusLib *d = mLib;
   DBusMessageIter strct, props, prop, value, children, child;
   dbus_int32_t id = 0;
   *visible = true;
 
-  d->dbus_message_iter_recurse(layout, &strct);
-  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
+  dbus_message_iter_recurse(layout, &strct);
+  if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_INT32)
     return;
-  d->dbus_message_iter_get_basic(&strct, &id);
+  dbus_message_iter_get_basic(&strct, &id);
   entry.id = id;
-  d->dbus_message_iter_next(&strct);
+  dbus_message_iter_next(&strct);
 
-  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
+  if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
     return;
-  d->dbus_message_iter_recurse(&strct, &props);
-  while (d->dbus_message_iter_get_arg_type(&props) == DBUS_TYPE_DICT_ENTRY) {
+  dbus_message_iter_recurse(&strct, &props);
+  while (dbus_message_iter_get_arg_type(&props) == DBUS_TYPE_DICT_ENTRY) {
     const char *name;
-    d->dbus_message_iter_recurse(&props, &prop);
-    d->dbus_message_iter_get_basic(&prop, &name);
-    d->dbus_message_iter_next(&prop);
-    d->dbus_message_iter_recurse(&prop, &value);
-    int type = d->dbus_message_iter_get_arg_type(&value);
+    dbus_message_iter_recurse(&props, &prop);
+    dbus_message_iter_get_basic(&prop, &name);
+    dbus_message_iter_next(&prop);
+    dbus_message_iter_recurse(&prop, &value);
+    int type = dbus_message_iter_get_arg_type(&value);
 
     if (type == DBUS_TYPE_STRING) {
       const char *str;
-      d->dbus_message_iter_get_basic(&value, &str);
+      dbus_message_iter_get_basic(&value, &str);
       if (eq(name, "type") && eq(str, "separator")) {
         entry.type = SystrayMenuEntry::Type::Separator;
       } else if (eq(name, "label")) {
@@ -1054,34 +1012,34 @@ void StatusNotifierWatcher::readMenuLayout(DBusMessageIter *layout,
       }
     } else if (type == DBUS_TYPE_BOOLEAN) {
       dbus_bool_t b;
-      d->dbus_message_iter_get_basic(&value, &b);
+      dbus_message_iter_get_basic(&value, &b);
       if (eq(name, "enabled"))
         entry.enabled = b;
       else if (eq(name, "visible"))
         *visible = b;
     } else if (type == DBUS_TYPE_INT32) {
       dbus_int32_t i;
-      d->dbus_message_iter_get_basic(&value, &i);
+      dbus_message_iter_get_basic(&value, &i);
       if (eq(name, "toggle-state"))
         entry.toggled = i == 1;
     }
-    d->dbus_message_iter_next(&props);
+    dbus_message_iter_next(&props);
   }
-  d->dbus_message_iter_next(&strct);
+  dbus_message_iter_next(&strct);
 
-  if (d->dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
+  if (dbus_message_iter_get_arg_type(&strct) != DBUS_TYPE_ARRAY)
     return;
-  d->dbus_message_iter_recurse(&strct, &children);
-  while (d->dbus_message_iter_get_arg_type(&children) == DBUS_TYPE_VARIANT) {
-    d->dbus_message_iter_recurse(&children, &child);
-    if (d->dbus_message_iter_get_arg_type(&child) == DBUS_TYPE_STRUCT) {
+  dbus_message_iter_recurse(&strct, &children);
+  while (dbus_message_iter_get_arg_type(&children) == DBUS_TYPE_VARIANT) {
+    dbus_message_iter_recurse(&children, &child);
+    if (dbus_message_iter_get_arg_type(&child) == DBUS_TYPE_STRUCT) {
       SystrayMenuEntry sub;
       bool subVisible;
       readMenuLayout(&child, sub, &subVisible);
       if (subVisible)
         entry.children.push_back(std::move(sub));
     }
-    d->dbus_message_iter_next(&children);
+    dbus_message_iter_next(&children);
   }
 }
 
@@ -1089,28 +1047,26 @@ void StatusNotifierWatcher::readMenuLayout(DBusMessageIter *layout,
 void StatusNotifierWatcher::sendMenuEvent(const std::string &id, int entryId,
                                           const char *event) {
   DBusLib *d;
-  if ((d = mLib) == nullptr || !mConn)
-    return;
   auto conn = mItemConns.find(id);
   if (conn == mItemConns.end() || conn->second.menuPath.empty())
     return;
 
-  DBusMessage *msg = d->dbus_message_new_method_call(
-      conn->second.service.c_str(), conn->second.menuPath.c_str(), MENU_IFACE,
-      "Event");
+  DBusMessage *msg = dbus_message_new_method_call(conn->second.service.c_str(),
+                                                  conn->second.menuPath.c_str(),
+                                                  MENU_IFACE, "Event");
   DBusMessageIter iter, variant;
   dbus_int32_t did = entryId, data = 0;
   dbus_uint32_t timestamp = 0;
-  d->dbus_message_iter_init_append(msg, &iter);
-  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &did);
-  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &event);
-  d->dbus_message_iter_open_container(&iter, DBUS_TYPE_VARIANT, "i", &variant);
-  d->dbus_message_iter_append_basic(&variant, DBUS_TYPE_INT32, &data);
-  d->dbus_message_iter_close_container(&iter, &variant);
-  d->dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &timestamp);
-  d->dbus_message_set_no_reply(msg, true);
-  d->dbus_connection_send(mConn, msg, nullptr);
-  d->dbus_message_unref(msg);
+  dbus_message_iter_init_append(msg, &iter);
+  dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &did);
+  dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &event);
+  dbus_message_iter_open_container(&iter, DBUS_TYPE_VARIANT, "i", &variant);
+  dbus_message_iter_append_basic(&variant, DBUS_TYPE_INT32, &data);
+  dbus_message_iter_close_container(&iter, &variant);
+  dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &timestamp);
+  dbus_message_set_no_reply(msg, true);
+  dbus_connection_send(mConn, msg, nullptr);
+  dbus_message_unref(msg);
 }
 
 void StatusNotifierWatcher::menuEntryActivated(const std::string &id,
@@ -1125,21 +1081,19 @@ void StatusNotifierWatcher::menuClosed(const std::string &id) {
 void StatusNotifierWatcher::scroll(const std::string &id, int delta,
                                    bool horizontal) {
   DBusLib *d;
-  if ((d = mLib) == nullptr || !mConn)
-    return;
   auto conn = mItemConns.find(id);
   if (conn == mItemConns.end())
     return;
 
-  DBusMessage *msg = d->dbus_message_new_method_call(
-      conn->second.service.c_str(), conn->second.path.c_str(), ITEM_IFACE,
-      "Scroll");
+  DBusMessage *msg = dbus_message_new_method_call(conn->second.service.c_str(),
+                                                  conn->second.path.c_str(),
+                                                  ITEM_IFACE, "Scroll");
   dbus_int32_t ddelta = delta;
   const char *orientation = horizontal ? "horizontal" : "vertical";
-  d->dbus_message_append_args(msg, DBUS_TYPE_INT32, &ddelta, DBUS_TYPE_STRING,
-                              &orientation, DBUS_TYPE_INVALID);
-  d->dbus_message_set_no_reply(msg, true);
-  d->dbus_connection_send(mConn, msg, nullptr);
-  d->dbus_message_unref(msg);
+  dbus_message_append_args(msg, DBUS_TYPE_INT32, &ddelta, DBUS_TYPE_STRING,
+                           &orientation, DBUS_TYPE_INVALID);
+  dbus_message_set_no_reply(msg, true);
+  dbus_connection_send(mConn, msg, nullptr);
+  dbus_message_unref(msg);
 }
 #endif

@@ -7,10 +7,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../lib/wayland_loader.hpp"
+#include "wayland_loader.h"
 
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
+
+#include "../protocol/wayland-client-protocol.h"
 
 #include "../protocol/cursor-shape-v1-protocol.h"
 #include "../protocol/river-input-management-v1-protocol.h"
@@ -18,8 +20,8 @@
 #include "../protocol/river-window-management-v1-protocol.h"
 #include "../protocol/river-xkb-bindings-v1-protocol.h"
 
-#include "../lib/egl_loader.hpp"
-#include "../lib/gl_loader.hpp"
+#include "egl_loader.hpp"
+#include "gl_loader.hpp"
 
 #include "../utils/glyph.hpp"
 
@@ -571,11 +573,10 @@ public:
   void dirty() { river_window_manager_v1_manage_dirty(mRiverWindowManager); }
 
   void terminate() {
-    auto wl = WaylandLib::get();
     if (mRiverWindowManager)
       river_window_manager_v1_exit_session(mRiverWindowManager);
     mRunning = false;
-    wl->wl_display_flush(mDisplay);
+    wl_display_flush(mDisplay);
   }
 
   const std::vector<Output *> &outputs() { return mOutputs; };

@@ -3,11 +3,11 @@
 #ifndef RIVER_LAYER_SHELL_V1_CLIENT_PROTOCOL_H
 #define RIVER_LAYER_SHELL_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -25,7 +25,8 @@ extern "C" {
  * document are to be interpreted as described in IETF RFC 2119.
  *
  * @section page_ifaces_river_layer_shell_v1 Interfaces
- * - @subpage page_iface_river_layer_shell_v1 - river layer shell global interface
+ * - @subpage page_iface_river_layer_shell_v1 - river layer shell global
+ * interface
  * - @subpage page_iface_river_layer_shell_output_v1 - layer shell output state
  * - @subpage page_iface_river_layer_shell_seat_v1 - layer shell seat state
  * @section page_copyright_river_layer_shell_v1 Copyright
@@ -101,7 +102,8 @@ extern const struct wl_interface river_layer_shell_v1_interface;
  * See @ref iface_river_layer_shell_output_v1.
  */
 /**
- * @defgroup iface_river_layer_shell_output_v1 The river_layer_shell_output_v1 interface
+ * @defgroup iface_river_layer_shell_output_v1 The river_layer_shell_output_v1
+ * interface
  *
  * The lifetime of this object is tied to the corresponding river_output_v1.
  * This object is made inert when the river_output_v1.removed event is sent
@@ -122,7 +124,8 @@ extern const struct wl_interface river_layer_shell_output_v1_interface;
  * See @ref iface_river_layer_shell_seat_v1.
  */
 /**
- * @defgroup iface_river_layer_shell_seat_v1 The river_layer_shell_seat_v1 interface
+ * @defgroup iface_river_layer_shell_seat_v1 The river_layer_shell_seat_v1
+ * interface
  *
  * The lifetime of this object is tied to the corresponding river_seat_v1.
  * This object is made inert when the river_seat_v1.removed event is sent and
@@ -134,17 +137,16 @@ extern const struct wl_interface river_layer_shell_seat_v1_interface;
 #ifndef RIVER_LAYER_SHELL_V1_ERROR_ENUM
 #define RIVER_LAYER_SHELL_V1_ERROR_ENUM
 enum river_layer_shell_v1_error {
-	/**
-	 * the layer_shell_output/seat object was already created.
-	 */
-	RIVER_LAYER_SHELL_V1_ERROR_OBJECT_ALREADY_CREATED = 0,
+  /**
+   * the layer_shell_output/seat object was already created.
+   */
+  RIVER_LAYER_SHELL_V1_ERROR_OBJECT_ALREADY_CREATED = 0,
 };
 #endif /* RIVER_LAYER_SHELL_V1_ERROR_ENUM */
 
 #define RIVER_LAYER_SHELL_V1_DESTROY 0
 #define RIVER_LAYER_SHELL_V1_GET_OUTPUT 1
 #define RIVER_LAYER_SHELL_V1_GET_SEAT 2
-
 
 /**
  * @ingroup iface_river_layer_shell_v1
@@ -160,23 +162,20 @@ enum river_layer_shell_v1_error {
 #define RIVER_LAYER_SHELL_V1_GET_SEAT_SINCE_VERSION 1
 
 /** @ingroup iface_river_layer_shell_v1 */
-static inline void
-river_layer_shell_v1_set_user_data(struct river_layer_shell_v1 *river_layer_shell_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_layer_shell_v1, user_data);
+static inline void river_layer_shell_v1_set_user_data(
+    struct river_layer_shell_v1 *river_layer_shell_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_layer_shell_v1, user_data);
 }
 
 /** @ingroup iface_river_layer_shell_v1 */
-static inline void *
-river_layer_shell_v1_get_user_data(struct river_layer_shell_v1 *river_layer_shell_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_layer_shell_v1);
+static inline void *river_layer_shell_v1_get_user_data(
+    struct river_layer_shell_v1 *river_layer_shell_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_layer_shell_v1);
 }
 
-static inline uint32_t
-river_layer_shell_v1_get_version(struct river_layer_shell_v1 *river_layer_shell_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_layer_shell_v1);
+static inline uint32_t river_layer_shell_v1_get_version(
+    struct river_layer_shell_v1 *river_layer_shell_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_layer_shell_v1);
 }
 
 /**
@@ -185,11 +184,12 @@ river_layer_shell_v1_get_version(struct river_layer_shell_v1 *river_layer_shell_
  * This request indicates that the client will no longer use the
  * river_layer_shell_v1 object.
  */
-static inline void
-river_layer_shell_v1_destroy(struct river_layer_shell_v1 *river_layer_shell_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_v1,
-			 RIVER_LAYER_SHELL_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_layer_shell_v1_destroy(
+    struct river_layer_shell_v1 *river_layer_shell_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_v1, RIVER_LAYER_SHELL_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_layer_shell_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -199,14 +199,18 @@ river_layer_shell_v1_destroy(struct river_layer_shell_v1 *river_layer_shell_v1)
  * river_output_v1 object.
  */
 static inline struct river_layer_shell_output_v1 *
-river_layer_shell_v1_get_output(struct river_layer_shell_v1 *river_layer_shell_v1, struct river_output_v1 *output)
-{
-	struct wl_proxy *id;
+river_layer_shell_v1_get_output(
+    struct river_layer_shell_v1 *river_layer_shell_v1,
+    struct river_output_v1 *output) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_v1,
-			 RIVER_LAYER_SHELL_V1_GET_OUTPUT, &river_layer_shell_output_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_v1), 0, NULL, output);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_v1, RIVER_LAYER_SHELL_V1_GET_OUTPUT,
+      &river_layer_shell_output_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_layer_shell_v1), 0, NULL,
+      output);
 
-	return (struct river_layer_shell_output_v1 *) id;
+  return (struct river_layer_shell_output_v1 *)id;
 }
 
 /**
@@ -216,14 +220,17 @@ river_layer_shell_v1_get_output(struct river_layer_shell_v1 *river_layer_shell_v
  * river_seat_v1 object.
  */
 static inline struct river_layer_shell_seat_v1 *
-river_layer_shell_v1_get_seat(struct river_layer_shell_v1 *river_layer_shell_v1, struct river_seat_v1 *seat)
-{
-	struct wl_proxy *id;
+river_layer_shell_v1_get_seat(struct river_layer_shell_v1 *river_layer_shell_v1,
+                              struct river_seat_v1 *seat) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_v1,
-			 RIVER_LAYER_SHELL_V1_GET_SEAT, &river_layer_shell_seat_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_v1), 0, NULL, seat);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_v1, RIVER_LAYER_SHELL_V1_GET_SEAT,
+      &river_layer_shell_seat_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_layer_shell_v1), 0, NULL,
+      seat);
 
-	return (struct river_layer_shell_seat_v1 *) id;
+  return (struct river_layer_shell_seat_v1 *)id;
 }
 
 /**
@@ -231,41 +238,38 @@ river_layer_shell_v1_get_seat(struct river_layer_shell_v1 *river_layer_shell_v1,
  * @struct river_layer_shell_output_v1_listener
  */
 struct river_layer_shell_output_v1_listener {
-	/**
-	 * area left after subtracting exclusive zones
-	 *
-	 * This event indicates the area of the output remaining after
-	 * subtracting the exclusive zones of layer surfaces. Exclusive
-	 * zones are a hint, the window manager is free to ignore this area
-	 * hint if it wishes.
-	 *
-	 * The x and y values are in the global coordinate space, not
-	 * relative to the position of the output.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 * @param x global x coordinate
-	 * @param y global y coordinate
-	 * @param width area width
-	 * @param height area height
-	 */
-	void (*non_exclusive_area)(void *data,
-				   struct river_layer_shell_output_v1 *river_layer_shell_output_v1,
-				   int32_t x,
-				   int32_t y,
-				   int32_t width,
-				   int32_t height);
+  /**
+   * area left after subtracting exclusive zones
+   *
+   * This event indicates the area of the output remaining after
+   * subtracting the exclusive zones of layer surfaces. Exclusive
+   * zones are a hint, the window manager is free to ignore this area
+   * hint if it wishes.
+   *
+   * The x and y values are in the global coordinate space, not
+   * relative to the position of the output.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   * @param x global x coordinate
+   * @param y global y coordinate
+   * @param width area width
+   * @param height area height
+   */
+  void (*non_exclusive_area)(
+      void *data,
+      struct river_layer_shell_output_v1 *river_layer_shell_output_v1,
+      int32_t x, int32_t y, int32_t width, int32_t height);
 };
 
 /**
  * @ingroup iface_river_layer_shell_output_v1
  */
-static inline int
-river_layer_shell_output_v1_add_listener(struct river_layer_shell_output_v1 *river_layer_shell_output_v1,
-					 const struct river_layer_shell_output_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_layer_shell_output_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_layer_shell_output_v1_add_listener(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1,
+    const struct river_layer_shell_output_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_layer_shell_output_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_LAYER_SHELL_OUTPUT_V1_DESTROY 0
@@ -286,23 +290,22 @@ river_layer_shell_output_v1_add_listener(struct river_layer_shell_output_v1 *riv
 #define RIVER_LAYER_SHELL_OUTPUT_V1_SET_DEFAULT_SINCE_VERSION 1
 
 /** @ingroup iface_river_layer_shell_output_v1 */
-static inline void
-river_layer_shell_output_v1_set_user_data(struct river_layer_shell_output_v1 *river_layer_shell_output_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_layer_shell_output_v1, user_data);
+static inline void river_layer_shell_output_v1_set_user_data(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_layer_shell_output_v1,
+                         user_data);
 }
 
 /** @ingroup iface_river_layer_shell_output_v1 */
-static inline void *
-river_layer_shell_output_v1_get_user_data(struct river_layer_shell_output_v1 *river_layer_shell_output_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_layer_shell_output_v1);
+static inline void *river_layer_shell_output_v1_get_user_data(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_layer_shell_output_v1);
 }
 
-static inline uint32_t
-river_layer_shell_output_v1_get_version(struct river_layer_shell_output_v1 *river_layer_shell_output_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_layer_shell_output_v1);
+static inline uint32_t river_layer_shell_output_v1_get_version(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_layer_shell_output_v1);
 }
 
 /**
@@ -314,11 +317,13 @@ river_layer_shell_output_v1_get_version(struct river_layer_shell_output_v1 *rive
  * This request should be made after the river_output_v1.removed event is
  * received to complete destruction of the output.
  */
-static inline void
-river_layer_shell_output_v1_destroy(struct river_layer_shell_output_v1 *river_layer_shell_output_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_output_v1,
-			 RIVER_LAYER_SHELL_OUTPUT_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_output_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_layer_shell_output_v1_destroy(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_output_v1,
+      RIVER_LAYER_SHELL_OUTPUT_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_layer_shell_output_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -334,11 +339,12 @@ river_layer_shell_output_v1_destroy(struct river_layer_shell_output_v1 *river_la
  * This request modifies window management state and may only be made as
  * part of a manage sequence, see the river_window_manager_v1 description.
  */
-static inline void
-river_layer_shell_output_v1_set_default(struct river_layer_shell_output_v1 *river_layer_shell_output_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_output_v1,
-			 RIVER_LAYER_SHELL_OUTPUT_V1_SET_DEFAULT, NULL, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_output_v1), 0);
+static inline void river_layer_shell_output_v1_set_default(
+    struct river_layer_shell_output_v1 *river_layer_shell_output_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_output_v1,
+      RIVER_LAYER_SHELL_OUTPUT_V1_SET_DEFAULT, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_layer_shell_output_v1), 0);
 }
 
 /**
@@ -346,69 +352,68 @@ river_layer_shell_output_v1_set_default(struct river_layer_shell_output_v1 *rive
  * @struct river_layer_shell_seat_v1_listener
  */
 struct river_layer_shell_seat_v1_listener {
-	/**
-	 * layer shell surface has exclusive focus
-	 *
-	 * A layer shell surface will be given exclusive keyboard focus
-	 * at the end of the manage sequence in which this event is sent.
-	 * The window manager may want to update window decorations or
-	 * similar to indicate that no window is focused.
-	 *
-	 * Until the focus_non_exclusive or focus_none event is sent, all
-	 * window manager requests to change focus are ignored.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*focus_exclusive)(void *data,
-				struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
-	/**
-	 * layer shell surface wants non-exclusive focus
-	 *
-	 * A layer shell surface will be given non-exclusive keyboard
-	 * focus at the end of the manage sequence in which this event is
-	 * sent. The window manager may want to update window decorations
-	 * or similar to indicate that no window is focused.
-	 *
-	 * The window manager continues to control focus and may choose to
-	 * focus a different window/shell surface at any time. If the
-	 * window manager sets focus during the same manage sequence in
-	 * which this event is sent, the layer surface will not be focused.
-	 *
-	 * If the layer surface with non-exclusive focus is closed or the
-	 * window manager chooses to move focus away from the layer
-	 * surface, a focus_none event will be sent in the next manage
-	 * sequence.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*focus_non_exclusive)(void *data,
-				    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
-	/**
-	 * no layer shell surface has focus
-	 *
-	 * No layer shell surface will have keyboard focus at the end of
-	 * the manage sequence in which this event is sent. The window
-	 * manager may want to return focus to whichever window last had
-	 * focus, for example.
-	 *
-	 * This event will be followed by a manage_start event after all
-	 * other new state has been sent by the server.
-	 */
-	void (*focus_none)(void *data,
-			   struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
+  /**
+   * layer shell surface has exclusive focus
+   *
+   * A layer shell surface will be given exclusive keyboard focus
+   * at the end of the manage sequence in which this event is sent.
+   * The window manager may want to update window decorations or
+   * similar to indicate that no window is focused.
+   *
+   * Until the focus_non_exclusive or focus_none event is sent, all
+   * window manager requests to change focus are ignored.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*focus_exclusive)(
+      void *data, struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
+  /**
+   * layer shell surface wants non-exclusive focus
+   *
+   * A layer shell surface will be given non-exclusive keyboard
+   * focus at the end of the manage sequence in which this event is
+   * sent. The window manager may want to update window decorations
+   * or similar to indicate that no window is focused.
+   *
+   * The window manager continues to control focus and may choose to
+   * focus a different window/shell surface at any time. If the
+   * window manager sets focus during the same manage sequence in
+   * which this event is sent, the layer surface will not be focused.
+   *
+   * If the layer surface with non-exclusive focus is closed or the
+   * window manager chooses to move focus away from the layer
+   * surface, a focus_none event will be sent in the next manage
+   * sequence.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*focus_non_exclusive)(
+      void *data, struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
+  /**
+   * no layer shell surface has focus
+   *
+   * No layer shell surface will have keyboard focus at the end of
+   * the manage sequence in which this event is sent. The window
+   * manager may want to return focus to whichever window last had
+   * focus, for example.
+   *
+   * This event will be followed by a manage_start event after all
+   * other new state has been sent by the server.
+   */
+  void (*focus_none)(
+      void *data, struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1);
 };
 
 /**
  * @ingroup iface_river_layer_shell_seat_v1
  */
-static inline int
-river_layer_shell_seat_v1_add_listener(struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1,
-				       const struct river_layer_shell_seat_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_layer_shell_seat_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_layer_shell_seat_v1_add_listener(
+    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1,
+    const struct river_layer_shell_seat_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_layer_shell_seat_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_LAYER_SHELL_SEAT_V1_DESTROY 0
@@ -432,23 +437,22 @@ river_layer_shell_seat_v1_add_listener(struct river_layer_shell_seat_v1 *river_l
 #define RIVER_LAYER_SHELL_SEAT_V1_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_river_layer_shell_seat_v1 */
-static inline void
-river_layer_shell_seat_v1_set_user_data(struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_layer_shell_seat_v1, user_data);
+static inline void river_layer_shell_seat_v1_set_user_data(
+    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1,
+    void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_layer_shell_seat_v1,
+                         user_data);
 }
 
 /** @ingroup iface_river_layer_shell_seat_v1 */
-static inline void *
-river_layer_shell_seat_v1_get_user_data(struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_layer_shell_seat_v1);
+static inline void *river_layer_shell_seat_v1_get_user_data(
+    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_layer_shell_seat_v1);
 }
 
-static inline uint32_t
-river_layer_shell_seat_v1_get_version(struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_layer_shell_seat_v1);
+static inline uint32_t river_layer_shell_seat_v1_get_version(
+    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_layer_shell_seat_v1);
 }
 
 /**
@@ -460,14 +464,16 @@ river_layer_shell_seat_v1_get_version(struct river_layer_shell_seat_v1 *river_la
  * This request should be made after the river_seat_v1.removed event is
  * received to complete destruction of the seat.
  */
-static inline void
-river_layer_shell_seat_v1_destroy(struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_layer_shell_seat_v1,
-			 RIVER_LAYER_SHELL_SEAT_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_layer_shell_seat_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_layer_shell_seat_v1_destroy(
+    struct river_layer_shell_seat_v1 *river_layer_shell_seat_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_layer_shell_seat_v1,
+      RIVER_LAYER_SHELL_SEAT_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_layer_shell_seat_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

@@ -23,17 +23,17 @@
  * IN THE SOFTWARE.
  */
 
+#include "wayland_loader.h"
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include "wayland-util.h"
+#include <stdlib.h>
 
 #ifndef __has_attribute
-# define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */
+#define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
 #endif
 
 #if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__ ((visibility("hidden")))
+#define WL_PRIVATE __attribute__((visibility("hidden")))
 #else
 #define WL_PRIVATE
 #endif
@@ -43,59 +43,54 @@ extern const struct wl_interface river_xkb_binding_v1_interface;
 extern const struct wl_interface river_xkb_bindings_seat_v1_interface;
 
 static const struct wl_interface *river_xkb_bindings_v1_types[] = {
-	NULL,
-	&river_seat_v1_interface,
-	&river_xkb_binding_v1_interface,
-	NULL,
-	NULL,
-	&river_xkb_bindings_seat_v1_interface,
-	&river_seat_v1_interface,
+    NULL,
+    &river_seat_v1_interface,
+    &river_xkb_binding_v1_interface,
+    NULL,
+    NULL,
+    &river_xkb_bindings_seat_v1_interface,
+    &river_seat_v1_interface,
 };
 
 static const struct wl_message river_xkb_bindings_v1_requests[] = {
-	{ "destroy", "", river_xkb_bindings_v1_types + 0 },
-	{ "get_xkb_binding", "onuu", river_xkb_bindings_v1_types + 1 },
-	{ "get_seat", "2no", river_xkb_bindings_v1_types + 5 },
+    {"destroy", "", river_xkb_bindings_v1_types + 0},
+    {"get_xkb_binding", "onuu", river_xkb_bindings_v1_types + 1},
+    {"get_seat", "2no", river_xkb_bindings_v1_types + 5},
 };
 
 WL_PRIVATE const struct wl_interface river_xkb_bindings_v1_interface = {
-	"river_xkb_bindings_v1", 2,
-	3, river_xkb_bindings_v1_requests,
-	0, NULL,
+    "river_xkb_bindings_v1", 2, 3, river_xkb_bindings_v1_requests, 0, NULL,
 };
 
 static const struct wl_message river_xkb_binding_v1_requests[] = {
-	{ "destroy", "", river_xkb_bindings_v1_types + 0 },
-	{ "set_layout_override", "u", river_xkb_bindings_v1_types + 0 },
-	{ "enable", "", river_xkb_bindings_v1_types + 0 },
-	{ "disable", "", river_xkb_bindings_v1_types + 0 },
+    {"destroy", "", river_xkb_bindings_v1_types + 0},
+    {"set_layout_override", "u", river_xkb_bindings_v1_types + 0},
+    {"enable", "", river_xkb_bindings_v1_types + 0},
+    {"disable", "", river_xkb_bindings_v1_types + 0},
 };
 
 static const struct wl_message river_xkb_binding_v1_events[] = {
-	{ "pressed", "", river_xkb_bindings_v1_types + 0 },
-	{ "released", "", river_xkb_bindings_v1_types + 0 },
-	{ "stop_repeat", "2", river_xkb_bindings_v1_types + 0 },
+    {"pressed", "", river_xkb_bindings_v1_types + 0},
+    {"released", "", river_xkb_bindings_v1_types + 0},
+    {"stop_repeat", "2", river_xkb_bindings_v1_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface river_xkb_binding_v1_interface = {
-	"river_xkb_binding_v1", 2,
-	4, river_xkb_binding_v1_requests,
-	3, river_xkb_binding_v1_events,
+    "river_xkb_binding_v1",        2, 4,
+    river_xkb_binding_v1_requests, 3, river_xkb_binding_v1_events,
 };
 
 static const struct wl_message river_xkb_bindings_seat_v1_requests[] = {
-	{ "destroy", "2", river_xkb_bindings_v1_types + 0 },
-	{ "ensure_next_key_eaten", "2", river_xkb_bindings_v1_types + 0 },
-	{ "cancel_ensure_next_key_eaten", "2", river_xkb_bindings_v1_types + 0 },
+    {"destroy", "2", river_xkb_bindings_v1_types + 0},
+    {"ensure_next_key_eaten", "2", river_xkb_bindings_v1_types + 0},
+    {"cancel_ensure_next_key_eaten", "2", river_xkb_bindings_v1_types + 0},
 };
 
 static const struct wl_message river_xkb_bindings_seat_v1_events[] = {
-	{ "ate_unbound_key", "2", river_xkb_bindings_v1_types + 0 },
+    {"ate_unbound_key", "2", river_xkb_bindings_v1_types + 0},
 };
 
 WL_PRIVATE const struct wl_interface river_xkb_bindings_seat_v1_interface = {
-	"river_xkb_bindings_seat_v1", 2,
-	3, river_xkb_bindings_seat_v1_requests,
-	1, river_xkb_bindings_seat_v1_events,
+    "river_xkb_bindings_seat_v1",        2, 3,
+    river_xkb_bindings_seat_v1_requests, 1, river_xkb_bindings_seat_v1_events,
 };
-

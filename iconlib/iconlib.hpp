@@ -4,7 +4,6 @@
 #include <string>
 
 class IconManager {
-  struct GtkLib *mLib = nullptr;
   struct _GtkIconTheme *mGTKIconTheme = nullptr;
   /* themes that only search one extra directory, keyed by that directory */
   std::map<std::string, struct _GtkIconTheme *> mExtraThemes;

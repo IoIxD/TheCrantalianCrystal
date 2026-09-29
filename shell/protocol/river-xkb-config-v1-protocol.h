@@ -3,11 +3,11 @@
 #ifndef RIVER_XKB_CONFIG_V1_CLIENT_PROTOCOL_H
 #define RIVER_XKB_CONFIG_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
+#include "wayland_loader.h"
 #include <stddef.h>
-#include "wayland-client.h"
+#include <stdint.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -122,22 +122,22 @@ extern const struct wl_interface river_xkb_keyboard_v1_interface;
 #ifndef RIVER_XKB_CONFIG_V1_ERROR_ENUM
 #define RIVER_XKB_CONFIG_V1_ERROR_ENUM
 enum river_xkb_config_v1_error {
-	RIVER_XKB_CONFIG_V1_ERROR_INVALID_DESTROY = 0,
-	RIVER_XKB_CONFIG_V1_ERROR_INVALID_FORMAT = 1,
+  RIVER_XKB_CONFIG_V1_ERROR_INVALID_DESTROY = 0,
+  RIVER_XKB_CONFIG_V1_ERROR_INVALID_FORMAT = 1,
 };
 #endif /* RIVER_XKB_CONFIG_V1_ERROR_ENUM */
 
 #ifndef RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_ENUM
 #define RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_ENUM
 enum river_xkb_config_v1_keymap_format {
-	/**
-	 * XKB_KEYMAP_FORMAT_TEXT_V1
-	 */
-	RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_TEXT_V1 = 1,
-	/**
-	 * XKB_KEYMAP_FORMAT_TEXT_V2
-	 */
-	RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_TEXT_V2 = 2,
+  /**
+   * XKB_KEYMAP_FORMAT_TEXT_V1
+   */
+  RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_TEXT_V1 = 1,
+  /**
+   * XKB_KEYMAP_FORMAT_TEXT_V2
+   */
+  RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_TEXT_V2 = 2,
 };
 #endif /* RIVER_XKB_CONFIG_V1_KEYMAP_FORMAT_ENUM */
 
@@ -146,36 +146,34 @@ enum river_xkb_config_v1_keymap_format {
  * @struct river_xkb_config_v1_listener
  */
 struct river_xkb_config_v1_listener {
-	/**
-	 * the server has finished with the object
-	 *
-	 * This event indicates that the server will send no further
-	 * events on this object. The client should destroy the object. See
-	 * river_xkb_config_v1.destroy for more information.
-	 */
-	void (*finished)(void *data,
-			 struct river_xkb_config_v1 *river_xkb_config_v1);
-	/**
-	 * new xkb keyboard
-	 *
-	 * A new xkbcommon keyboard has been created. Not every
-	 * river_input_device_v1 is necessarily an xkbcommon keyboard as
-	 * well.
-	 */
-	void (*xkb_keyboard)(void *data,
-			     struct river_xkb_config_v1 *river_xkb_config_v1,
-			     struct river_xkb_keyboard_v1 *id);
+  /**
+   * the server has finished with the object
+   *
+   * This event indicates that the server will send no further
+   * events on this object. The client should destroy the object. See
+   * river_xkb_config_v1.destroy for more information.
+   */
+  void (*finished)(void *data, struct river_xkb_config_v1 *river_xkb_config_v1);
+  /**
+   * new xkb keyboard
+   *
+   * A new xkbcommon keyboard has been created. Not every
+   * river_input_device_v1 is necessarily an xkbcommon keyboard as
+   * well.
+   */
+  void (*xkb_keyboard)(void *data,
+                       struct river_xkb_config_v1 *river_xkb_config_v1,
+                       struct river_xkb_keyboard_v1 *id);
 };
 
 /**
  * @ingroup iface_river_xkb_config_v1
  */
-static inline int
-river_xkb_config_v1_add_listener(struct river_xkb_config_v1 *river_xkb_config_v1,
-				 const struct river_xkb_config_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_xkb_config_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_xkb_config_v1_add_listener(
+    struct river_xkb_config_v1 *river_xkb_config_v1,
+    const struct river_xkb_config_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_xkb_config_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_XKB_CONFIG_V1_STOP 0
@@ -205,23 +203,20 @@ river_xkb_config_v1_add_listener(struct river_xkb_config_v1 *river_xkb_config_v1
 #define RIVER_XKB_CONFIG_V1_CREATE_KEYMAP_SINCE_VERSION 1
 
 /** @ingroup iface_river_xkb_config_v1 */
-static inline void
-river_xkb_config_v1_set_user_data(struct river_xkb_config_v1 *river_xkb_config_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_config_v1, user_data);
+static inline void river_xkb_config_v1_set_user_data(
+    struct river_xkb_config_v1 *river_xkb_config_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_config_v1, user_data);
 }
 
 /** @ingroup iface_river_xkb_config_v1 */
-static inline void *
-river_xkb_config_v1_get_user_data(struct river_xkb_config_v1 *river_xkb_config_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_config_v1);
+static inline void *river_xkb_config_v1_get_user_data(
+    struct river_xkb_config_v1 *river_xkb_config_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_config_v1);
 }
 
-static inline uint32_t
-river_xkb_config_v1_get_version(struct river_xkb_config_v1 *river_xkb_config_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_config_v1);
+static inline uint32_t river_xkb_config_v1_get_version(
+    struct river_xkb_config_v1 *river_xkb_config_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_config_v1);
 }
 
 /**
@@ -235,10 +230,10 @@ river_xkb_config_v1_get_version(struct river_xkb_config_v1 *river_xkb_config_v1)
  * for a river_xkb_config_v1.finished event before destroying this object.
  */
 static inline void
-river_xkb_config_v1_stop(struct river_xkb_config_v1 *river_xkb_config_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_config_v1,
-			 RIVER_XKB_CONFIG_V1_STOP, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_config_v1), 0);
+river_xkb_config_v1_stop(struct river_xkb_config_v1 *river_xkb_config_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_config_v1, RIVER_XKB_CONFIG_V1_STOP, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_config_v1), 0);
 }
 
 /**
@@ -257,10 +252,11 @@ river_xkb_config_v1_stop(struct river_xkb_config_v1 *river_xkb_config_v1)
  * this interface.
  */
 static inline void
-river_xkb_config_v1_destroy(struct river_xkb_config_v1 *river_xkb_config_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_config_v1,
-			 RIVER_XKB_CONFIG_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_config_v1), WL_MARSHAL_FLAG_DESTROY);
+river_xkb_config_v1_destroy(struct river_xkb_config_v1 *river_xkb_config_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_config_v1, RIVER_XKB_CONFIG_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_config_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -271,15 +267,18 @@ river_xkb_config_v1_destroy(struct river_xkb_config_v1 *river_xkb_config_v1)
  * The client must not modify the contents of the fd after making this request.
  * The client should seal the fd with fcntl.
  */
-static inline struct river_xkb_keymap_v1 *
-river_xkb_config_v1_create_keymap(struct river_xkb_config_v1 *river_xkb_config_v1, int32_t fd, uint32_t format)
-{
-	struct wl_proxy *id;
+static inline struct river_xkb_keymap_v1 *river_xkb_config_v1_create_keymap(
+    struct river_xkb_config_v1 *river_xkb_config_v1, int32_t fd,
+    uint32_t format) {
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_config_v1,
-			 RIVER_XKB_CONFIG_V1_CREATE_KEYMAP, &river_xkb_keymap_v1_interface, wl_proxy_get_version((struct wl_proxy *) river_xkb_config_v1), 0, NULL, fd, format);
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_config_v1, RIVER_XKB_CONFIG_V1_CREATE_KEYMAP,
+      &river_xkb_keymap_v1_interface,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_config_v1), 0, NULL, fd,
+      format);
 
-	return (struct river_xkb_keymap_v1 *) id;
+  return (struct river_xkb_keymap_v1 *)id;
 }
 
 /**
@@ -287,37 +286,34 @@ river_xkb_config_v1_create_keymap(struct river_xkb_config_v1 *river_xkb_config_v
  * @struct river_xkb_keymap_v1_listener
  */
 struct river_xkb_keymap_v1_listener {
-	/**
-	 * keymap creation succeeded
-	 *
-	 * The keymap object was successfully created and may be used
-	 * with the river_xkb_keyboard_v1.set_keymap request.
-	 */
-	void (*success)(void *data,
-			struct river_xkb_keymap_v1 *river_xkb_keymap_v1);
-	/**
-	 * keymap creation failed
-	 *
-	 * The compositor failed to create a keymap from the given
-	 * parameters.
-	 *
-	 * It is a protocol error to use this keymap object with
-	 * river_xkb_keyboard_v1.set_keymap.
-	 */
-	void (*failure)(void *data,
-			struct river_xkb_keymap_v1 *river_xkb_keymap_v1,
-			const char *error_msg);
+  /**
+   * keymap creation succeeded
+   *
+   * The keymap object was successfully created and may be used
+   * with the river_xkb_keyboard_v1.set_keymap request.
+   */
+  void (*success)(void *data, struct river_xkb_keymap_v1 *river_xkb_keymap_v1);
+  /**
+   * keymap creation failed
+   *
+   * The compositor failed to create a keymap from the given
+   * parameters.
+   *
+   * It is a protocol error to use this keymap object with
+   * river_xkb_keyboard_v1.set_keymap.
+   */
+  void (*failure)(void *data, struct river_xkb_keymap_v1 *river_xkb_keymap_v1,
+                  const char *error_msg);
 };
 
 /**
  * @ingroup iface_river_xkb_keymap_v1
  */
-static inline int
-river_xkb_keymap_v1_add_listener(struct river_xkb_keymap_v1 *river_xkb_keymap_v1,
-				 const struct river_xkb_keymap_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_xkb_keymap_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_xkb_keymap_v1_add_listener(
+    struct river_xkb_keymap_v1 *river_xkb_keymap_v1,
+    const struct river_xkb_keymap_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_xkb_keymap_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_XKB_KEYMAP_V1_DESTROY 0
@@ -337,23 +333,20 @@ river_xkb_keymap_v1_add_listener(struct river_xkb_keymap_v1 *river_xkb_keymap_v1
 #define RIVER_XKB_KEYMAP_V1_DESTROY_SINCE_VERSION 1
 
 /** @ingroup iface_river_xkb_keymap_v1 */
-static inline void
-river_xkb_keymap_v1_set_user_data(struct river_xkb_keymap_v1 *river_xkb_keymap_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_keymap_v1, user_data);
+static inline void river_xkb_keymap_v1_set_user_data(
+    struct river_xkb_keymap_v1 *river_xkb_keymap_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_keymap_v1, user_data);
 }
 
 /** @ingroup iface_river_xkb_keymap_v1 */
-static inline void *
-river_xkb_keymap_v1_get_user_data(struct river_xkb_keymap_v1 *river_xkb_keymap_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_keymap_v1);
+static inline void *river_xkb_keymap_v1_get_user_data(
+    struct river_xkb_keymap_v1 *river_xkb_keymap_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_keymap_v1);
 }
 
-static inline uint32_t
-river_xkb_keymap_v1_get_version(struct river_xkb_keymap_v1 *river_xkb_keymap_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_keymap_v1);
+static inline uint32_t river_xkb_keymap_v1_get_version(
+    struct river_xkb_keymap_v1 *river_xkb_keymap_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_keymap_v1);
 }
 
 /**
@@ -363,16 +356,17 @@ river_xkb_keymap_v1_get_version(struct river_xkb_keymap_v1 *river_xkb_keymap_v1)
  * object and that it may be safely destroyed.
  */
 static inline void
-river_xkb_keymap_v1_destroy(struct river_xkb_keymap_v1 *river_xkb_keymap_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keymap_v1,
-			 RIVER_XKB_KEYMAP_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keymap_v1), WL_MARSHAL_FLAG_DESTROY);
+river_xkb_keymap_v1_destroy(struct river_xkb_keymap_v1 *river_xkb_keymap_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keymap_v1, RIVER_XKB_KEYMAP_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keymap_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef RIVER_XKB_KEYBOARD_V1_ERROR_ENUM
 #define RIVER_XKB_KEYBOARD_V1_ERROR_ENUM
 enum river_xkb_keyboard_v1_error {
-	RIVER_XKB_KEYBOARD_V1_ERROR_INVALID_KEYMAP = 0,
+  RIVER_XKB_KEYBOARD_V1_ERROR_INVALID_KEYMAP = 0,
 };
 #endif /* RIVER_XKB_KEYBOARD_V1_ERROR_ENUM */
 
@@ -381,93 +375,91 @@ enum river_xkb_keyboard_v1_error {
  * @struct river_xkb_keyboard_v1_listener
  */
 struct river_xkb_keyboard_v1_listener {
-	/**
-	 * the xkb keyboard is removed
-	 *
-	 * This event indicates that the xkb keyboard has been removed.
-	 *
-	 * The server will send no further events on this object and ignore
-	 * any request (other than river_xkb_keyboard_v1.destroy) made
-	 * after this event is sent. The client should destroy this object
-	 * with the river_xkb_keyboard_v1.destroy request to free up
-	 * resources.
-	 */
-	void (*removed)(void *data,
-			struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
-	/**
-	 * corresponding river input device
-	 *
-	 * The river_input_device_v1 corresponding to this xkb keyboard.
-	 * This event will always be the first event sent on the
-	 * river_xkb_keyboard_v1 object, and it will be sent exactly once.
-	 */
-	void (*input_device)(void *data,
-			     struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
-			     struct river_input_device_v1 *device);
-	/**
-	 * currently active layout
-	 *
-	 * The currently active layout index and name. The name arg may
-	 * be null if the active layout does not have a name.
-	 *
-	 * This event is sent once when the river_xkb_keyboard_v1 is
-	 * created and again whenever the layout changes.
-	 */
-	void (*layout)(void *data,
-		       struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
-		       uint32_t index,
-		       const char *name);
-	/**
-	 * capslock is currently enabled
-	 *
-	 * Capslock is currently enabled for the keyboard.
-	 *
-	 * This event is sent once when the river_xkb_keyboard_v1 is
-	 * created and again whenever the capslock state changes.
-	 */
-	void (*capslock_enabled)(void *data,
-				 struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
-	/**
-	 * capslock is currently disabled
-	 *
-	 * Capslock is currently disabled for the keyboard.
-	 *
-	 * This event is sent once when the river_xkb_keyboard_v1 is
-	 * created and again whenever the capslock state changes.
-	 */
-	void (*capslock_disabled)(void *data,
-				  struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
-	/**
-	 * numlock is currently enabled
-	 *
-	 * Numlock is currently enabled for the keyboard.
-	 *
-	 * This event is sent once when the river_xkb_keyboard_v1 is
-	 * created and again whenever the numlock state changes.
-	 */
-	void (*numlock_enabled)(void *data,
-				struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
-	/**
-	 * numlock is currently disabled
-	 *
-	 * Numlock is currently disabled for the keyboard.
-	 *
-	 * This event is sent once when the river_xkb_keyboard_v1 is
-	 * created and again whenever the numlock state changes.
-	 */
-	void (*numlock_disabled)(void *data,
-				 struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
+  /**
+   * the xkb keyboard is removed
+   *
+   * This event indicates that the xkb keyboard has been removed.
+   *
+   * The server will send no further events on this object and ignore
+   * any request (other than river_xkb_keyboard_v1.destroy) made
+   * after this event is sent. The client should destroy this object
+   * with the river_xkb_keyboard_v1.destroy request to free up
+   * resources.
+   */
+  void (*removed)(void *data,
+                  struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
+  /**
+   * corresponding river input device
+   *
+   * The river_input_device_v1 corresponding to this xkb keyboard.
+   * This event will always be the first event sent on the
+   * river_xkb_keyboard_v1 object, and it will be sent exactly once.
+   */
+  void (*input_device)(void *data,
+                       struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
+                       struct river_input_device_v1 *device);
+  /**
+   * currently active layout
+   *
+   * The currently active layout index and name. The name arg may
+   * be null if the active layout does not have a name.
+   *
+   * This event is sent once when the river_xkb_keyboard_v1 is
+   * created and again whenever the layout changes.
+   */
+  void (*layout)(void *data,
+                 struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
+                 uint32_t index, const char *name);
+  /**
+   * capslock is currently enabled
+   *
+   * Capslock is currently enabled for the keyboard.
+   *
+   * This event is sent once when the river_xkb_keyboard_v1 is
+   * created and again whenever the capslock state changes.
+   */
+  void (*capslock_enabled)(void *data,
+                           struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
+  /**
+   * capslock is currently disabled
+   *
+   * Capslock is currently disabled for the keyboard.
+   *
+   * This event is sent once when the river_xkb_keyboard_v1 is
+   * created and again whenever the capslock state changes.
+   */
+  void (*capslock_disabled)(
+      void *data, struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
+  /**
+   * numlock is currently enabled
+   *
+   * Numlock is currently enabled for the keyboard.
+   *
+   * This event is sent once when the river_xkb_keyboard_v1 is
+   * created and again whenever the numlock state changes.
+   */
+  void (*numlock_enabled)(void *data,
+                          struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
+  /**
+   * numlock is currently disabled
+   *
+   * Numlock is currently disabled for the keyboard.
+   *
+   * This event is sent once when the river_xkb_keyboard_v1 is
+   * created and again whenever the numlock state changes.
+   */
+  void (*numlock_disabled)(void *data,
+                           struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1);
 };
 
 /**
  * @ingroup iface_river_xkb_keyboard_v1
  */
-static inline int
-river_xkb_keyboard_v1_add_listener(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
-				   const struct river_xkb_keyboard_v1_listener *listener, void *data)
-{
-	return wl_proxy_add_listener((struct wl_proxy *) river_xkb_keyboard_v1,
-				     (void (**)(void)) listener, data);
+static inline int river_xkb_keyboard_v1_add_listener(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
+    const struct river_xkb_keyboard_v1_listener *listener, void *data) {
+  return wl_proxy_add_listener((struct wl_proxy *)river_xkb_keyboard_v1,
+                               (void (**)(void))listener, data);
 }
 
 #define RIVER_XKB_KEYBOARD_V1_DESTROY 0
@@ -542,23 +534,20 @@ river_xkb_keyboard_v1_add_listener(struct river_xkb_keyboard_v1 *river_xkb_keybo
 #define RIVER_XKB_KEYBOARD_V1_NUMLOCK_DISABLE_SINCE_VERSION 1
 
 /** @ingroup iface_river_xkb_keyboard_v1 */
-static inline void
-river_xkb_keyboard_v1_set_user_data(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, void *user_data)
-{
-	wl_proxy_set_user_data((struct wl_proxy *) river_xkb_keyboard_v1, user_data);
+static inline void river_xkb_keyboard_v1_set_user_data(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, void *user_data) {
+  wl_proxy_set_user_data((struct wl_proxy *)river_xkb_keyboard_v1, user_data);
 }
 
 /** @ingroup iface_river_xkb_keyboard_v1 */
-static inline void *
-river_xkb_keyboard_v1_get_user_data(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	return wl_proxy_get_user_data((struct wl_proxy *) river_xkb_keyboard_v1);
+static inline void *river_xkb_keyboard_v1_get_user_data(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy *)river_xkb_keyboard_v1);
 }
 
-static inline uint32_t
-river_xkb_keyboard_v1_get_version(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	return wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1);
+static inline uint32_t river_xkb_keyboard_v1_get_version(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  return wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1);
 }
 
 /**
@@ -567,11 +556,12 @@ river_xkb_keyboard_v1_get_version(struct river_xkb_keyboard_v1 *river_xkb_keyboa
  * This request indicates that the client will no longer use the keyboard
  * object and that it may be safely destroyed.
  */
-static inline void
-river_xkb_keyboard_v1_destroy(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), WL_MARSHAL_FLAG_DESTROY);
+static inline void river_xkb_keyboard_v1_destroy(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1, RIVER_XKB_KEYBOARD_V1_DESTROY,
+      NULL, wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -584,11 +574,14 @@ river_xkb_keyboard_v1_destroy(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v
  * It is a protocol error to pass a keymap object for which the
  * river_xkb_keymap_v1.success event was not received.
  */
-static inline void
-river_xkb_keyboard_v1_set_keymap(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, struct river_xkb_keymap_v1 *keymap)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_SET_KEYMAP, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0, keymap);
+static inline void river_xkb_keyboard_v1_set_keymap(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1,
+    struct river_xkb_keymap_v1 *keymap) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_SET_KEYMAP, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0,
+      keymap);
 }
 
 /**
@@ -597,11 +590,12 @@ river_xkb_keyboard_v1_set_keymap(struct river_xkb_keyboard_v1 *river_xkb_keyboar
  * Set the active layout for the keyboard's keymap. Has no effect if the
  * layout index is out of bounds for the current keymap.
  */
-static inline void
-river_xkb_keyboard_v1_set_layout_by_index(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, int32_t index)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_SET_LAYOUT_BY_INDEX, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0, index);
+static inline void river_xkb_keyboard_v1_set_layout_by_index(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, int32_t index) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_SET_LAYOUT_BY_INDEX, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0, index);
 }
 
 /**
@@ -610,11 +604,12 @@ river_xkb_keyboard_v1_set_layout_by_index(struct river_xkb_keyboard_v1 *river_xk
  * Set the active layout for the keyboard's keymap. Has no effect if there
  * is no layout with the give name for the keyboard's keymap.
  */
-static inline void
-river_xkb_keyboard_v1_set_layout_by_name(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, const char *name)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_SET_LAYOUT_BY_NAME, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0, name);
+static inline void river_xkb_keyboard_v1_set_layout_by_name(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1, const char *name) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_SET_LAYOUT_BY_NAME, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0, name);
 }
 
 /**
@@ -622,11 +617,12 @@ river_xkb_keyboard_v1_set_layout_by_name(struct river_xkb_keyboard_v1 *river_xkb
  *
  * Enable capslock for the keyboard.
  */
-static inline void
-river_xkb_keyboard_v1_capslock_enable(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_CAPSLOCK_ENABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0);
+static inline void river_xkb_keyboard_v1_capslock_enable(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_CAPSLOCK_ENABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0);
 }
 
 /**
@@ -634,11 +630,12 @@ river_xkb_keyboard_v1_capslock_enable(struct river_xkb_keyboard_v1 *river_xkb_ke
  *
  * Disable capslock for the keyboard.
  */
-static inline void
-river_xkb_keyboard_v1_capslock_disable(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_CAPSLOCK_DISABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0);
+static inline void river_xkb_keyboard_v1_capslock_disable(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_CAPSLOCK_DISABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0);
 }
 
 /**
@@ -646,11 +643,12 @@ river_xkb_keyboard_v1_capslock_disable(struct river_xkb_keyboard_v1 *river_xkb_k
  *
  * Enable numlock for the keyboard.
  */
-static inline void
-river_xkb_keyboard_v1_numlock_enable(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_NUMLOCK_ENABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0);
+static inline void river_xkb_keyboard_v1_numlock_enable(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_NUMLOCK_ENABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0);
 }
 
 /**
@@ -658,14 +656,15 @@ river_xkb_keyboard_v1_numlock_enable(struct river_xkb_keyboard_v1 *river_xkb_key
  *
  * Disable numlock for the keyboard.
  */
-static inline void
-river_xkb_keyboard_v1_numlock_disable(struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1)
-{
-	wl_proxy_marshal_flags((struct wl_proxy *) river_xkb_keyboard_v1,
-			 RIVER_XKB_KEYBOARD_V1_NUMLOCK_DISABLE, NULL, wl_proxy_get_version((struct wl_proxy *) river_xkb_keyboard_v1), 0);
+static inline void river_xkb_keyboard_v1_numlock_disable(
+    struct river_xkb_keyboard_v1 *river_xkb_keyboard_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy *)river_xkb_keyboard_v1,
+      RIVER_XKB_KEYBOARD_V1_NUMLOCK_DISABLE, NULL,
+      wl_proxy_get_version((struct wl_proxy *)river_xkb_keyboard_v1), 0);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 
