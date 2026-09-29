@@ -1,7 +1,6 @@
 #include "systray.hpp"
 #ifdef TCC_SYSTRAY_DBUS
 #include "dbus/sni_watcher.hpp"
-#include "othericons/bluez_bluetooth.hpp"
 #include "othericons/upower_battery.hpp"
 #endif
 #ifdef TCC_SYSTRAY_PULSE
@@ -30,11 +29,11 @@ TCCSystrayClient::TCCSystrayClient() {
 
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
-  addProtocol(std::make_unique<BluezBluetooth>());
   addProtocol(std::make_unique<UPowerBattery>());
-  // The network item is nm-applet's, started once our watcher is registered
-  // so it finds it.
+  // The network and Bluetooth items are nm-applet's and blueman-applet's,
+  // started once our watcher is registered so they find it.
   launchDetached({"nm-applet", "--indicator"});
+  launchDetached({"blueman-applet"});
 #endif
 #ifdef TCC_SYSTRAY_PULSE
   addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
