@@ -28,3 +28,4 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS client/ssd.vert)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/iconlib)
 target_link_libraries(${PROJECT_NAME} PRIVATE tcc_iconlib)
+target_link_libraries(${PROJECT_NAME} PRIVATE tcc_progman)

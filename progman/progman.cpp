@@ -51,7 +51,8 @@ void ProgmanWindow::update_list() {
   }
 }
 
-ProgmanWindow::ProgmanWindow() {
+ProgmanWindow::ProgmanWindow(void (*close_callback)(void *user), void *user)
+    : mCloseCallback(close_callback), mUserPtr(user) {
   MwSizeHints hints = {0};
 
   hints.min_width = hints.max_width = 640;
@@ -63,6 +64,33 @@ ProgmanWindow::ProgmanWindow() {
   mViewport =
       MwVaCreateWidget(MwViewportClass, NULL, mWindow, 5, 5, 630, 390, NULL);
   MwAddUserHandler(mWindow, MwNtickHandler, tick, this);
+
+  MwAddUserHandler(
+      mWindow, MwNcloseHandler,
+      +[](MwWidget handle, void *user, void *client) {
+        MwWidget msg = MwMessageBox(handle, "Break the Crantalian Crystal?",
+                                    "Close?", MwMB_BUTTONYESNO);
+        handle->close = 0;
+
+        MwAddUserHandler(
+            MwMessageBoxGetChild(msg, MwMB_BUTTONYES), MwNactivateHandler,
+            +[](MwWidget handle, void *user, void *client) {
+              ProgmanWindow *th = (ProgmanWindow *)user;
+
+              handle->close = 1;
+              th->mCloseCallback(th->mUserPtr);
+            },
+            user);
+        MwAddUserHandler(
+            MwMessageBoxGetChild(msg, MwMB_BUTTONNO), MwNactivateHandler,
+            +[](MwWidget handle, void *user, void *client) {
+              ProgmanWindow *th = (ProgmanWindow *)user;
+
+              MwDestroyWidget(MwGetParent(handle));
+            },
+            user);
+      },
+      this);
 
   update_list();
 }

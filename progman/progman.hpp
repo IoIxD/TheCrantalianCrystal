@@ -1,4 +1,5 @@
 #pragma once
+#define _MILSKO
 #include <Mw/Milsko.h>
 
 #include "iconlib.hpp"
@@ -22,7 +23,11 @@ class ProgmanWindow {
   std::unordered_map<std::string, std::vector<GAppInfo *>> mItems;
   static void MWAPI tick(MwWidget handle, void *user, void *client);
 
+  void (*mCloseCallback)(void *user);
+  void *mUserPtr;
+
 public:
+  ProgmanWindow(void (*close_callback)(void *user), void *user);
   struct Subwindow;
 
   struct FolderPair {

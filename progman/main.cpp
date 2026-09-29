@@ -3,7 +3,8 @@
 #include <Mw/Milsko.h>
 #include <cstdio>
 
-int main() {
+extern __attribute__((visibility("default"))) int
+tcc_program_main(void (*close_callback)(void *user), void *user) {
   auto gtk = GtkLib::get();
   if (!gtk)
     return 1;
@@ -11,7 +12,7 @@ int main() {
   gtk->gtk_init();
   MwLibraryInit();
 
-  auto win = ProgmanWindow();
+  auto win = ProgmanWindow(close_callback, user);
 
   win.setup();
 

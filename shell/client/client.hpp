@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -294,6 +295,9 @@ private:
   river_input_manager_v1 *mRiverInputManager = nullptr;
   river_xkb_bindings_v1 *mRiverXKBBinding = nullptr;
   wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
+
+  std::thread mProgmanThread;
+
   const river_window_manager_v1_listener mRiverWindowManagementListener = {
       .unavailable = river_wm_unavailable,
       .finished = river_wm_finished,

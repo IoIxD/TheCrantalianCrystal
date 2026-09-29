@@ -670,11 +670,6 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
   seat->op_dy = 0;
 }
 
-void TCCClient::launch_initial_components() {
-  launch_component("tcc_progman");
-  launch_component("tcc_systray");
-}
-
 void TCCClient::launch_component(std::string name) {
   char dest[PATH_MAX];
   memset(dest, 0, sizeof(dest));
