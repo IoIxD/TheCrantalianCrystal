@@ -9,6 +9,7 @@
   X(g_list_nth)                                                                \
   X(g_app_info_get_all)                                                        \
   X(g_app_info_get_name)                                                       \
+  X(g_app_info_get_id)                                                         \
   X(g_app_info_get_icon)                                                       \
   X(g_app_info_launch)                                                         \
   X(g_desktop_app_info_get_categories)                                         \

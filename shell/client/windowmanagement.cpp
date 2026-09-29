@@ -707,9 +707,8 @@ void TCCClient::spawn(const char *path, const char *const argv[]) {
 void TCCClient::reap_children() {
   // only wait on our own children, others (e.g. glycin's) belong to whoever
   // spawned them
-  std::erase_if(mChildren, [](pid_t pid) {
-    return waitpid(pid, nullptr, WNOHANG) != 0;
-  });
+  std::erase_if(mChildren,
+                [](pid_t pid) { return waitpid(pid, nullptr, WNOHANG) != 0; });
 }
 void TCCClient::seat_action(Seat *seat, Action action) {
   switch (action) {
@@ -722,20 +721,21 @@ void TCCClient::seat_action(Seat *seat, Action action) {
   }
   // through WirePlumber, whose -l keeps volume up from going past 100%
   case ACTION_VOLUME_UP: {
-    const char *args[] = {"wpctl", "set-volume", "-l", "1.0",
-                          "@DEFAULT_AUDIO_SINK@", "5%+", nullptr};
+    const char *args[] = {"wpctl", "set-volume",           "-l",
+                          "1.0",   "@DEFAULT_AUDIO_SINK@", "5%+",
+                          nullptr};
     spawn("wpctl", args);
     break;
   }
   case ACTION_VOLUME_DOWN: {
-    const char *args[] = {"wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
-                          "5%-", nullptr};
+    const char *args[] = {"wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-",
+                          nullptr};
     spawn("wpctl", args);
     break;
   }
   case ACTION_VOLUME_MUTE: {
-    const char *args[] = {"wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@",
-                          "toggle", nullptr};
+    const char *args[] = {"wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle",
+                          nullptr};
     spawn("wpctl", args);
     break;
   }
@@ -793,8 +793,7 @@ void TCCClient::seat_manage(Seat *seat) {
     pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
     xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_TERMINAL);
 
-    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioRaiseVolume,
-                       ACTION_VOLUME_UP);
+    xkb_binding_create(seat, 0, XKB_KEY_XF86AudioRaiseVolume, ACTION_VOLUME_UP);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioLowerVolume,
                        ACTION_VOLUME_DOWN);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMute, ACTION_VOLUME_MUTE);

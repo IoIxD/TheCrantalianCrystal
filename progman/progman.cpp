@@ -1,6 +1,7 @@
 #include "progman.hpp"
 #include "gtk_loader.hpp"
 #include "utils.hpp"
+#include <set>
 #include <string>
 
 #define ICON_SIZE 72
@@ -76,6 +77,7 @@ void ProgmanWindow::run() {
     int v = 0;
     long t, t2;
     long more;
+
     if (MwPending(mWindow)) {
       if ((v = MwStep(mWindow)) != 0)
         break;
@@ -252,14 +254,23 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
                            0, 0, 640 - 25, folder_height, MwNcolumns, 7,
                            MwNmargin, 16, MwNrowSpan, 1, NULL);
 
+  std::set<std::string> added;
+
   for (auto item : items) {
     FolderPair *f = new FolderPair();
     int width = ICON_SIZE;
     int height = ICON_SIZE;
+
     f->holder = MwVaCreateWidget(MwFrameClass, NULL, table, 0, 0, ICON_SIZE,
                                  ICON_SIZE, NULL);
 
     auto name = gtk->g_app_info_get_name(item);
+
+    if (added.contains(name)) {
+      continue;
+    }
+    added.insert(added.end(), name);
+
     f->info = item;
 
     unsigned char *px = nullptr;
