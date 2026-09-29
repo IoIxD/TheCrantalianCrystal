@@ -59,6 +59,7 @@ private:
   static void setColumn(Column &column, const SystrayMixerChannel &channel);
   static bool hasExpandButton(const SystrayMixer &mixer);
 
+  static void MWAPI popupDraw(MwWidget handle, void *user, void *call);
   static void MWAPI sliderChanged(MwWidget handle, void *user, void *call);
   static void MWAPI muteChanged(MwWidget handle, void *user, void *call);
   static void MWAPI expandClicked(MwWidget handle, void *user, void *call);

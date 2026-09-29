@@ -2,6 +2,7 @@
 #include "../systray.hpp"
 
 #include <algorithm>
+#include <format>
 
 namespace {
 
@@ -38,8 +39,7 @@ bool MixerWindow::hasExpandButton(const SystrayMixer &mixer) {
 std::vector<SystrayMixerChannel> MixerWindow::shownChannels() const {
   std::vector<SystrayMixerChannel> channels = {mMixer.master};
   if (mExpanded)
-    channels.insert(channels.end(), mMixer.others.begin(),
-                    mMixer.others.end());
+    channels.insert(channels.end(), mMixer.others.begin(), mMixer.others.end());
   return channels;
 }
 
@@ -56,23 +56,16 @@ void MixerWindow::build() {
 
   mPopup = MwVaCreateWidget(MwFrameClass, "mixer", mParent, mX, 0, width,
                             HEIGHT, NULL);
+  MwAddUserHandler(mPopup, MwNdrawHandler, popupDraw, this);
+
   for (size_t i = 0; i < channels.size(); i++)
     addColumn((int)i, channels[i]);
-
-  if (placeholder) {
-    int left = (int)channels.size() * COLUMN_WIDTH;
-    const char *lines[] = {"No apps", "playing"};
-    for (int i = 0; i < 2; i++)
-      MwVaCreateWidget(MwLabelClass, "none", mPopup, left + 2,
-                       SLIDER_TOP + SLIDER_HEIGHT / 2 - 16 + i * 16,
-                       COLUMN_WIDTH - 4, 16, MwNtext, lines[i], MwNalignment,
-                       MwALIGNMENT_CENTER, NULL);
-  }
 
   if (hasExpandButton(mMixer)) {
     MwWidget expand = MwVaCreateWidget(
         MwButtonClass, "expand", mPopup, 6, BUTTON_TOP, COLUMN_WIDTH - 12, 20,
-        MwNtext, mExpanded ? "<< Apps" : "Apps >>", NULL);
+        MwNtext, mExpanded ? "<< Apps" : "Apps >>", MwNdisabled,
+        mMixer.others.empty(), NULL);
     MwAddUserHandler(expand, MwNactivateHandler, expandClicked, this);
   }
 
@@ -100,14 +93,22 @@ void MixerWindow::addColumn(int index, const SystrayMixerChannel &channel) {
   column->label = MwVaCreateWidget(MwLabelClass, "label", mPopup, left + 2, 6,
                                    COLUMN_WIDTH - 4, 16, MwNalignment,
                                    MwALIGNMENT_CENTER, NULL);
-  column->slider = MwVaCreateWidget(
-      MwScrollBarClass, "slider", mPopup, left + COLUMN_WIDTH / 2 - 8,
-      SLIDER_TOP, 16, SLIDER_HEIGHT, MwNorientation, MwVERTICAL,
-      MwNshowArrows, 0, MwNminValue, 0, NULL);
+  column->slider = MwVaCreateWidget(MwScrollBarClass, "slider", mPopup,
+                                    left + COLUMN_WIDTH / 2 - 8, SLIDER_TOP, 16,
+                                    SLIDER_HEIGHT, MwNorientation, MwVERTICAL,
+                                    MwNshowArrows, 0, MwNminValue, 0, NULL);
   column->mute = MwVaCreateWidget(MwCheckBoxClass, "mute", mPopup, left + 10,
                                   MUTE_TOP, 14, 14, NULL);
-  MwVaCreateWidget(MwLabelClass, "muteLabel", mPopup, left + 28, MUTE_TOP - 1,
-                   COLUMN_WIDTH - 30, 16, MwNtext, "Mute", NULL);
+
+  MwColor base = MwParseColor(mPopup, MwGetString(mPopup, MwNbackground));
+  MwColor darken = MwLightenColor(mPopup, base, -15, -15, -15);
+  int r, g, b;
+  MwColorGet(darken, &r, &g, &b);
+  std::string bg = std::format("#{:02X}{:02X}{:02X}", r, g, b);
+
+  MwVaCreateWidget(MwLabelClass, "muteLabel", mPopup, left + 24, MUTE_TOP - 2.5,
+                   COLUMN_WIDTH - 30, 16, MwNtext, "Mute", MwNbackground,
+                   bg.c_str(), NULL);
 
   setColumn(*column, channel);
   MwAddUserHandler(column->slider, MwNchangedHandler, sliderChanged,
@@ -117,7 +118,8 @@ void MixerWindow::addColumn(int index, const SystrayMixerChannel &channel) {
 }
 
 // Shows a channel's values. Setting them doesn't call the changed handlers.
-void MixerWindow::setColumn(Column &column, const SystrayMixerChannel &channel) {
+void MixerWindow::setColumn(Column &column,
+                            const SystrayMixerChannel &channel) {
   // The slider runs top to bottom, so it holds how far the volume is from
   // the top.
   column.max = std::max(100, channel.volume);
@@ -163,7 +165,22 @@ void MixerWindow::update(const SystrayMixer &mixer) {
       MwVaApply(column->mute, MwNchecked, channel->muted ? 1 : 0, NULL);
   }
 }
+void MWAPI MixerWindow::popupDraw(MwWidget handle, void *user, void *call) {
+  MwRect rect = {0};
+  rect.width = MwGetInteger(handle, MwNwidth);
+  rect.height = MwGetInteger(handle, MwNheight);
+  MwColor base = MwParseColor(handle, MwGetString(handle, MwNbackground));
+  MwColor darken = MwLightenColor(handle, base, -15, -15, -15);
 
+  MwDrawWidgetBack(handle, &rect, base, 0, 1);
+
+  rect.x += 1;
+  rect.y = rect.height - 47;
+  rect.width -= 2;
+  rect.height = 48;
+
+  MwDrawRect(handle, &rect, darken);
+}
 void MWAPI MixerWindow::sliderChanged(MwWidget handle, void *user, void *call) {
   (void)call;
   auto &column = *static_cast<Column *>(user);
@@ -177,8 +194,7 @@ void MWAPI MixerWindow::muteChanged(MwWidget handle, void *user, void *call) {
   column.window->mOnMute(column.channel, MwGetInteger(handle, MwNchecked) != 0);
 }
 
-void MWAPI MixerWindow::expandClicked(MwWidget handle, void *user,
-                                      void *call) {
+void MWAPI MixerWindow::expandClicked(MwWidget handle, void *user, void *call) {
   (void)handle;
   (void)call;
   auto *window = static_cast<MixerWindow *>(user);

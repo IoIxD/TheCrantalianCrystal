@@ -1,13 +1,7 @@
 #ifdef TCC_SYSTRAY_DBUS
 #include "dbus_client.hpp"
 
-#include <algorithm>
 #include <cstdio>
-
-struct DBusClient::Call {
-  DBusClient *self;
-  ReplyHandler onReply;
-};
 
 DBusClient::~DBusClient() { close(); }
 
@@ -18,20 +12,19 @@ bool DBusClient::open(DBusBusType type) {
   mLib = DBusLib::get();
   if (!mLib)
     return false;
-  DBusLib *d = mLib;
 
   DBusError err;
-  d->dbus_error_init(&err);
-  mConn = d->dbus_bus_get_private(type, &err);
+  mLib->dbus_error_init(&err);
+  mConn = mLib->dbus_bus_get_private(type, &err);
   if (!mConn) {
     fprintf(stderr, "tcc_systray: could not connect to the %s bus: %s\n",
             type == DBUS_BUS_SYSTEM ? "system" : "session",
-            d->dbus_error_is_set(&err) ? err.message : "unknown error");
-    d->dbus_error_free(&err);
+            mLib->dbus_error_is_set(&err) ? err.message : "unknown error");
+    mLib->dbus_error_free(&err);
     return false;
   }
-  d->dbus_connection_set_exit_on_disconnect(mConn, false);
-  d->dbus_connection_add_filter(mConn, filterThunk, this, nullptr);
+  mLib->dbus_connection_set_exit_on_disconnect(mConn, false);
+  mLib->dbus_connection_add_filter(mConn, filterThunk, this, nullptr);
   return true;
 }
 
@@ -51,15 +44,14 @@ void DBusClient::close() {
 void DBusClient::poll() {
   if (!mConn)
     return;
-  DBusLib *d = mLib;
 
-  if (!d->dbus_connection_read_write(mConn, 0)) {
+  if (!mLib->dbus_connection_read_write(mConn, 0)) {
     fprintf(stderr, "tcc_systray: lost connection to a message bus\n");
     close();
     return;
   }
   while (mConn &&
-         d->dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
+         mLib->dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
   }
 }
 
@@ -90,8 +82,7 @@ void DBusClient::callAsync(DBusMessage *msg, ReplyHandler onReply,
     return;
   }
   DBusPendingCall *pending = nullptr;
-  if (!mLib->dbus_connection_send_with_reply(mConn, msg, &pending,
-                                             timeoutMs) ||
+  if (!mLib->dbus_connection_send_with_reply(mConn, msg, &pending, timeoutMs) ||
       !pending) {
     onReply(nullptr);
     return;
@@ -117,46 +108,47 @@ void DBusClient::replyThunk(DBusPendingCall *pending, void *data) {
 }
 
 void DBusClient::getAllProperties(const char *service, const char *path,
-                                  const char *iface,
-                                  PropertyHandler onProperty,
+                                  const char *iface, PropertyHandler onProperty,
                                   std::function<void(bool ok)> onDone) {
   if (!mConn) {
     onDone(false);
     return;
   }
   DBusLib *d = mLib;
-  DBusMessage *msg = d->dbus_message_new_method_call(
+
+  DBusMessage *msg = mLib->dbus_message_new_method_call(
       service, path, "org.freedesktop.DBus.Properties", "GetAll");
-  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface,
-                              DBUS_TYPE_INVALID);
+  mLib->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface,
+                                 DBUS_TYPE_INVALID);
   callAsync(msg, [this, d, onProperty, onDone](DBusMessage *reply) {
     DBusMessageIter iter;
-    if (isError(d, reply) || !d->dbus_message_iter_init(reply, &iter)) {
+    if (isError(d, reply) || !mLib->dbus_message_iter_init(reply, &iter)) {
       onDone(false);
       return;
     }
     forEachProperty(&iter, onProperty);
     onDone(true);
   });
-  d->dbus_message_unref(msg);
+  mLib->dbus_message_unref(msg);
 }
 
 void DBusClient::forEachProperty(DBusMessageIter *dict,
                                  const PropertyHandler &handler) {
-  DBusLib *d = mLib;
+
   DBusMessageIter entries, entry, value;
-  if (d->dbus_message_iter_get_arg_type(dict) != DBUS_TYPE_ARRAY)
+  if (mLib->dbus_message_iter_get_arg_type(dict) != DBUS_TYPE_ARRAY)
     return;
 
-  d->dbus_message_iter_recurse(dict, &entries);
-  while (d->dbus_message_iter_get_arg_type(&entries) == DBUS_TYPE_DICT_ENTRY) {
+  mLib->dbus_message_iter_recurse(dict, &entries);
+  while (mLib->dbus_message_iter_get_arg_type(&entries) ==
+         DBUS_TYPE_DICT_ENTRY) {
     const char *name;
-    d->dbus_message_iter_recurse(&entries, &entry);
-    d->dbus_message_iter_get_basic(&entry, &name);
-    d->dbus_message_iter_next(&entry);
-    d->dbus_message_iter_recurse(&entry, &value);
+    mLib->dbus_message_iter_recurse(&entries, &entry);
+    mLib->dbus_message_iter_get_basic(&entry, &name);
+    mLib->dbus_message_iter_next(&entry);
+    mLib->dbus_message_iter_recurse(&entry, &value);
     handler(name, &value);
-    d->dbus_message_iter_next(&entries);
+    mLib->dbus_message_iter_next(&entries);
   }
 }
 #endif

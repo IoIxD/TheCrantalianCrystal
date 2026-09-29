@@ -46,8 +46,7 @@ public:
 
   // Sends msg, then runs onReply with the reply. The reply is an error message
   // if the call failed, or null if it timed out or the connection closed.
-  void callAsync(DBusMessage *msg, ReplyHandler onReply,
-                 int timeoutMs = 5000);
+  void callAsync(DBusMessage *msg, ReplyHandler onReply, int timeoutMs = 5000);
   // Properties.GetAll(iface) on an object, with the a{sv} reply read by
   // forEachProperty(). onDone(false) if the call failed.
   void getAllProperties(const char *service, const char *path,
@@ -62,7 +61,10 @@ public:
   }
 
 private:
-  struct Call;
+  struct Call {
+    DBusClient *self;
+    ReplyHandler onReply;
+  };
 
   DBusLib *mLib = nullptr;
   DBusConnection *mConn = nullptr;
