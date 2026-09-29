@@ -224,8 +224,7 @@ void TCCSystrayClient::relayout() {
 }
 
 // Draws the notch over the frame's plain background: a rounded tab with a
-// gradient like a button's, and a grip of vertical ridges, like the end of
-// Mac OS 9's control strip.
+// gradient like a button's, and a grip of vertical ridges
 void MWAPI TCCSystrayClient::drawNotch(MwWidget handle, void *user,
                                        void *call) {
   (void)user;
