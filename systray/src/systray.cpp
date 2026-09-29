@@ -1,23 +1,71 @@
 #include "systray.hpp"
 #ifdef TCC_SYSTRAY_DBUS
 #include "dbus/sni_watcher.hpp"
+#include "othericons/upower_battery.hpp"
+#endif
+#ifdef TCC_SYSTRAY_PULSE
+#include "othericons/pulse_volume.hpp"
+#endif
+#ifdef TCC_SYSTRAY_RIVER
+#include "othericons/river_keyboard_layout.hpp"
 #endif
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <sys/wait.h>
+#include <unistd.h>
 
 TCCSystrayClient::TCCSystrayClient() {
   mWindow = window_setup(&mBounds);
   // Clicking the bar outside of the icons dismisses an open menu.
   MwAddUserHandler(mWindow, MwNmouseUpHandler, windowMouseUp, this);
 
+  // Moved to the end of the icons by relayout().
+  mNotch = MwVaCreateWidget(MwFrameClass, "notch", mWindow, ICON_SPACING, 0,
+                            NOTCH_WIDTH, 32, NULL);
+  MwAddUserHandler(mNotch, MwNdrawHandler, drawNotch, this);
+  MwAddUserHandler(mNotch, MwNmouseUpHandler, notchMouseUp, this);
+
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
+  addProtocol(std::make_unique<UPowerBattery>());
+  // The network and Bluetooth items are nm-applet's and blueman-applet's,
+  // started once our watcher is registered so they find it.
+  launchDetached({"nm-applet", "--indicator"});
+  launchDetached({"blueman-applet"});
+#endif
+#ifdef TCC_SYSTRAY_PULSE
+  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
+  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Output));
+#endif
+#ifdef TCC_SYSTRAY_RIVER
+  addProtocol(std::make_unique<RiverKeyboardLayout>());
 #endif
 
   if (mProtocols.empty())
     fprintf(stderr, "tcc_systray: systray icons will not be available\n");
+}
+
+void TCCSystrayClient::launchDetached(std::vector<const char *> argv) {
+  argv.push_back(nullptr);
+  pid_t pid = fork();
+  if (pid < 0) {
+    perror("tcc_systray: fork");
+    return;
+  }
+  if (pid == 0) {
+    // Fork again so the program is reparented to init and never left as our
+    // zombie; it also outlives us in its own session.
+    setsid();
+    if (fork() == 0) {
+      execvp(argv[0], const_cast<char *const *>(argv.data()));
+      fprintf(stderr, "tcc_systray: could not launch %s\n", argv[0]);
+      _exit(127);
+    }
+    _exit(0);
+  }
+  waitpid(pid, nullptr, 0);
 }
 
 void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {
@@ -27,6 +75,9 @@ void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {
              const std::vector<SystrayMenuEntry> &entries) {
         showMenu(protocol, id, entries);
       });
+  protocol->setShowMixerCallback(
+      [this](SystrayProtocol &protocol, const std::string &id,
+             const SystrayMixer &mixer) { showMixer(protocol, id, mixer); });
   protocol->setItemsChangedCallback(
       [this](SystrayProtocol &protocol, const std::vector<SystrayItem> &items) {
         itemsChanged(protocol, items);
@@ -55,6 +106,13 @@ unsigned char *TCCSystrayClient::loadIcon(const SystrayIcon &icon, int size,
   if (!icon.name.empty())
     mIcons.get_icon_by_name(icon.name.c_str(), icon.themePath.c_str(), size,
                             width, height, &pixels);
+  for (const auto &name : icon.fallbackNames) {
+    if (pixels)
+      break;
+    if (!name.empty())
+      mIcons.get_icon_by_name(name.c_str(), icon.themePath.c_str(), size, width,
+                              height, &pixels);
+  }
   if (!pixels && !icon.pixels.empty())
     mIcons.get_icon_from_pixels(icon.pixels.data(), icon.width, icon.height,
                                 size, width, height, &pixels);
@@ -70,8 +128,8 @@ void TCCSystrayClient::drawOverlay(const SystrayIcon &overlay,
   // Half the size of the icon, like other trays draw emblems.
   int overlayWidth, overlayHeight;
   unsigned char *src =
-      loadIcon(overlay, std::max(1, std::min(width, height) / 2),
-               &overlayWidth, &overlayHeight);
+      loadIcon(overlay, std::max(1, std::min(width, height) / 2), &overlayWidth,
+               &overlayHeight);
   if (!src)
     return;
 
@@ -97,55 +155,127 @@ void TCCSystrayClient::drawOverlay(const SystrayIcon &overlay,
 }
 
 void TCCSystrayClient::relayout() {
-  // Don't leave a menu open for an item that went away.
-  if (mMenu) {
-    const auto &items = mMenu->protocol->items();
-    if (std::none_of(items.begin(), items.end(), [&](const SystrayItem &item) {
-          return item.id == mMenu->id;
-        }))
-      closeMenu();
-  }
+  // Don't leave a menu or mixer open for an item that went away.
+  auto gone = [](SystrayProtocol *protocol, const std::string &id) {
+    const auto &items = protocol->items();
+    return std::none_of(items.begin(), items.end(),
+                        [&](const SystrayItem &item) { return item.id == id; });
+  };
+  if (mMenu && gone(mMenu->protocol, mMenu->id))
+    closeMenu();
+  if (mMixer && gone(mMixer->protocol, mMixer->id))
+    closeMixer();
 
   for (auto &widget : mIconWidgets) {
     MwDestroyWidget(widget->image);
-    mOldPixmaps.push_back(widget->pixmap);
+    if (widget->pixmap)
+      mOldPixmaps.push_back(widget->pixmap);
   }
   mIconWidgets.clear();
 
   int x = ICON_SPACING;
   for (auto &protocol : mProtocols) {
+    // Collapsed down to just the notch.
+    if (mCollapsed)
+      break;
     for (const auto &item : protocol->items()) {
       if (item.status == SystrayItem::Status::Passive)
         continue;
 
-      int width, height;
-      unsigned char *pixels =
-          loadIcon(item.currentIcon(), ICON_SIZE, &width, &height);
-      if (!pixels)
-        mIcons.get_icon_by_name("application-x-executable", ICON_SIZE, &width,
-                                &height, &pixels);
-      if (!pixels)
-        continue;
-      drawOverlay(item.overlayIcon, pixels, width, height);
+      // A text icon, or an image drawn at its own size rather than stretched
+      // to fill the button.
+      MwPixmap pixmap = nullptr;
+      if (item.currentIcon().text.empty()) {
+        int width, height;
+        unsigned char *pixels =
+            loadIcon(item.currentIcon(), ICON_SIZE, &width, &height);
+        if (!pixels)
+          mIcons.get_icon_by_name("application-x-executable", ICON_SIZE, &width,
+                                  &height, &pixels);
+        if (!pixels)
+          continue;
+        drawOverlay(item.overlayIcon, pixels, width, height);
+        pixmap = MwLoadRaw(mWindow, pixels, width, height);
+        free(pixels);
+      }
 
-      MwPixmap pixmap = MwLoadRaw(mWindow, pixels, width, height);
-      free(pixels);
+      MwWidget button = MwVaCreateWidget(MwButtonClass, NULL, mWindow, x,
+                                         (32 - BUTTON_SIZE) / 2, BUTTON_SIZE,
+                                         BUTTON_SIZE, MwNfillArea, 0, NULL);
+      if (pixmap)
+        MwVaApply(button, MwNpixmap, pixmap, NULL);
+      else
+        MwVaApply(button, MwNtext, item.currentIcon().text.c_str(), NULL);
 
-      MwWidget image = MwVaCreateWidget(
-          MwImageClass, NULL, mWindow, x + (ICON_SIZE - width) / 2,
-          (32 - height) / 2, width, height, MwNpixmap, pixmap, NULL);
       auto widget = std::make_unique<IconWidget>(
-          IconWidget{this, image, pixmap, protocol.get(), item.id});
-      MwAddUserHandler(image, MwNmouseDownHandler, iconMouseDown, widget.get());
-      MwAddUserHandler(image, MwNmouseUpHandler, iconMouseUp, widget.get());
+          IconWidget{this, button, pixmap, protocol.get(), item.id});
+      MwAddUserHandler(button, MwNmouseDownHandler, iconMouseDown,
+                       widget.get());
+      MwAddUserHandler(button, MwNmouseUpHandler, iconMouseUp, widget.get());
       mIconWidgets.push_back(std::move(widget));
-      x += ICON_SIZE + ICON_SPACING;
+      x += BUTTON_SIZE;
     }
   }
 
+  MwVaApply(mNotch, MwNx, x, NULL);
   MwVaApply(mWindow, MwNwidth,
-            (mIconWidgets.size() * ICON_SIZE) + (ICON_SPACING * ICON_SIZE),
+            (mIconWidgets.size() * BUTTON_SIZE) + ICON_SPACING + NOTCH_WIDTH,
             MwNheight, 32, NULL);
+}
+
+// Draws the notch over the frame's plain background: a rounded tab with a
+// gradient like a button's, and a grip of vertical ridges
+void MWAPI TCCSystrayClient::drawNotch(MwWidget handle, void *user,
+                                       void *call) {
+  (void)user;
+  (void)call;
+  int w = MwGetInteger(handle, MwNwidth);
+  int h = MwGetInteger(handle, MwNheight);
+
+  MwColor base = MwParseColor(handle, MwGetString(handle, MwNbackground));
+  MwColor light = MwLightenColor(handle, base, 64, 64, 64);
+  MwColor dark = MwLightenColor(handle, base, -96, -96, -96);
+
+  auto rect = [&](int x, int y, int width, int height, MwColor color) {
+    MwRect r = {x, y, width, height};
+    MwDrawRect(handle, &r, color);
+  };
+
+  MwRect body = {0, 0, w, h};
+  MwDrawRectFading(handle, &body, base);
+
+  // Bevelled like a raised button: lit from the top left.
+  rect(0, 0, w, 1, light);
+  rect(0, 0, 1, h, light);
+  rect(0, h - 1, w, 1, dark);
+  rect(w - 1, 0, 1, h, dark);
+
+  // The grip: three ridges, each a shadow with a highlight beside it.
+  int gripTop = 8;
+  int gripHeight = h - gripTop * 2;
+  int gripLeft = (w - 8) / 2;
+  for (int i = 0; i < 3; i++) {
+    rect(gripLeft + i * 3, gripTop, 1, gripHeight, dark);
+    rect(gripLeft + i * 3 + 1, gripTop, 1, gripHeight, light);
+  }
+
+  MwFreeColor(dark);
+  MwFreeColor(light);
+  MwFreeColor(base);
+}
+
+void MWAPI TCCSystrayClient::notchMouseUp(MwWidget handle, void *user,
+                                          void *call) {
+  (void)handle;
+  auto *client = static_cast<TCCSystrayClient *>(user);
+  if (static_cast<MwMouse *>(call)->button != MwMOUSE_LEFT)
+    return;
+
+  // Popups belong to icons that are about to go away.
+  client->closePopups(nullptr, {});
+  client->mCollapsed = !client->mCollapsed;
+  // Not right away, we're inside one of Milsko's handlers.
+  client->mNeedsRelayout = true;
 }
 
 void TCCSystrayClient::screenPosition(IconWidget &icon, const MwMouse &mouse,
@@ -177,15 +307,11 @@ void MWAPI TCCSystrayClient::iconMouseUp(MwWidget handle, void *user,
 
   TCCSystrayClient *client = icon.client;
 
-  // Any click on the tray dismisses an open menu, and clicking the item whose
-  // menu is open toggles it off rather than opening it again.
-  if (client->mMenu) {
-    bool sameItem = client->mMenu->protocol == icon.protocol &&
-                    client->mMenu->id == icon.id;
-    client->closeMenu();
-    if (sameItem && mouse.button != MwMOUSE_MIDDLE)
-      return;
-  }
+  // Any click on the tray dismisses an open menu or mixer, and clicking the
+  // item it belongs to toggles it off rather than opening it again.
+  if (client->closePopups(icon.protocol, icon.id) &&
+      mouse.button != MwMOUSE_MIDDLE)
+    return;
 
   int x, y;
   client->screenPosition(icon, mouse, &x, &y);
@@ -206,13 +332,61 @@ void MWAPI TCCSystrayClient::windowMouseUp(MwWidget handle, void *user,
                                            void *call) {
   (void)handle;
   (void)call;
-  static_cast<TCCSystrayClient *>(user)->closeMenu();
+  static_cast<TCCSystrayClient *>(user)->closePopups(nullptr, {});
+}
+
+bool TCCSystrayClient::closePopups(SystrayProtocol *protocol,
+                                   const std::string &id) {
+  bool sameItem = (mMenu && mMenu->protocol == protocol && mMenu->id == id) ||
+                  (mMixer && mMixer->protocol == protocol && mMixer->id == id);
+  closeMenu();
+  closeMixer();
+  return sameItem;
+}
+
+void TCCSystrayClient::showMixer(SystrayProtocol &protocol,
+                                 const std::string &id,
+                                 const SystrayMixer &mixer) {
+  // The protocol keeps an open mixer up to date through here too.
+  if (mMixer && mMixer->protocol == &protocol && mMixer->id == id) {
+    mMixer->window->update(mixer);
+    return;
+  }
+  closePopups(nullptr, {});
+
+  auto icon = std::find_if(
+      mIconWidgets.begin(), mIconWidgets.end(), [&](const auto &widget) {
+        return widget->protocol == &protocol && widget->id == id;
+      });
+  if (icon == mIconWidgets.end())
+    return;
+
+  auto *target = &protocol;
+  std::string item = id;
+  mMixer = std::make_unique<OpenMixer>();
+  mMixer->protocol = &protocol;
+  mMixer->id = id;
+  mMixer->window = std::make_unique<MixerWindow>(
+      mWindow, MwGetInteger((*icon)->image, MwNx), mixer,
+      [target, item](int channel, int volume) {
+        target->mixerVolumeChanged(item, channel, volume);
+      },
+      [target, item](int channel, bool muted) {
+        target->mixerMuteChanged(item, channel, muted);
+      });
+}
+
+void TCCSystrayClient::closeMixer() {
+  if (!mMixer)
+    return;
+  mMixer->protocol->mixerClosed(mMixer->id);
+  mMixer.reset();
 }
 
 void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
                                 const std::string &id,
                                 const std::vector<SystrayMenuEntry> &entries) {
-  closeMenu();
+  closePopups(nullptr, {});
 
   auto icon = std::find_if(
       mIconWidgets.begin(), mIconWidgets.end(), [&](const auto &widget) {
@@ -227,9 +401,8 @@ void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
 
   // Sits on the top edge of the bar, above the icons (which start lower), so
   // it never takes their clicks.
-  mMenu->holder =
-      MwCreateWidget(MwFrameClass, "menuholder", mWindow,
-                     MwGetInteger((*icon)->image, MwNx), 0, 1, 1);
+  mMenu->holder = MwCreateWidget(MwFrameClass, "menuholder", mWindow,
+                                 MwGetInteger((*icon)->image, MwNx), 0, 1, 1);
   MwShow(mMenu->holder, 0);
   mMenu->menubar =
       MwCreateWidget(MwMenuClass, "menubar", mMenu->holder, 0, 0, 0, 0);
@@ -241,8 +414,8 @@ void TCCSystrayClient::showMenu(SystrayProtocol &protocol,
   MwMenu top = MwMenuAdd(mMenu->menubar, NULL, "");
   addMenuEntries(top, entries);
 
-  MwWidget popup = MwCreateWidget(MwSubMenuClass, "submenu", mMenu->menubar,
-                                  0, 0, 0, 0);
+  MwWidget popup =
+      MwCreateWidget(MwSubMenuClass, "submenu", mMenu->menubar, 0, 0, 0, 0);
   // Opens upwards from the bar.
   MwPoint point = {0, 0};
   MwSubMenuAppear(popup, top, &point, 1);
@@ -265,6 +438,7 @@ void TCCSystrayClient::addMenuEntries(
     label += entry.label;
 
     MwMenu menu = MwMenuAdd(mMenu->menubar, parent, label.c_str());
+
     if (!entry.children.empty())
       addMenuEntries(menu, entry.children);
     else if (entry.enabled)
@@ -301,6 +475,7 @@ void TCCSystrayClient::run() {
     for (auto &protocol : mProtocols)
       protocol->poll();
 
+    bool relaidOut = mNeedsRelayout;
     if (mNeedsRelayout) {
       mNeedsRelayout = false;
       relayout();
@@ -311,5 +486,11 @@ void TCCSystrayClient::run() {
     MwStep(mWindow);
     for (auto pixmap : oldPixmaps)
       MwDestroyPixmap(pixmap);
+
+    // Removed icons are only gone once that step has freed them, and nothing
+    // repaints where they were otherwise (e.g. what collapsing leaves under
+    // the notch).
+    if (relaidOut)
+      MwForceRender(mWindow);
   };
 }
