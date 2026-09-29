@@ -3,13 +3,9 @@
 #include <map>
 #include <string>
 
-/*
- * all functions return tightly packed 8-bit RGBA pixels. on failure
- * width/height are 0 and pixels is null, otherwise pixels must be free()'d by
- * the caller.
- */
 class IconManager {
-  struct _GtkIconTheme *mGTKIconTheme;
+  struct GtkLib *mLib = nullptr;
+  struct _GtkIconTheme *mGTKIconTheme = nullptr;
   /* themes that only search one extra directory, keyed by that directory */
   std::map<std::string, struct _GtkIconTheme *> mExtraThemes;
 

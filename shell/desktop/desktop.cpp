@@ -1,5 +1,4 @@
 #include "desktop.hpp"
-#include <GL/gl.h>
 #include <algorithm>
 #include <assert.h>
 #include <csignal>
@@ -7,7 +6,6 @@
 #include "bg_image.c"
 
 #include "../utils/texture.hpp"
-#include <EGL/eglext.h>
 
 void TCCDesktopClient::layer_surface_configure(
     void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial,
@@ -19,9 +17,10 @@ void TCCDesktopClient::layer_surface_configure(
 }
 void TCCDesktopClient::layer_surface_closed(
     void *data, struct zwlr_layer_surface_v1 *surface) {
+  auto egl = EGLLib::get();
   TCCDesktopClient *client = (TCCDesktopClient *)data;
-  eglDestroySurface(client->mEGLDisplay, client->mEGLSurface);
-  wl_egl_window_destroy(client->mEGLWindow);
+  egl->eglDestroySurface(client->mEGLDisplay, client->mEGLSurface);
+  egl->wl_egl_window_destroy(client->mEGLWindow);
   zwlr_layer_surface_v1_destroy(surface);
   wl_surface_destroy(client->mSurface);
 }
@@ -156,17 +155,19 @@ void TCCDesktopClient::wl_pointer_axis(void *data,
 
 TCCDesktopClient::TCCDesktopClient(TCCClient::Output *output)
     : mOutput(output) {
-  mDisplay = wl_display_connect(NULL);
+  auto wl = WaylandLib::get();
+  mDisplay = wl->wl_display_connect(NULL);
   mRegistry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(mRegistry, &mRegistryListener, this);
-  if (wl_display_roundtrip(mDisplay) == -1) {
+  if (wl->wl_display_roundtrip(mDisplay) == -1) {
     fprintf(stderr, "roundtrip failed\n");
     raise(SIGTRAP);
     return;
   }
 }
 void TCCDesktopClient::step() {
-  if (wl_display_dispatch_pending(mDisplay) < 0) {
+  auto wl = WaylandLib::get();
+  if (wl->wl_display_dispatch_pending(mDisplay) < 0) {
     fprintf(stderr, "3 dispatch failed\n");
     raise(SIGTRAP);
   }
@@ -175,6 +176,7 @@ void TCCDesktopClient::step() {
 }
 
 void TCCDesktopClient::setup_egl() {
+  auto egl = EGLLib::get();
   const char *extensions;
 
   EGLint config_attribs[] = {EGL_SURFACE_TYPE,
@@ -201,49 +203,52 @@ void TCCDesktopClient::setup_egl() {
   EGLConfig *configs;
   EGLBoolean ret;
 
-  mEGLDisplay = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, mDisplay, NULL);
+  mEGLDisplay =
+      egl->eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, mDisplay, NULL);
 
-  ret = eglInitialize(mEGLDisplay, &major, &minor);
+  ret = egl->eglInitialize(mEGLDisplay, &major, &minor);
   assert(ret == EGL_TRUE);
 
-  if (!eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
+  if (!egl->eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
     assert(0);
 
   configs = (EGLConfig *)calloc(count, sizeof *configs);
   assert(configs);
 
-  ret = eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
+  ret = egl->eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
   assert(ret && n >= 1);
 
   mEGLConfig = configs[0];
 
   free(configs);
 
-  mEGLWindow = wl_egl_window_create(mSurface, mOutput->width, mOutput->height);
+  mEGLWindow =
+      egl->wl_egl_window_create(mSurface, mOutput->width, mOutput->height);
   if (!mEGLWindow) {
-    printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
+    printf("ERROR: eglCreateWindowSurface, %0X\n", egl->eglGetError());
     raise(SIGTRAP);
   }
 
-  ret = eglBindAPI(EGL_OPENGL_API);
+  ret = egl->eglBindAPI(EGL_OPENGL_API);
   assert(ret == EGL_TRUE);
-  mEGLContext =
-      eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT, contextAttribs);
+  mEGLContext = egl->eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT,
+                                      contextAttribs);
   assert(mEGLContext);
 
-  mEGLSurface =
-      eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig, mEGLWindow, NULL);
+  mEGLSurface = egl->eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig,
+                                                    mEGLWindow, NULL);
   if (mEGLSurface == EGL_NO_SURFACE) {
-    printf("eglCreatePlatformWindowSurface error: %0X\n", eglGetError());
+    printf("eglCreatePlatformWindowSurface error: %0X\n", egl->eglGetError());
     raise(SIGTRAP);
   }
 
-  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
+                           mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
-  eglSwapInterval(mEGLDisplay, 0);
+  egl->eglSwapInterval(mEGLDisplay, 0);
 
   /* desktop */
   mTexture = TextureManager::NewGLTextureID(
@@ -251,6 +256,7 @@ void TCCDesktopClient::setup_egl() {
 }
 
 void TCCDesktopClient::draw_desktop() {
+  auto gl = GLLib::get();
   float screenAspect = (float)mOutput->width / (float)mOutput->height;
   float imageAspect = (float)gDesktopImage.width / (float)gDesktopImage.height;
   float scaleX = 1.0f;
@@ -261,22 +267,23 @@ void TCCDesktopClient::draw_desktop() {
     scaleY = screenAspect / imageAspect;
   }
 
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex3f(-scaleX, -scaleY, 0.9); // bottom-left
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex3f(scaleX, -scaleY, 0.9);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex3f(scaleX, scaleY, 0.9);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex3f(-scaleX, scaleY, 0.9); // top-right
-  glEnd();
+  gl->glBegin(GL_QUADS);
+  gl->glTexCoord2f(0.0f, 1.0f);
+  gl->glVertex3f(-scaleX, -scaleY, 0.9); // bottom-left
+  gl->glTexCoord2f(1.0f, 1.0f);
+  gl->glVertex3f(scaleX, -scaleY, 0.9);
+  gl->glTexCoord2f(1.0f, 0.0f);
+  gl->glVertex3f(scaleX, scaleY, 0.9);
+  gl->glTexCoord2f(0.0f, 0.0f);
+  gl->glVertex3f(-scaleX, scaleY, 0.9); // top-right
+  gl->glEnd();
 }
 
 void TCCDesktopClient::draw_icon(TCCClient::Window *win, int x, int y) {
-  glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT |
-               GL_VIEWPORT_BIT);
-  glViewport(x, mOutput->height - y, ICON_SIZE, ICON_SIZE);
+  auto gl = GLLib::get();
+  gl->glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT |
+                   GL_VIEWPORT_BIT);
+  gl->glViewport(x, mOutput->height - y, ICON_SIZE, ICON_SIZE);
 
   if (!mWindowIcons.contains(win)) {
     IconInf inf;
@@ -291,58 +298,60 @@ void TCCDesktopClient::draw_icon(TCCClient::Window *win, int x, int y) {
     mWindowIcons.insert_or_assign(win, inf);
   }
 
-  glEnable(GL_TEXTURE_2D);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  gl->glEnable(GL_TEXTURE_2D);
+  gl->glEnable(GL_BLEND);
+  gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   auto icon = mWindowIcons.at(win);
 
-  glBindTexture(GL_TEXTURE_2D, icon.id);
-  glColor4f(1, 1, 1, 1);
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex3f(-1., -1., 1); // bottom-left
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex3f(1., -1., 1);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex3f(1., 1., 1);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex3f(-1., 1., 1); // top-right
-  glEnd();
-  glBindTexture(GL_TEXTURE_2D, 0);
+  gl->glBindTexture(GL_TEXTURE_2D, icon.id);
+  gl->glColor4f(1, 1, 1, 1);
+  gl->glBegin(GL_QUADS);
+  gl->glTexCoord2f(0.0f, 1.0f);
+  gl->glVertex3f(-1., -1., 1); // bottom-left
+  gl->glTexCoord2f(1.0f, 1.0f);
+  gl->glVertex3f(1., -1., 1);
+  gl->glTexCoord2f(1.0f, 0.0f);
+  gl->glVertex3f(1., 1., 1);
+  gl->glTexCoord2f(0.0f, 0.0f);
+  gl->glVertex3f(-1., 1., 1); // top-right
+  gl->glEnd();
+  gl->glBindTexture(GL_TEXTURE_2D, 0);
 
-  glViewport(x, mOutput->height - y - 20, ICON_SIZE, 16);
+  gl->glViewport(x, mOutput->height - y - 20, ICON_SIZE, 16);
 
-  glColor4f(0, 0, 0, 0.5);
-  glBegin(GL_QUADS);
-  glVertex3f(-1., -1., 1); // bottom-left
-  glVertex3f(1., -1., 1);
-  glVertex3f(1., 1., 1);
-  glVertex3f(-1., 1., 1); // top-right
-  glEnd();
-  glColor4f(1, 1, 1, 1);
+  gl->glColor4f(0, 0, 0, 0.5);
+  gl->glBegin(GL_QUADS);
+  gl->glVertex3f(-1., -1., 1); // bottom-left
+  gl->glVertex3f(1., -1., 1);
+  gl->glVertex3f(1., 1., 1);
+  gl->glVertex3f(-1., 1., 1); // top-right
+  gl->glEnd();
+  gl->glColor4f(1, 1, 1, 1);
 
-  glPopAttrib();
+  gl->glPopAttrib();
 }
 
 void TCCDesktopClient::egl_draw() {
-  if (eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext) !=
+  auto egl = EGLLib::get();
+  auto gl = GLLib::get();
+  if (egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext) !=
       EGL_TRUE) {
-    printf("eglMakeCurrent error %08X\n", eglGetError());
+    printf("eglMakeCurrent error %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
   zwlr_layer_surface_v1_set_margin(mLayerSurface, 0, 0, 0, 0);
   zwlr_layer_surface_v1_set_size(mLayerSurface, mOutput->width,
                                  mOutput->height);
-  wl_egl_window_resize(mEGLWindow, mOutput->width, mOutput->height, 0, 0);
-  glViewport(0, 0, mOutput->width, mOutput->height);
+  egl->wl_egl_window_resize(mEGLWindow, mOutput->width, mOutput->height, 0, 0);
+  gl->glViewport(0, 0, mOutput->width, mOutput->height);
 
-  glClearColor(1.f, 0.0f, 0.f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  gl->glClearColor(1.f, 0.0f, 0.f, 1.f);
+  gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, mTexture);
-  glColor3f(1.0f, 1.0f, 1.0f);
+  gl->glEnable(GL_TEXTURE_2D);
+  gl->glBindTexture(GL_TEXTURE_2D, mTexture);
+  gl->glColor3f(1.0f, 1.0f, 1.0f);
 
   draw_desktop();
 
@@ -364,15 +373,17 @@ void TCCDesktopClient::egl_draw() {
                             mOutput->height, true, false);
   });
 
-  if (eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
-    printf("eglSwapBuffers error %08X\n", eglGetError());
+  if (egl->eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
+    printf("eglSwapBuffers error %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 }
 
 TCCDesktopClient::~TCCDesktopClient() {
-  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+  auto egl = EGLLib::get();
+  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
+                           mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
@@ -396,9 +407,9 @@ TCCDesktopClient::~TCCDesktopClient() {
       wl_seat_destroy(mSeat);
   }
 
-  wl_egl_window_destroy(mEGLWindow);
-  eglDestroyContext(mEGLDisplay, mEGLContext);
-  eglDestroyContext(mEGLDisplay, mEGLSurface);
+  egl->wl_egl_window_destroy(mEGLWindow);
+  egl->eglDestroyContext(mEGLDisplay, mEGLContext);
+  egl->eglDestroyContext(mEGLDisplay, mEGLSurface);
 }
 
 void TCCDesktopClient::for_each_minimized(

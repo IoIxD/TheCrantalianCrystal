@@ -4,14 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glext.h>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-#include <EGL/egl.h>
+#include "../lib/egl_loader.hpp"
+#include "../lib/freetype_loader.hpp"
+#include "../lib/gl_loader.hpp"
 
 class GlyphManager {
   static FT_Library FTLibrary;

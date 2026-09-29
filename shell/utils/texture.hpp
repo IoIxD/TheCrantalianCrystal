@@ -1,8 +1,6 @@
 #pragma once
 
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glext.h>
+#include "../lib/gl_loader.hpp"
 
 /*
  * Utility functions that handle OpenGL texture IDs for us.

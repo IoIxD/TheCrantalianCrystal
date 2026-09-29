@@ -1,5 +1,9 @@
 #include "bluescreen/bluescreen.hpp"
 #include "client/client.hpp"
+#include "lib/egl_loader.hpp"
+#include "lib/freetype_loader.hpp"
+#include "lib/gl_loader.hpp"
+#include "lib/wayland_loader.hpp"
 #include <execinfo.h>
 #include <filesystem>
 #include <format>
@@ -9,7 +13,6 @@
 #include <sys/user.h>
 #include <ucontext.h>
 #include <unistd.h>
-#include <wayland-client.h>
 
 static std::shared_ptr<TCCClient> client;
 
@@ -58,6 +61,14 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
 }
 
 int main() {
+  /*
+   * the shell can't do anything without these, and once they've loaded here
+   * the rest of the code can assume their get() never returns null.
+   */
+  if (!WaylandLib::get() || !GLLib::get() || !EGLLib::get() ||
+      !FreetypeLib::get())
+    return 1;
+
   if (!getenv("TCC_BYPASS_BLUESCREEN")) {
     char *p;
     char a;

@@ -20,9 +20,13 @@ endif()
 
 # river's xkb config protocol, for the keyboard layout item. The protocol code
 # is generated from the shell's copies of river's protocol files.
+#
+# wayland-client is dlopen'd at runtime, so the core protocol's code is
+# generated here too instead of coming from the library.
 pkg_check_modules(WAYLAND wayland-client)
+pkg_check_modules(WAYLAND_SCANNER_PC wayland-scanner)
 find_program(WAYLAND_SCANNER wayland-scanner)
-if(WAYLAND_FOUND AND WAYLAND_SCANNER)
+if(WAYLAND_FOUND AND WAYLAND_SCANNER AND WAYLAND_SCANNER_PC_FOUND)
   set(RIVER_PROTOCOL_DIR ${CMAKE_SOURCE_DIR}/shell/protocol)
   set(RIVER_GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/protocol)
   file(MAKE_DIRECTORY ${RIVER_GENERATED_DIR})
@@ -41,9 +45,17 @@ if(WAYLAND_FOUND AND WAYLAND_SCANNER)
                    ${RIVER_GENERATED_DIR}/${proto}-protocol.h
                    ${RIVER_GENERATED_DIR}/${proto}-protocol.c)
   endforeach()
+  pkg_get_variable(WAYLAND_PROTOCOL_DIR wayland-scanner pkgdatadir)
+  add_custom_command(
+    OUTPUT ${RIVER_GENERATED_DIR}/wayland-protocol.c
+    COMMAND ${WAYLAND_SCANNER} private-code ${WAYLAND_PROTOCOL_DIR}/wayland.xml
+            ${RIVER_GENERATED_DIR}/wayland-protocol.c
+    DEPENDS ${WAYLAND_PROTOCOL_DIR}/wayland.xml)
+  target_sources(${PROJECT_NAME} PRIVATE
+                 ${RIVER_GENERATED_DIR}/wayland-protocol.c)
   target_include_directories(${PROJECT_NAME} PRIVATE ${RIVER_GENERATED_DIR}
                              ${WAYLAND_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${WAYLAND_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
   target_compile_definitions(${PROJECT_NAME} PRIVATE TCC_SYSTRAY_RIVER)
 endif()
 

@@ -1,6 +1,6 @@
 #include "progman.hpp"
+#include "gtk_loader.hpp"
 #include "utils.hpp"
-#include <gtk/gtk.h>
 #include <string>
 
 #define ICON_SIZE 72
@@ -24,15 +24,17 @@ static std::unordered_map<std::string, std::string> gMainCategories = {
 };
 
 void ProgmanWindow::update_list() {
+  auto gtk = GtkLib::get();
+
   if (mItems.size() > 0)
     mItems.erase(mItems.begin());
 
-  GList *apps = g_app_info_get_all();
-  for (int i = 0; i < g_list_length(apps); i++) {
-    GAppInfo **inf = (GAppInfo **)g_list_nth(apps, i);
-    std::string name = g_app_info_get_name(*inf);
+  GList *apps = gtk->g_app_info_get_all();
+  for (int i = 0; i < gtk->g_list_length(apps); i++) {
+    GAppInfo **inf = (GAppInfo **)gtk->g_list_nth(apps, i);
+    std::string name = gtk->g_app_info_get_name(*inf);
     const char *categories =
-        g_desktop_app_info_get_categories((GDesktopAppInfo *)*inf);
+        gtk->g_desktop_app_info_get_categories((GDesktopAppInfo *)*inf);
     if (categories) {
       for (auto category : string_split(categories, ";")) {
         if (category == "Development")
@@ -203,11 +205,12 @@ void MWAPI ProgmanWindow::FolderPair::icon_dbl_click(MwWidget handle,
       pair->subwin->doubleClickTimer = 10;
     } else {
       /* we've double clicked */
+      auto gtk = GtkLib::get();
       GError *error;
       GAppLaunchContext *context =
-          (GAppLaunchContext *)gdk_display_get_app_launch_context(
-              gdk_display_get_default());
-      g_app_info_launch(pair->info, NULL, context, &error);
+          (GAppLaunchContext *)gtk->gdk_display_get_app_launch_context(
+              gtk->gdk_display_get_default());
+      gtk->g_app_info_launch(pair->info, NULL, context, &error);
     }
   }
 }
@@ -233,6 +236,7 @@ void ProgmanWindow::remove_subwindow(Subwindow *sub) {
 
 MwWidget
 ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
+  auto gtk = GtkLib::get();
   this->appinfos = items;
 
   MwWidget table = nullptr;
@@ -255,11 +259,11 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
     f->holder = MwVaCreateWidget(MwFrameClass, NULL, table, 0, 0, ICON_SIZE,
                                  ICON_SIZE, NULL);
 
-    auto name = g_app_info_get_name(item);
+    auto name = gtk->g_app_info_get_name(item);
     f->info = item;
 
     unsigned char *px = nullptr;
-    win->mIcons.get_icon_from_gicon(g_app_info_get_icon(item), 32, &width,
+    win->mIcons.get_icon_from_gicon(gtk->g_app_info_get_icon(item), 32, &width,
                                     &height, &px);
     if (px) {
       f->folder_pixmap = MwLoadRaw(subwindow, px, width, height);

@@ -6,12 +6,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE sources *.cpp *.c)
 
-find_package(Freetype REQUIRED)
+find_package(PkgConfig REQUIRED)
 
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} PRIVATE wayland-client wayland-egl EGL GL)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${FREETYPE_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${FREETYPE_INCLUDE_DIRS})
+
+# wayland-client, GL, EGL, wayland-egl and freetype are dlopen'd at runtime,
+# only their headers are needed
+pkg_check_modules(shell_deps REQUIRED wayland-client gl egl wayland-egl
+                  freetype2)
+target_include_directories(${PROJECT_NAME} PRIVATE ${shell_deps_INCLUDE_DIRS})
+target_compile_options(${PROJECT_NAME} PRIVATE ${shell_deps_CFLAGS_OTHER})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/client/ssd.frag" SSD_FRAG_SOURCE)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/client/ssd.vert" SSD_VERT_SOURCE)

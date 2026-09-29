@@ -6,9 +6,8 @@
 #include "../protocol/wlr-layer-shell-unstable-v1-protocol.h"
 #include <chrono>
 
-#include <EGL/egl.h>
-#include <GL/gl.h>
-#include <wayland-egl.h>
+#include "../lib/egl_loader.hpp"
+#include "../lib/gl_loader.hpp"
 
 #define WAIT_AMOUNT 15
 

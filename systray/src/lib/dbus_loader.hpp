@@ -1,8 +1,6 @@
 #ifdef TCC_SYSTRAY_DBUS
 #pragma once
 
-// Only the libdbus headers are used at compile time (for types, constants and
-// function signatures); the library itself is loaded at runtime with dlopen.
 #include <dbus/dbus.h>
 
 #define TCC_DBUS_FUNCS(X)                                                      \
@@ -46,7 +44,7 @@
   X(dbus_message_iter_get_arg_type)                                            \
   X(dbus_message_iter_recurse)                                                 \
   X(dbus_message_iter_get_basic)                                               \
-  X(dbus_message_iter_next)                                                     \
+  X(dbus_message_iter_next)                                                    \
   X(dbus_message_iter_get_fixed_array)                                         \
   X(dbus_connection_send_with_reply)                                           \
   X(dbus_pending_call_set_notify)                                              \

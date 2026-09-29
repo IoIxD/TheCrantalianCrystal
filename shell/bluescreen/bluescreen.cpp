@@ -1,9 +1,6 @@
 #include "bluescreen.hpp"
-#include <GL/gl.h>
 #include <assert.h>
 #include <csignal>
-
-#include <EGL/eglext.h>
 
 void TCCBluescreenClient::layer_surface_configure(
     void *data, struct zwlr_layer_surface_v1 *surface, uint32_t serial,
@@ -15,9 +12,10 @@ void TCCBluescreenClient::layer_surface_configure(
 }
 void TCCBluescreenClient::layer_surface_closed(
     void *data, struct zwlr_layer_surface_v1 *surface) {
+  auto egl = EGLLib::get();
   TCCBluescreenClient *client = (TCCBluescreenClient *)data;
-  eglDestroySurface(client->mEGLDisplay, client->mEGLSurface);
-  wl_egl_window_destroy(client->mEGLWindow);
+  egl->eglDestroySurface(client->mEGLDisplay, client->mEGLSurface);
+  egl->wl_egl_window_destroy(client->mEGLWindow);
   zwlr_layer_surface_v1_destroy(surface);
   wl_surface_destroy(client->mSurface);
 }
@@ -67,10 +65,11 @@ TCCBluescreenClient::TCCBluescreenClient(
     TCCClient::Output *output, std::vector<std::string> stacktrace,
     std::vector<std::pair<std::string, std::string>> registers)
     : mOutput(output), mStacktrace(stacktrace), mRegisters(registers) {
-  mDisplay = wl_display_connect(NULL);
+  auto wl = WaylandLib::get();
+  mDisplay = wl->wl_display_connect(NULL);
   mRegistry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(mRegistry, &mRegistryListener, this);
-  if (wl_display_roundtrip(mDisplay) == -1) {
+  if (wl->wl_display_roundtrip(mDisplay) == -1) {
     fprintf(stderr, "roundtrip failed\n");
     raise(SIGTRAP);
     return;
@@ -79,8 +78,9 @@ TCCBluescreenClient::TCCBluescreenClient(
   mGlyphManager.set_text_size(24);
 }
 void TCCBluescreenClient::run() {
+  auto wl = WaylandLib::get();
   while (seconds() < WAIT_AMOUNT) {
-    if (wl_display_dispatch_pending(mDisplay) < 0) {
+    if (wl->wl_display_dispatch_pending(mDisplay) < 0) {
       fprintf(stderr, "dispatch failed\n");
       raise(SIGTRAP);
     }
@@ -90,6 +90,7 @@ void TCCBluescreenClient::run() {
 }
 
 void TCCBluescreenClient::setup_egl() {
+  auto egl = EGLLib::get();
   const char *extensions;
 
   EGLint config_attribs[] = {EGL_SURFACE_TYPE,
@@ -116,49 +117,52 @@ void TCCBluescreenClient::setup_egl() {
   EGLConfig *configs;
   EGLBoolean ret;
 
-  mEGLDisplay = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, mDisplay, NULL);
+  mEGLDisplay =
+      egl->eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, mDisplay, NULL);
 
-  ret = eglInitialize(mEGLDisplay, &major, &minor);
+  ret = egl->eglInitialize(mEGLDisplay, &major, &minor);
   assert(ret == EGL_TRUE);
 
-  if (!eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
+  if (!egl->eglGetConfigs(mEGLDisplay, NULL, 0, &count) || count < 1)
     assert(0);
 
   configs = (EGLConfig *)calloc(count, sizeof *configs);
   assert(configs);
 
-  ret = eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
+  ret = egl->eglChooseConfig(mEGLDisplay, config_attribs, configs, count, &n);
   assert(ret && n >= 1);
 
   mEGLConfig = configs[0];
 
   free(configs);
 
-  mEGLWindow = wl_egl_window_create(mSurface, mOutput->width, mOutput->height);
+  mEGLWindow =
+      egl->wl_egl_window_create(mSurface, mOutput->width, mOutput->height);
   if (!mEGLWindow) {
-    printf("ERROR: eglCreateWindowSurface, %0X\n", eglGetError());
+    printf("ERROR: eglCreateWindowSurface, %0X\n", egl->eglGetError());
     raise(SIGTRAP);
   }
 
-  ret = eglBindAPI(EGL_OPENGL_API);
+  ret = egl->eglBindAPI(EGL_OPENGL_API);
   assert(ret == EGL_TRUE);
-  mEGLContext =
-      eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT, contextAttribs);
+  mEGLContext = egl->eglCreateContext(mEGLDisplay, mEGLConfig, EGL_NO_CONTEXT,
+                                      contextAttribs);
   assert(mEGLContext);
 
-  mEGLSurface =
-      eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig, mEGLWindow, NULL);
+  mEGLSurface = egl->eglCreatePlatformWindowSurface(mEGLDisplay, mEGLConfig,
+                                                    mEGLWindow, NULL);
   if (mEGLSurface == EGL_NO_SURFACE) {
-    printf("eglCreatePlatformWindowSurface error: %0X\n", eglGetError());
+    printf("eglCreatePlatformWindowSurface error: %0X\n", egl->eglGetError());
     raise(SIGTRAP);
   }
 
-  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
+                           mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
-  eglSwapInterval(mEGLDisplay, 0);
+  egl->eglSwapInterval(mEGLDisplay, 0);
 
   mClock = std::chrono::system_clock::now();
 }
@@ -208,28 +212,32 @@ void TCCBluescreenClient::draw_text() {
 }
 
 void TCCBluescreenClient::egl_draw() {
-  if (eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext) !=
+  auto egl = EGLLib::get();
+  auto gl = GLLib::get();
+  if (egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext) !=
       EGL_TRUE) {
-    printf("eglMakeCurrent error %08X\n", eglGetError());
+    printf("eglMakeCurrent error %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
-  glViewport(0, 0, mOutput->width, mOutput->height);
+  gl->glViewport(0, 0, mOutput->width, mOutput->height);
 
-  glClearColor(0.06f, 0.06f, .8f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  gl->glClearColor(0.06f, 0.06f, .8f, 1.f);
+  gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   draw_text();
 
-  if (eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
-    printf("eglSwapBuffers error %08X\n", eglGetError());
+  if (egl->eglSwapBuffers(mEGLDisplay, mEGLSurface) != EGL_TRUE) {
+    printf("eglSwapBuffers error %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 }
 
 TCCBluescreenClient::~TCCBluescreenClient() {
-  if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
-    printf("eglMakeCurrent error (init) %08X\n", eglGetError());
+  auto egl = EGLLib::get();
+  if (!egl->eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface,
+                           mEGLContext)) {
+    printf("eglMakeCurrent error (init) %08X\n", egl->eglGetError());
     raise(SIGTRAP);
   };
 
@@ -237,7 +245,7 @@ TCCBluescreenClient::~TCCBluescreenClient() {
     glyph->destroy();
   }
 
-  wl_egl_window_destroy(mEGLWindow);
-  eglDestroyContext(mEGLDisplay, mEGLContext);
-  eglDestroyContext(mEGLDisplay, mEGLSurface);
+  egl->wl_egl_window_destroy(mEGLWindow);
+  egl->eglDestroyContext(mEGLDisplay, mEGLContext);
+  egl->eglDestroyContext(mEGLDisplay, mEGLSurface);
 }

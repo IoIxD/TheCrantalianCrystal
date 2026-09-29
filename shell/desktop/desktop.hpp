@@ -7,9 +7,8 @@
 #include <functional>
 #include <memory>
 
-#include <EGL/egl.h>
-#include <GL/gl.h>
-#include <wayland-egl.h>
+#include "../lib/egl_loader.hpp"
+#include "../lib/gl_loader.hpp"
 
 #define ICON_SIZE 64
 #define ICON_MARGIN ICON_SIZE + 32

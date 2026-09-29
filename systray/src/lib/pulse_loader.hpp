@@ -1,8 +1,6 @@
 #ifdef TCC_SYSTRAY_PULSE
 #pragma once
 
-// Only the libpulse headers are used at compile time (for types, constants and
-// function signatures); the library itself is loaded at runtime with dlopen.
 #include <pulse/pulseaudio.h>
 
 #define TCC_PULSE_FUNCS(X)                                                     \

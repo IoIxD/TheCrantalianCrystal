@@ -14,7 +14,8 @@
 #include <dlfcn.h>
 
 TCCClient::TCCClient() {
-  mDisplay = wl_display_connect(NULL);
+  auto wl = WaylandLib::get();
+  mDisplay = wl->wl_display_connect(NULL);
   if (mDisplay == nullptr) {
     fprintf(stderr, "failed to connect to Wayland server\n");
     raise(SIGTRAP);
@@ -36,7 +37,7 @@ TCCClient::TCCClient() {
   mRegistry = wl_display_get_registry(mDisplay);
 
   wl_registry_add_listener(mRegistry, &mRegistryListener, this);
-  if (wl_display_roundtrip(mDisplay) == -1) {
+  if (wl->wl_display_roundtrip(mDisplay) == -1) {
     fprintf(stderr, "roundtrip failed\n");
     raise(SIGTRAP);
     return;
@@ -111,6 +112,7 @@ void TCCClient::global_remove(void *data, struct wl_registry *wl_registry,
 };
 
 void TCCClient::run() {
+  auto wl = WaylandLib::get();
   if (!mRiverWindowManager || !mRiverXKBBinding) {
     fprintf(stderr, "river_window_manager_v1 or river_xkb_bindings_v1 "
                     "not supported by the Wayland server\n");
@@ -131,14 +133,14 @@ void TCCClient::run() {
     }
 
     for (wl_display *display : displays) {
-      while (wl_display_prepare_read(display) != 0) {
-        if (wl_display_dispatch_pending(display) < 0) {
+      while (wl->wl_display_prepare_read(display) != 0) {
+        if (wl->wl_display_dispatch_pending(display) < 0) {
           fprintf(stderr, "dispatch failed\n");
           raise(SIGTRAP);
         }
       }
-      wl_display_flush(display);
-      fds.push_back({wl_display_get_fd(display), POLLIN, 0});
+      wl->wl_display_flush(display);
+      fds.push_back({wl->wl_display_get_fd(display), POLLIN, 0});
     }
 
     if (poll(fds.data(), fds.size(), -1) < 0) {
@@ -154,20 +156,21 @@ void TCCClient::run() {
     for (size_t i = displays.size(); i-- > 0;) {
       wl_display *display = displays[i];
       if (fds[i].revents & (POLLERR | POLLHUP)) {
-        wl_display_cancel_read(display);
+        wl->wl_display_cancel_read(display);
         fprintf(stderr, "wayland connection lost\n");
         raise(SIGTRAP);
       }
       if (fds[i].revents & POLLIN) {
-        if (wl_display_read_events(display) < 0) {
+        if (wl->wl_display_read_events(display) < 0) {
           fprintf(stderr, "read events failed\n");
           raise(SIGTRAP);
         }
       } else {
-        wl_display_cancel_read(display);
+        wl->wl_display_cancel_read(display);
       }
-      if (wl_display_dispatch_pending(display) < 0) {
-        fprintf(stderr, "dispatch failed: %d\n", wl_display_get_error(display));
+      if (wl->wl_display_dispatch_pending(display) < 0) {
+        fprintf(stderr, "dispatch failed: %d\n",
+                wl->wl_display_get_error(display));
         raise(SIGTRAP);
       }
     }
