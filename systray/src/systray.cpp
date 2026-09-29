@@ -481,6 +481,12 @@ void TCCSystrayClient::run() {
       relayout();
     }
 
+    MwGetScreenSize(mWindow, &mBounds);
+    MwVaApply(mWindow, MwNx, 0, MwNy, mBounds.height - 32, NULL);
+    MwVaApply(mWindow, MwNwidth,
+              (mIconWidgets.size() * BUTTON_SIZE) + ICON_SPACING + NOTCH_WIDTH,
+              MwNheight, 32, NULL);
+
     std::vector<MwPixmap> oldPixmaps = std::move(mOldPixmaps);
     mOldPixmaps.clear();
     MwStep(mWindow);
