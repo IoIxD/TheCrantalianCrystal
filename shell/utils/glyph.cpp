@@ -8,19 +8,36 @@
 #include <cstdlib>
 
 FT_Library GlyphManager::FTLibrary;
-FT_Face GlyphManager::FTFaceNormal;
-FT_Face GlyphManager::FTFaceBold;
+FT_Face GlyphManager::FTFaceNormal = nullptr;
+FT_Face GlyphManager::FTFaceBold = nullptr;
 
 void GlyphManager::Init() {
   auto ft = FreetypeLib::get();
-  assert(ft->FT_Init_FreeType(&FTLibrary) == 0);
-  assert(ft->FT_New_Memory_Face(FTLibrary, OpenSans_Regular.data(),
-                                OpenSans_Regular.size(), 0,
-                                &FTFaceNormal) == 0);
-  assert(ft->FT_New_Memory_Face(FTLibrary, OpenSans_Semibold.data(),
-                                OpenSans_Semibold.size(), 0, &FTFaceBold) == 0);
-  assert(ft->FT_Set_Pixel_Sizes(FTFaceNormal, 0, 13) == 0);
-  assert(ft->FT_Set_Pixel_Sizes(FTFaceBold, 0, 13) == 0);
+  int error = 0;
+  if ((error = ft->FT_Init_FreeType(&FTLibrary)) != 0) {
+    printf("FT_Init_FreeType failed: %d\n", error);
+    raise(SIGTRAP);
+  };
+  if ((error = ft->FT_New_Memory_Face(FTLibrary, OpenSans_Regular.data(),
+                                      OpenSans_Regular.size(), 0,
+                                      &FTFaceNormal)) != 0) {
+    printf("FT_New_Memory_Face failed: %d\n", error);
+    raise(SIGTRAP);
+  };
+  if ((error = ft->FT_New_Memory_Face(FTLibrary, OpenSans_Semibold.data(),
+                                      OpenSans_Semibold.size(), 0,
+                                      &FTFaceBold)) != 0) {
+    printf("FT_New_Memory_Face failed: %d\n", error);
+    raise(SIGTRAP);
+  };
+  if ((error = ft->FT_Set_Pixel_Sizes(FTFaceNormal, 0, 13)) != 0) {
+    printf("FT_Set_Pixel_Sizes failed: %d\n", error);
+    raise(SIGTRAP);
+  };
+  if ((error = ft->FT_Set_Pixel_Sizes(FTFaceBold, 0, 13)) != 0) {
+    printf("FT_Set_Pixel_Sizes failed: %d\n", error);
+    raise(SIGTRAP);
+  };
 }
 
 void GlyphManager::Deinit() {
@@ -41,6 +58,11 @@ GlyphManager::get_glyph(uint32_t c, bool bold, bool black) {
   FT_Face f = bold ? FTFaceBold : FTFaceNormal;
   auto &cache = bold ? (black ? mGlyphCacheBoldBlack : mGlyphCacheBoldWhite)
                      : (black ? mGlyphCacheBlack : mGlyphCacheWhite);
+
+  if (!f) {
+    return nullptr;
+  }
+
   FT_GlyphSlot slot = f->glyph;
   FT_Bitmap *bmp = &slot->bitmap;
 
@@ -99,6 +121,9 @@ void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
 
   for (auto codepoint : get_codepoints(text)) {
     auto g = get_glyph(codepoint, bold, black);
+
+    if (!g)
+      continue;
 
     if (g->width > 0 && g->height > 0) {
       float px0 = penX + g->bearingX;

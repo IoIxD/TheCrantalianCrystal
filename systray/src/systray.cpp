@@ -57,10 +57,12 @@ void TCCSystrayClient::launchDetached(std::vector<const char *> argv) {
   if (pid == 0) {
     // Fork again so the program is reparented to init and never left as our
     // zombie; it also outlives us in its own session.
-    setsid();
+    // setsid();
     if (fork() == 0) {
-      execvp(argv[0], const_cast<char *const *>(argv.data()));
-      fprintf(stderr, "tcc_systray: could not launch %s\n", argv[0]);
+      int err = 0;
+      err = execvp(argv[0], const_cast<char *const *>(argv.data()));
+      fprintf(stderr, "tcc_systray: could not launch %s: %s\n", argv[0],
+              strerror(errno));
       _exit(127);
     }
     _exit(0);

@@ -89,19 +89,19 @@ public:
   class Window {
     GlyphManager mGlyphManager;
 
-    wl_egl_window *mEGLWindow;
-    EGLDisplay mEGLDisplay;
-    EGLContext mEGLContext;
-    EGLConfig mEGLConfig;
-    EGLSurface mEGLSurface;
-    GLuint mEGLShaderProgram;
+    wl_egl_window *mEGLWindow = nullptr;
+    EGLDisplay mEGLDisplay = nullptr;
+    EGLContext mEGLContext = nullptr;
+    EGLConfig mEGLConfig = nullptr;
+    EGLSurface mEGLSurface = nullptr;
+    GLuint mEGLShaderProgram = 0;
 
     std::string mIconPath;
 
   public:
     std::shared_ptr<TCCClient> client;
-    river_window_v1 *id;
-    river_node_v1 *node;
+    river_window_v1 *id = nullptr;
+    river_node_v1 *node = nullptr;
     bool is_new = false;
     bool closed = false;
     int saved_x = 0, saved_y = 0;
@@ -109,8 +109,8 @@ public:
 
     bool hide_decor = false;
     bool has_decor = false;
-    river_decoration_v1 *decor_decor;
-    wl_surface *decor_surface;
+    river_decoration_v1 *decor_decor = nullptr;
+    wl_surface *decor_surface = nullptr;
     GLuint decor_icon_texture = -1;
 
     bool center_requested = false;
@@ -197,20 +197,20 @@ private:
   struct XkbBinding {
     std::shared_ptr<TCCClient> client;
     river_xkb_binding_v1 *id;
-    Seat *seat;
-    Action action;
+    Seat *seat = nullptr;
+    Action action = ACTION_NONE;
   };
 
   struct PointerBinding {
     std::shared_ptr<TCCClient> client;
-    river_pointer_binding_v1 *id;
-    Seat *seat;
-    Action action;
+    river_pointer_binding_v1 *id = nullptr;
+    Seat *seat = nullptr;
+    Action action = ACTION_NONE;
   };
 
   struct Seat {
     std::shared_ptr<TCCClient> client;
-    river_seat_v1 *id;
+    river_seat_v1 *id = nullptr;
     bool is_new = false;
     bool removed = false;
 
@@ -568,7 +568,6 @@ public:
 
   void terminate() {
     auto wl = WaylandLib::get();
-    printf("%p\n", mRiverWindowManager);
     if (mRiverWindowManager)
       river_window_manager_v1_exit_session(mRiverWindowManager);
     mRunning = false;

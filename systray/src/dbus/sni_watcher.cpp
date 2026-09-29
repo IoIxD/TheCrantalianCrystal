@@ -570,8 +570,9 @@ void StatusNotifierWatcher::sendReply(DBusMessage *reply) {
 }
 
 SystrayItem *StatusNotifierWatcher::findItem(const std::string &id) {
-  auto it = std::find_if(mItems.begin(), mItems.end(),
-                         [&](const SystrayItem &item) { return item.id == id; });
+  auto it =
+      std::find_if(mItems.begin(), mItems.end(),
+                   [&](const SystrayItem &item) { return item.id == id; });
   return it == mItems.end() ? nullptr : &*it;
 }
 
@@ -609,8 +610,7 @@ void StatusNotifierWatcher::removeItem(const std::string &id) {
     }
     mItemConns.erase(conn);
   }
-  std::erase_if(mItems,
-                [&](const SystrayItem &item) { return item.id == id; });
+  std::erase_if(mItems, [&](const SystrayItem &item) { return item.id == id; });
 }
 
 void StatusNotifierWatcher::clearItems() {
@@ -641,8 +641,7 @@ void StatusNotifierWatcher::fetchItemProperties(const std::string &id) {
   DBusMessage *msg = d->dbus_message_new_method_call(
       conn.service.c_str(), conn.path.c_str(), PROPS_IFACE, "GetAll");
   const char *iface = ITEM_IFACE;
-  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface,
-                              DBUS_TYPE_INVALID);
+  d->dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_INVALID);
 
   // Asynchronous, so an unresponsive item can't hang the tray.
   DBusPendingCall *pending = nullptr;
@@ -1048,9 +1047,10 @@ void StatusNotifierWatcher::readMenuLayout(DBusMessageIter *layout,
             entry.label += *c;
         }
       } else if (eq(name, "toggle-type")) {
-        entry.toggle = eq(str, "checkmark") ? SystrayMenuEntry::Toggle::Checkmark
-                       : eq(str, "radio")   ? SystrayMenuEntry::Toggle::Radio
-                                            : SystrayMenuEntry::Toggle::None;
+        entry.toggle = eq(str, "checkmark")
+                           ? SystrayMenuEntry::Toggle::Checkmark
+                       : eq(str, "radio") ? SystrayMenuEntry::Toggle::Radio
+                                          : SystrayMenuEntry::Toggle::None;
       }
     } else if (type == DBUS_TYPE_BOOLEAN) {
       dbus_bool_t b;

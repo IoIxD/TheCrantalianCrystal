@@ -50,14 +50,15 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
     registers.push_back(std::pair<std::string, std::string>(names[i], buf));
   }
 
-  auto bluescreen =
-      new TCCBluescreenClient(client->outputs()[0], fullStacktrace, registers);
+  if (!getenv("TCC_BYPASS_BLUESCREEN")) {
+    auto bluescreen = new TCCBluescreenClient(client->outputs()[0],
+                                              fullStacktrace, registers);
 
-  bluescreen->run();
-
-  client->terminate();
-
-  client->run();
+    bluescreen->run();
+    client->terminate();
+  } else {
+    exit(0);
+  }
 }
 
 int main() {
@@ -69,17 +70,15 @@ int main() {
       !FreetypeLib::get())
     return 1;
 
-  if (!getenv("TCC_BYPASS_BLUESCREEN")) {
-    char *p;
-    char a;
-    int pagesize;
-    struct sigaction sa;
+  char *p;
+  char a;
+  int pagesize;
+  struct sigaction sa;
 
-    sa.sa_flags = SA_SIGINFO;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_sigaction = sigsegv_handler;
-    sigaction(SIGSEGV, &sa, NULL);
-  }
+  sa.sa_flags = SA_SIGINFO;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_sigaction = sigsegv_handler;
+  sigaction(SIGSEGV, &sa, NULL);
 
   client = std::make_shared<TCCClient>();
 

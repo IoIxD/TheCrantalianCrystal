@@ -19,7 +19,7 @@ class TCCBluescreenClient {
   std::chrono::system_clock::time_point mClock =
       std::chrono::system_clock::now();
 
-  wl_display *mDisplay;
+  wl_display *mDisplay = nullptr;
   wl_registry *mRegistry;
   wl_compositor *mCompositor;
 
