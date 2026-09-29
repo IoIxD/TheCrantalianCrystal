@@ -4,14 +4,17 @@
 #include "dynload.hpp"
 
 int main() {
-  if (!dynload_setup::dbus() || !dynload_setup::pulse() ||
-      !dynload_setup::wayland() || !dynload_setup::gtk()) {
+  if (!dynload_setup::gtk()) {
     return 1;
   }
 
+  bool has_wl = dynload_setup::wayland();
+  bool has_dbus = dynload_setup::dbus();
+  bool has_pulse = dynload_setup::pulse();
+
   MwLibraryInit();
 
-  TCCSystrayClient systray;
+  TCCSystrayClient systray = TCCSystrayClient(has_wl, has_dbus, has_pulse);
 
   systray.run();
 }

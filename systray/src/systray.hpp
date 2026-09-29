@@ -104,7 +104,7 @@ class TCCSystrayClient {
   bool closePopups(SystrayProtocol *protocol, const std::string &id);
 
 public:
-  TCCSystrayClient();
+  TCCSystrayClient(bool has_dbus, bool has_pulse, bool has_wl);
   void run();
 };
 

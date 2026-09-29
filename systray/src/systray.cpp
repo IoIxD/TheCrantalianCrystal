@@ -16,7 +16,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-TCCSystrayClient::TCCSystrayClient() {
+TCCSystrayClient::TCCSystrayClient(bool has_dbus, bool has_pulse, bool has_wl) {
   mWindow = window_setup(&mBounds);
   // Clicking the bar outside of the icons dismisses an open menu.
   MwAddUserHandler(mWindow, MwNmouseUpHandler, windowMouseUp, this);
@@ -28,19 +28,26 @@ TCCSystrayClient::TCCSystrayClient() {
   MwAddUserHandler(mNotch, MwNmouseUpHandler, notchMouseUp, this);
 
 #ifdef TCC_HAS_DBUS
-  addProtocol(std::make_unique<StatusNotifierWatcher>());
-  addProtocol(std::make_unique<UPowerBattery>());
+  if (has_dbus) {
+    addProtocol(std::make_unique<StatusNotifierWatcher>());
+    addProtocol(std::make_unique<UPowerBattery>());
+  }
+#endif
+#ifdef TCC_HAS_PULSE
+  if (has_pulse) {
+    addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
+    addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Output));
+  }
+#endif
   // The network and Bluetooth items are nm-applet's and blueman-applet's,
   // started once our watcher is registered so they find it.
   launchDetached({"nm-applet", "--indicator"});
   launchDetached({"blueman-applet"});
-#endif
-#ifdef TCC_HAS_PULSE
-  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
-  addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Output));
-#endif
+
 #ifdef TCC_SYSTRAY_RIVER
-  addProtocol(std::make_unique<RiverKeyboardLayout>());
+  if (has_wl) {
+    addProtocol(std::make_unique<RiverKeyboardLayout>());
+  }
 #endif
 
   if (mProtocols.empty())
