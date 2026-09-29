@@ -2,7 +2,6 @@
 #ifdef TCC_SYSTRAY_DBUS
 #include "dbus/sni_watcher.hpp"
 #include "othericons/bluez_bluetooth.hpp"
-#include "othericons/network_manager.hpp"
 #include "othericons/upower_battery.hpp"
 #endif
 #ifdef TCC_SYSTRAY_PULSE
@@ -15,6 +14,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <sys/wait.h>
+#include <unistd.h>
 
 TCCSystrayClient::TCCSystrayClient() {
   mWindow = window_setup(&mBounds);
@@ -30,8 +31,10 @@ TCCSystrayClient::TCCSystrayClient() {
 #ifdef TCC_SYSTRAY_DBUS
   addProtocol(std::make_unique<StatusNotifierWatcher>());
   addProtocol(std::make_unique<BluezBluetooth>());
-  addProtocol(std::make_unique<NetworkManagerIcon>());
   addProtocol(std::make_unique<UPowerBattery>());
+  // The network item is nm-applet's, started once our watcher is registered
+  // so it finds it.
+  launchDetached({"nm-applet", "--indicator"});
 #endif
 #ifdef TCC_SYSTRAY_PULSE
   addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
@@ -43,6 +46,27 @@ TCCSystrayClient::TCCSystrayClient() {
 
   if (mProtocols.empty())
     fprintf(stderr, "tcc_systray: systray icons will not be available\n");
+}
+
+void TCCSystrayClient::launchDetached(std::vector<const char *> argv) {
+  argv.push_back(nullptr);
+  pid_t pid = fork();
+  if (pid < 0) {
+    perror("tcc_systray: fork");
+    return;
+  }
+  if (pid == 0) {
+    // Fork again so the program is reparented to init and never left as our
+    // zombie; it also outlives us in its own session.
+    setsid();
+    if (fork() == 0) {
+      execvp(argv[0], const_cast<char *const *>(argv.data()));
+      fprintf(stderr, "tcc_systray: could not launch %s\n", argv[0]);
+      _exit(127);
+    }
+    _exit(0);
+  }
+  waitpid(pid, nullptr, 0);
 }
 
 void TCCSystrayClient::addProtocol(std::unique_ptr<SystrayProtocol> protocol) {

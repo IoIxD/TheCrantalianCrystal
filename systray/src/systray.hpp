@@ -68,6 +68,8 @@ class TCCSystrayClient {
   std::unique_ptr<OpenMixer> mMixer;
 
   void addProtocol(std::unique_ptr<SystrayProtocol> protocol);
+  // Starts a program that isn't tied to the systray's lifetime.
+  static void launchDetached(std::vector<const char *> argv);
   void itemsChanged(SystrayProtocol &protocol,
                     const std::vector<SystrayItem> &items);
   void relayout();
