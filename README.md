@@ -10,17 +10,18 @@ In-line with what I do for all my Linux projects now, all shared libraries are d
 
 **Required Dependencies:**
 
-- glib-2.0
-- gio-2.0
-- gio-unix-2.0
+- glib 2.0 and gio 2.0
 - gtk4
 - wayland-client
-- gl
-- egl
-- wayland-egl
-- freetype2
+- GL, EGL, and wayland-egl
+- Freetype2
+- varlink
+- Milsko (bundled)
 
 **Optional Dependencies:**
+
+- Pulseaudio (systray audio mixer)
+- DBus (systray icons)
 
 ## AI policy
 
