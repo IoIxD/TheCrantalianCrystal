@@ -22,9 +22,3 @@ In-line with what I do for all my Linux projects now, all shared libraries are d
 
 - Pulseaudio (systray audio mixer)
 - DBus (systray icons)
-
-## AI policy
-
-All code must be reviewed by a human, and a human should be held responsible for any code they commit. AI-assisted coding is allowed, but vibecoding is not.
-
-**Only** the code may be done by AI. Assets such as images or audio cannot be done by AI. It's not allowed for concept art either.
