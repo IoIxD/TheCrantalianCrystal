@@ -12,8 +12,10 @@
 #include <vector>
 
 #include <linux/input-event-codes.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "../desktop/desktop.hpp"
+#include "../lock/lock.hpp"
 
 void TCCClient::river_wm_unavailable(
     void *data, struct river_window_manager_v1 *river_window_manager_v1) {
@@ -333,6 +335,7 @@ void TCCClient::river_output_wl_output(void *data, struct river_output_v1 *id,
   TCCClient::Output *output = (TCCClient::Output *)data;
   output->wl_output_name = name;
   output->desktop_client = std::make_unique<TCCDesktopClient>(output);
+  output->client->mLock->output_added(output);
 }
 void TCCClient::river_output_position(void *data, struct river_output_v1 *id,
                                       int32_t x, int32_t y) {
@@ -433,6 +436,7 @@ void TCCClient::output_maybe_destroy(Output *output) {
     return;
   }
   std::erase(mOutputs, output);
+  mLock->output_removed(output);
 
   // Hand the windows over to another output so they don't end up stranded
   // off-screen, or stash them until one shows up if this was the last.
@@ -843,10 +847,18 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
     wp_cursor_shape_device_v1_destroy(seat->cursor_shape_device);
   }
   if (seat->wl_pointer_id) {
-    wl_pointer_release(seat->wl_pointer_id);
+    if (wl_pointer_get_version(seat->wl_pointer_id) >=
+        WL_POINTER_RELEASE_SINCE_VERSION)
+      wl_pointer_release(seat->wl_pointer_id);
+    else
+      wl_pointer_destroy(seat->wl_pointer_id);
   }
   if (seat->wl_seat_id) {
-    wl_seat_release(seat->wl_seat_id);
+    mLock->seat_removed(seat->wl_seat_id);
+    if (wl_seat_get_version(seat->wl_seat_id) >= WL_SEAT_RELEASE_SINCE_VERSION)
+      wl_seat_release(seat->wl_seat_id);
+    else
+      wl_seat_destroy(seat->wl_seat_id);
   }
 
   river_seat_v1_destroy(seat->id);
@@ -978,6 +990,11 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     spawn("wpctl", args);
     break;
   }
+  case ACTION_LOCK: {
+    printf("attempting lock\n");
+    lock();
+    break;
+  }
   case ACTION_CLOSE:
     if (seat->focused != nullptr) {
       river_window_v1_close(seat->focused->id);
@@ -1033,6 +1050,7 @@ void TCCClient::seat_manage(Seat *seat) {
                        ACTION_VOLUME_DOWN);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMute, ACTION_VOLUME_MUTE);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMicMute, ACTION_MIC_MUTE);
+    xkb_binding_create(seat, super, XKB_KEY_l, ACTION_LOCK);
 
     /*
      * binding for testing what the window manager does when it segfaults.

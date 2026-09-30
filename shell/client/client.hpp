@@ -45,6 +45,7 @@
 #define SSD_NAV_BUTTON_MIN_X_FROM_RIGHT 82
 
 class TCCClient : public std::enable_shared_from_this<TCCClient> {
+  friend class TCCLock;
   struct Seat;
 
   enum Action {
@@ -61,6 +62,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     ACTION_VOLUME_DOWN,
     ACTION_VOLUME_MUTE,
     ACTION_MIC_MUTE,
+    ACTION_LOCK,
   };
 
   enum SeatOp {
@@ -324,7 +326,7 @@ private:
   river_xkb_bindings_v1 *mRiverXKBBinding = nullptr;
   wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
 
-  // std::thread mProgmanThread;
+  class TCCLock *mLock = nullptr;
 
   const river_window_manager_v1_listener mRiverWindowManagementListener = {
       .unavailable = river_wm_unavailable,
@@ -615,7 +617,8 @@ public:
     mRunning = false;
     wl_display_flush(mDisplay);
   }
-
+  // Safe to call from any thread.
+  void lock();
   const std::vector<Output *> &outputs() { return mOutputs; };
 };
 

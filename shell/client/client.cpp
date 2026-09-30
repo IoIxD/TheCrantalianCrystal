@@ -9,6 +9,7 @@
 #include <string>
 
 #include "../desktop/desktop.hpp"
+#include "../lock/lock.hpp"
 #include "../utils/glyph.hpp"
 #include "../varlink/daemon.hpp"
 #include <dlfcn.h>
@@ -33,6 +34,8 @@ TCCClient::TCCClient() {
   sigemptyset(&sa.sa_mask);
   sigaction(SIGCHLD, &sa, nullptr);
 
+  mLock = new TCCLock(this);
+
   mRegistry = wl_display_get_registry(mDisplay);
 
   wl_registry_add_listener(mRegistry, &mRegistryListener, this);
@@ -49,6 +52,8 @@ TCCClient::TCCClient() {
   }
 
   GlyphManager::Init();
+
+  mLock->start();
 
   mVarlink = new TCCClientVarlink(this);
   mThread = new std::thread([&]() { mVarlink->run(); });
@@ -96,6 +101,12 @@ void TCCClient::registry_global(void *data, struct wl_registry *wl_registry,
     client->mCursorShapeManager =
         (wp_cursor_shape_manager_v1 *)wl_registry_bind(
             client->mRegistry, name, &wp_cursor_shape_manager_v1_interface, 1);
+  } else if (inter == ext_session_lock_manager_v1_interface.name) {
+    client->mLock->bind_manager(name);
+  } else if (inter == zwp_linux_dmabuf_v1_interface.name) {
+    client->mLock->bind_dmabuf(name, version);
+  } else if (inter == ext_idle_notifier_v1_interface.name) {
+    client->mLock->bind_idle_notifier(name);
   } else if (inter == river_xkb_bindings_v1_interface.name) {
     client->mRiverXKBBinding = (river_xkb_bindings_v1 *)wl_registry_bind(
         client->mRegistry, name, &river_xkb_bindings_v1_interface, 1);
@@ -144,6 +155,9 @@ void TCCClient::run() {
       fds.push_back({wl_display_get_fd(display), POLLIN, 0});
     }
 
+    // After the displays', so fds[i] still lines up with displays[i].
+    mLock->add_poll_fds(fds);
+
     if (poll(fds.data(), fds.size(), -1) < 0) {
       if (errno != EINTR) {
         perror("poll");
@@ -174,8 +188,12 @@ void TCCClient::run() {
         raise(SIGTRAP);
       }
     }
+
+    mLock->process();
   }
 }
+
+void TCCClient::lock() { mLock->request_lock(); }
 
 void TCCClient::launch_initial_components() {
   launch_component("tcc_systray");

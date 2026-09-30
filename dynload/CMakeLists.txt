@@ -26,6 +26,8 @@ pkg_check_modules(deps REQUIRED
   wayland-egl
   freetype2
   libvarlink
+  xkbcommon
+  gbm
 )
 
 # Dependencies that do not need to be avaliable at runtime.

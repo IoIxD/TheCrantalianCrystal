@@ -10,6 +10,7 @@
   X(glBindAttribLocation)                                                      \
   X(glBindTexture)                                                             \
   X(glBlendFunc)                                                               \
+  X(glBlendFuncSeparate)                                                       \
   X(glClear)                                                                   \
   X(glClearColor)                                                              \
   X(glColor3f)                                                                 \
@@ -58,6 +59,7 @@ extern GLLib *GL_LIB;
 #define glBindAttribLocation GL_LIB->glBindAttribLocation
 #define glBindTexture GL_LIB->glBindTexture
 #define glBlendFunc GL_LIB->glBlendFunc
+#define glBlendFuncSeparate GL_LIB->glBlendFuncSeparate
 #define glClear GL_LIB->glClear
 #define glClearColor GL_LIB->glClearColor
 #define glColor3f GL_LIB->glColor3f

@@ -15,6 +15,9 @@ class TCCClientVarlink {
   static void InitiateClose(VarlinkService *service, VarlinkCall *call,
                             VarlinkObject *parameters, uint64_t flags,
                             void *userdata);
+  static void LockScreen(VarlinkService *service, VarlinkCall *call,
+                         VarlinkObject *parameters, uint64_t flags,
+                         void *userdata);
 
 public:
   TCCClientVarlink(class TCCClient *cli);

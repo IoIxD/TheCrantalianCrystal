@@ -6,11 +6,14 @@
 #include "dbus_loader.hpp"
 #include "egl_loader.hpp"
 #include "freetype_loader.hpp"
+#include "gbm_loader.hpp"
 #include "gl_loader.hpp"
 #include "gtk_loader.hpp"
+#include "pam_loader.hpp"
 #include "pulse_loader.hpp"
 #include "varlink_loader.hpp"
 #include "wayland_loader.hpp"
+#include "xkbcommon_loader.hpp"
 
 WaylandLib *WL_LIB = nullptr;
 PulseLib *PL_LIB = nullptr;
@@ -20,6 +23,9 @@ FreetypeLib *FT_LIB = nullptr;
 EGLLib *EGL_LIB = nullptr;
 DBusLib *DBUS_LIB = nullptr;
 VarlinkLib *VARLINK_LIB = nullptr;
+PamLib *PAM_LIB = nullptr;
+XkbcommonLib *XKB_LIB = nullptr;
+GbmLib *GBM_LIB = nullptr;
 
 static void *open_library(std::initializer_list<const char *> sonames,
                           const char *what = "") {
@@ -235,6 +241,76 @@ bool varlink() {
     return false;                                                              \
   }
   TCC_VARLINK_FUNCS(X)
+#undef X
+
+  return true;
+}
+
+bool pam() {
+  PAM_LIB = new PamLib();
+  PAM_LIB->handle = open_library({"libpam.so.0", "libpam.so"}, "libpam");
+
+  if (!PAM_LIB->handle) {
+    return false;
+  }
+
+#define X(name)                                                                \
+  PAM_LIB->name =                                                              \
+      reinterpret_cast<decltype(PAM_LIB->name)>(dlsym(PAM_LIB->handle, #name)); \
+  if (!PAM_LIB->name) {                                                        \
+    fprintf(stderr, "libpam is missing symbol %s\n", #name);                   \
+    dlclose(PAM_LIB->handle);                                                  \
+    PAM_LIB->handle = nullptr;                                                 \
+    return false;                                                              \
+  }
+  TCC_PAM_FUNCS(X)
+#undef X
+
+  return true;
+}
+
+bool xkbcommon() {
+  XKB_LIB = new XkbcommonLib();
+  XKB_LIB->handle = open_library({"libxkbcommon.so.0", "libxkbcommon.so"},
+                                 "libxkbcommon");
+
+  if (!XKB_LIB->handle) {
+    return false;
+  }
+
+#define X(name)                                                                \
+  XKB_LIB->name =                                                              \
+      reinterpret_cast<decltype(XKB_LIB->name)>(dlsym(XKB_LIB->handle, #name)); \
+  if (!XKB_LIB->name) {                                                        \
+    fprintf(stderr, "libxkbcommon is missing symbol %s\n", #name);             \
+    dlclose(XKB_LIB->handle);                                                  \
+    XKB_LIB->handle = nullptr;                                                 \
+    return false;                                                              \
+  }
+  TCC_XKBCOMMON_FUNCS(X)
+#undef X
+
+  return true;
+}
+
+bool gbm() {
+  GBM_LIB = new GbmLib();
+  GBM_LIB->handle = open_library({"libgbm.so.1", "libgbm.so"}, "libgbm");
+
+  if (!GBM_LIB->handle) {
+    return false;
+  }
+
+#define X(name)                                                                \
+  GBM_LIB->name =                                                              \
+      reinterpret_cast<decltype(GBM_LIB->name)>(dlsym(GBM_LIB->handle, #name)); \
+  if (!GBM_LIB->name) {                                                        \
+    fprintf(stderr, "libgbm is missing symbol %s\n", #name);                   \
+    dlclose(GBM_LIB->handle);                                                  \
+    GBM_LIB->handle = nullptr;                                                 \
+    return false;                                                              \
+  }
+  TCC_GBM_FUNCS(X)
 #undef X
 
   return true;

@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "../lock/lock.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -165,6 +166,8 @@ void TCCClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
   Seat *seat = (Seat *)data;
   bool has_pointer = capabilities & WL_SEAT_CAPABILITY_POINTER;
 
+  seat->client->mLock->seat_capabilities(wl_seat, capabilities);
+
   if (has_pointer && !seat->wl_pointer_id) {
     seat->wl_pointer_id = wl_seat_get_pointer(wl_seat);
     wl_pointer_add_listener(seat->wl_pointer_id,
@@ -179,7 +182,11 @@ void TCCClient::wl_seat_capabilities(void *data, struct wl_seat *wl_seat,
       wp_cursor_shape_device_v1_destroy(seat->cursor_shape_device);
       seat->cursor_shape_device = nullptr;
     }
-    wl_pointer_release(seat->wl_pointer_id);
+    if (wl_pointer_get_version(seat->wl_pointer_id) >=
+        WL_POINTER_RELEASE_SINCE_VERSION)
+      wl_pointer_release(seat->wl_pointer_id);
+    else
+      wl_pointer_destroy(seat->wl_pointer_id);
     seat->wl_pointer_id = nullptr;
     seat->pointer_window = nullptr;
   }
