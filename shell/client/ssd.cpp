@@ -1,18 +1,19 @@
 #include "../utils/texture.hpp"
 #include "../utils/utf8.hpp"
+#include "ssd.hpp"
 #include "client.hpp"
 #include "ssd_shader.h"
 #include <assert.h>
 #include <csignal>
 #include <format>
 
-static GLuint create_shader_program() {
+GLuint ssd_create_shader_program(const char *fragment_source) {
   GLuint vertex_shader = 0, fragment_shader = 0;
 
   int i = 0;
   for (auto shader : {&vertex_shader, &fragment_shader}) {
     *shader = glCreateShader((i == 0) ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
-    auto src = ((i == 0) ? SSD_VERT_SOURCE : SSD_FRAG_SOURCE);
+    auto src = ((i == 0) ? SSD_VERT_SOURCE : fragment_source);
 
     glShaderSource(*shader, 1, &src, NULL);
     glCompileShader(*shader);
@@ -133,7 +134,7 @@ void TCCClient::Window::setup_decor() {
 
   eglSwapInterval(mEGLDisplay, 0);
 
-  mEGLShaderProgram = create_shader_program();
+  mEGLShaderProgram = ssd_create_shader_program(SSD_FRAG_SOURCE);
 
   int width = 0, height = 0;
   unsigned char *pixels = nullptr;
@@ -165,8 +166,8 @@ void TCCClient::Window::decor_draw() {
 
   /* draw text */
   glViewport(0, 0, decor_width, decor_height);
-  mGlyphManager.draw_text(title, 32, 22, decor_width, decor_height, true,
-                          false);
+  mGlyphManager.draw_text(title, SSD_TITLE_X, SSD_TITLE_Y, decor_width,
+                          decor_height, true, false);
 
   eglSwapBuffers(mEGLDisplay, mEGLSurface);
 };
@@ -177,32 +178,46 @@ void TCCClient::Window::decor_draw_backing() {
   glClearColor(0.f, 0.0f, 0.f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  SSDNavButtons buttons;
+  buttons.close_held = close_held;
+  buttons.minimize_held = minimize_held;
+  buttons.maximize_held = maximize_held;
+  buttons.close_hover = close_hover;
+  buttons.minimize_hover = minimize_hover;
+  buttons.maximize_hover = maximize_hover;
+  buttons.show_maximize = show_maximize;
+  ssd_draw_backing(mEGLShaderProgram, decor_width, decor_height, buttons);
+}
+
+void ssd_draw_backing(GLuint program, int width, int height,
+                      const SSDNavButtons &buttons) {
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // (so partly see-through pixels don't come out even more see-through)
+  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                      GL_ONE_MINUS_SRC_ALPHA);
 
-  glUseProgram(mEGLShaderProgram);
-  glUniform2f(glGetUniformLocation(mEGLShaderProgram, "resolution"),
-              (float)decor_width, (float)decor_height);
+  glUseProgram(program);
+  glUniform2f(glGetUniformLocation(program, "resolution"), (float)width,
+              (float)height);
 
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "ssd_border_size"),
+  glUniform1i(glGetUniformLocation(program, "ssd_border_size"),
               SSD_BORDER_SIZE);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "ssd_border_size_top"),
+  glUniform1i(glGetUniformLocation(program, "ssd_border_size_top"),
               SSD_BORDER_SIZE_TOP - 1);
 
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "close_held"),
-              close_held);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "minimize_held"),
-              minimize_held);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_held"),
-              maximize_held);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "close_hover"),
-              close_hover);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "minimize_hover"),
-              minimize_hover);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "maximize_hover"),
-              maximize_hover);
-  glUniform1i(glGetUniformLocation(mEGLShaderProgram, "show_maximize"),
-              show_maximize);
+  glUniform1i(glGetUniformLocation(program, "close_held"), buttons.close_held);
+  glUniform1i(glGetUniformLocation(program, "minimize_held"),
+              buttons.minimize_held);
+  glUniform1i(glGetUniformLocation(program, "maximize_held"),
+              buttons.maximize_held);
+  glUniform1i(glGetUniformLocation(program, "close_hover"),
+              buttons.close_hover);
+  glUniform1i(glGetUniformLocation(program, "minimize_hover"),
+              buttons.minimize_hover);
+  glUniform1i(glGetUniformLocation(program, "maximize_hover"),
+              buttons.maximize_hover);
+  glUniform1i(glGetUniformLocation(program, "show_maximize"),
+              buttons.show_maximize);
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 1.0f);
   glVertex3f(-1, -1, 1); // bottom-left
@@ -219,27 +234,34 @@ void TCCClient::Window::decor_draw_backing() {
 }
 void TCCClient::Window::decor_draw_icon() {
   if (decor_icon_texture != -1) {
-    glViewport(10, decor_height - 20 - SSD_BORDER_LEEWAY, 16, 16);
-
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glBindTexture(GL_TEXTURE_2D, decor_icon_texture);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(-1, -1, 1); // bottom-left
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(1, -1, 1);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(1, 1, 1);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(-1, 1, 1); // top-right
-    glEnd();
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisable(GL_BLEND);
+    ssd_draw_icon(decor_icon_texture, 0, 0, decor_height);
   }
+}
+
+void ssd_draw_icon(GLuint texture, int x, int y, int height) {
+  glViewport(x + 10, y + height - 20 - SSD_BORDER_LEEWAY, 16, 16);
+
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_BLEND);
+  // (so partly see-through pixels don't come out even more see-through)
+  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                      GL_ONE_MINUS_SRC_ALPHA);
+
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex3f(-1, -1, 1); // bottom-left
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex3f(1, -1, 1);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex3f(1, 1, 1);
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex3f(-1, 1, 1); // top-right
+  glEnd();
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_BLEND);
 }
 
 TCCClient::Window::~Window() {

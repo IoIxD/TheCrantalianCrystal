@@ -11,5 +11,6 @@ public:
 
   bool open() { return mValidConn; };
   void InitiateClose();
+  void LockScreen();
   void step();
 };

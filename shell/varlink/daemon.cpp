@@ -20,6 +20,7 @@ TCCClientVarlink::TCCClientVarlink(TCCClient *cli) : mClient(cli) {
   if ((error = varlink_service_add_interface(
            mService, VARLINK_INTERFACE_SOURCE,   //
            "InitiateClose", InitiateClose, this, /* InitiateClose */
+           "LockScreen", LockScreen, this,       /* LockScreen */
            NULL                                  //
            )) != 0) {
     printf("varlink_service_add_interface error: %s\n",

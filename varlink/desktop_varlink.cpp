@@ -15,10 +15,9 @@ TCCVarlinkConnection::TCCVarlinkConnection() {
   };
 }
 
-static long close_callback(VarlinkConnection *connection, const char *error,
+static long dummy_callback(VarlinkConnection *connection, const char *error,
                            VarlinkObject *parameters, uint64_t flags,
                            void *userdata) {
-  printf("close callback\n");
   return 0;
 }
 
@@ -35,7 +34,30 @@ void TCCVarlinkConnection::InitiateClose() {
   };
   if (varlink_connection_call(mConn,
                               "net.ioi-xd.tcc-desktop-varlink.InitiateClose",
-                              parameters, 0, close_callback, this) != 0) {
+                              parameters, 0, dummy_callback, this) != 0) {
+    printf("varlink_connection_call error\n");
+    return;
+  };
+  if (varlink_object_unref(parameters) != NULL) {
+    printf("varlink_object_unref error\n");
+    return;
+  };
+}
+
+void TCCVarlinkConnection::LockScreen() {
+  if (!mValidConn) {
+    return;
+  }
+
+  VarlinkObject *parameters = NULL;
+
+  if (varlink_object_new(&parameters) != 0) {
+    printf("varlink_object_new error\n");
+    return;
+  };
+  if (varlink_connection_call(mConn,
+                              "net.ioi-xd.tcc-desktop-varlink.LockScreen",
+                              parameters, 0, dummy_callback, this) != 0) {
     printf("varlink_connection_call error\n");
     return;
   };

@@ -110,7 +110,10 @@ void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
 
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // Text adds to the coverage of whatever it's over, so it stays opaque even
+  // over something that isn't.
+  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                      GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
 
   float penX = x;
@@ -148,6 +151,15 @@ void GlyphManager::draw_text(std::string text, int32_t x, int32_t y,
   }
 
   glPopAttrib();
+}
+int GlyphManager::text_width(std::string text, bool bold, bool black) {
+  long width = 0;
+  for (auto codepoint : get_codepoints(text)) {
+    if (auto g = get_glyph(codepoint, bold, black)) {
+      width += g->advance;
+    }
+  }
+  return width;
 }
 void GlyphManager::set_text_size(size_t size) {
   assert(FT_Set_Pixel_Sizes(FTFaceNormal, 0, size) == 0);

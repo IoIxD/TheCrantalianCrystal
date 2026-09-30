@@ -14,6 +14,7 @@
   X(eglGetConfigs)                                                             \
   X(eglGetError)                                                               \
   X(eglGetPlatformDisplay)                                                     \
+  X(eglGetProcAddress)                                                         \
   X(eglInitialize)                                                             \
   X(eglMakeCurrent)                                                            \
   X(eglSwapBuffers)                                                            \
@@ -47,6 +48,7 @@ extern EGLLib *EGL_LIB;
 #define eglGetConfigs EGL_LIB->eglGetConfigs
 #define eglGetError EGL_LIB->eglGetError
 #define eglGetPlatformDisplay EGL_LIB->eglGetPlatformDisplay
+#define eglGetProcAddress EGL_LIB->eglGetProcAddress
 #define eglInitialize EGL_LIB->eglInitialize
 #define eglMakeCurrent EGL_LIB->eglMakeCurrent
 #define eglSwapBuffers EGL_LIB->eglSwapBuffers

@@ -17,8 +17,11 @@ In-line with what I do for all my Linux projects now, all shared libraries are d
 - Freetype2
 - varlink
 - Milsko (bundled)
+- xkbcommon
 
 **Optional Dependencies:**
 
 - Pulseaudio (systray audio mixer)
 - DBus (systray icons)
+- pam, systemd (Screen locking)
+- gbm (Screensaver on the lock screen)

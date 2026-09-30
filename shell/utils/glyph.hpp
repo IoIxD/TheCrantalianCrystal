@@ -31,6 +31,8 @@ public:
 
   void draw_text(std::string text, int32_t x, int32_t y, int32_t width,
                  int32_t height, bool bold, bool black);
+  /* how wide draw_text would draw text, in pixels */
+  int text_width(std::string text, bool bold, bool black);
 
 private:
   std::shared_ptr<Glyph> get_glyph(uint32_t c, bool bold, bool black);

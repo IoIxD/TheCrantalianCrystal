@@ -1,3 +1,4 @@
 interface net.ioi-xd.tcc-desktop-varlink
 
 method InitiateClose() -> ()
+method LockScreen() -> ()

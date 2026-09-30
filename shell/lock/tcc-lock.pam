@@ -1,0 +1,5 @@
+#
+# PAM configuration for TheCrantalianCrystal's lock screen.
+# Install as /etc/pam.d/tcc-lock
+#
+auth include login

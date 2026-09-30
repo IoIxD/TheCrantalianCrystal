@@ -64,9 +64,14 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
 int main() {
   if (!dynload_setup::gtk() || !dynload_setup::egl() || !dynload_setup::gl() ||
       !dynload_setup::wayland() || !dynload_setup::freetype() ||
-      !dynload_setup::varlink()) {
+      !dynload_setup::varlink() || !dynload_setup::xkbcommon()) {
     return 1;
   };
+  // Optional: without these the session just won't lock.
+  dynload_setup::pam();
+#ifdef TCC_HAS_DBUS
+  dynload_setup::dbus();
+#endif
 
   char *p;
   char a;

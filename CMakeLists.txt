@@ -4,6 +4,8 @@ project(TheCrantalianCrystal)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(GNUInstallDirs)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
@@ -23,3 +25,48 @@ add_subdirectory(shell)
 add_subdirectory(progman)
 add_subdirectory(systray)
 add_subdirectory(screensaver)
+
+# Install
+#
+# The shell starts its components and loads its screensavers from the
+# directory it's in, so everything goes in one private directory with just
+# the shell linked into bin.
+
+set(TCC_INSTALL_DIR ${CMAKE_INSTALL_LIBEXECDIR}/TheCrantalianCrystal)
+# PAM only looks in /etc/pam.d (and the distro's vendor dir), never under the
+# install prefix.
+set(TCC_PAM_DIR /etc/pam.d CACHE PATH "Where to install the PAM service file")
+
+set(TCC_INSTALL_TARGETS
+  tcc_shell
+  tcc_progman
+  tcc_systray
+  tcc_scr_loader
+  tcc_scr_tunnel
+  tcc_iconlib
+  tcc_varlinklib
+)
+
+# Find our libraries next to us, and Milsko's where it installs itself.
+file(RELATIVE_PATH TCC_LIBDIR_FROM_INSTALL_DIR
+  ${CMAKE_INSTALL_FULL_LIBEXECDIR}/TheCrantalianCrystal
+  ${CMAKE_INSTALL_FULL_LIBDIR})
+set_target_properties(${TCC_INSTALL_TARGETS} PROPERTIES
+  INSTALL_RPATH "$ORIGIN;$ORIGIN/${TCC_LIBDIR_FROM_INSTALL_DIR}")
+
+install(TARGETS ${TCC_INSTALL_TARGETS}
+  RUNTIME DESTINATION ${TCC_INSTALL_DIR}
+  LIBRARY DESTINATION ${TCC_INSTALL_DIR})
+
+file(RELATIVE_PATH TCC_INSTALL_DIR_FROM_BINDIR
+  ${CMAKE_INSTALL_FULL_BINDIR}
+  ${CMAKE_INSTALL_FULL_LIBEXECDIR}/TheCrantalianCrystal)
+install(CODE "
+  file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_FULL_BINDIR}\")
+  file(CREATE_LINK ${TCC_INSTALL_DIR_FROM_BINDIR}/tcc_shell
+    \"\$ENV{DESTDIR}${CMAKE_INSTALL_FULL_BINDIR}/tcc_shell\" SYMBOLIC)
+")
+
+install(FILES shell/lock/tcc-lock.pam
+  DESTINATION ${TCC_PAM_DIR}
+  RENAME tcc-lock)
