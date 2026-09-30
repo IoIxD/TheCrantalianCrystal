@@ -6,7 +6,7 @@
 
 #include "wayland_loader.h"
 
-class TCCRegistryDaemon {
+class TCCClientVarlink {
   class TCCClient *mClient;
   VarlinkService *mService;
   int mEPollFD = -1;
@@ -17,6 +17,6 @@ class TCCRegistryDaemon {
                             void *userdata);
 
 public:
-  TCCRegistryDaemon(class TCCClient *cli);
+  TCCClientVarlink(class TCCClient *cli);
   void run();
 };

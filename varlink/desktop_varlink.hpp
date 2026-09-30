@@ -2,12 +2,12 @@
 
 #include "varlink_loader.hpp"
 
-class TCCRegistryConnection {
+class TCCVarlinkConnection {
   bool mValidConn = true;
   VarlinkConnection *mConn = nullptr;
 
 public:
-  TCCRegistryConnection();
+  TCCVarlinkConnection();
 
   bool open() { return mValidConn; };
   void InitiateClose();

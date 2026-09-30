@@ -305,7 +305,7 @@ private:
   // Processes we spawned that haven't been reaped yet.
   std::vector<pid_t> mChildren;
 
-  TCCRegistryDaemon *mDaemon;
+  TCCClientVarlink *mVarlink;
   std::thread *mThread;
 
   const wl_registry_listener mRegistryListener = {

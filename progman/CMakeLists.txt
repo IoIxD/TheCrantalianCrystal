@@ -13,5 +13,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   Mw
   tcc_iconlib
   tcc_dynload
-  tcc_registrylib
+  tcc_varlinklib
 )

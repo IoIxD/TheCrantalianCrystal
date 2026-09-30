@@ -50,8 +50,8 @@ TCCClient::TCCClient() {
 
   GlyphManager::Init();
 
-  mDaemon = new TCCRegistryDaemon(this);
-  mThread = new std::thread([&]() { mDaemon->run(); });
+  mVarlink = new TCCClientVarlink(this);
+  mThread = new std::thread([&]() { mVarlink->run(); });
 
   // g_desktop_app_info_new();
 }
@@ -180,7 +180,7 @@ void TCCClient::run() {
 void TCCClient::launch_initial_components() {
   launch_component("tcc_systray");
   launch_component("tcc_progman");
-  launch_component("tcc_registry_daemon");
+  launch_component("tcc_desktop_varlink_daemon");
   // mProgmanThread = std::thread([&]() {
   //   extern __attribute__((visibility("default"))) int tcc_program_main(
   //       void (*close_callback)(void *user), void *user);

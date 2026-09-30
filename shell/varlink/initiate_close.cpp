@@ -4,11 +4,11 @@
 #include <cstdio>
 #include <thread>
 
-void TCCRegistryDaemon::InitiateClose(VarlinkService *service,
+void TCCClientVarlink::InitiateClose(VarlinkService *service,
                                       VarlinkCall *call,
                                       VarlinkObject *parameters, uint64_t flags,
                                       void *userdata) {
-  TCCRegistryDaemon *d = (TCCRegistryDaemon *)userdata;
+  TCCClientVarlink *d = (TCCClientVarlink *)userdata;
   printf("close initiate\n");
   varlink_call_reply(call, NULL, 0);
 

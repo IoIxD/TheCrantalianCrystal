@@ -1,6 +1,6 @@
 #include "progman.hpp"
+#include "desktop_varlink.hpp"
 #include "gtk_loader.hpp"
-#include "registry.hpp"
 #include "utils.hpp"
 #include <set>
 #include <string>
@@ -64,9 +64,9 @@ ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
       MwVaCreateWidget(MwViewportClass, NULL, mWindow, 5, 5, 630, 390, NULL);
   MwAddUserHandler(mWindow, MwNtickHandler, tick, this);
 
-  mRegistry = new TCCRegistryConnection();
+  mVarlink = new TCCVarlinkConnection();
 
-  if (mRegistry->open()) {
+  if (mVarlink->open()) {
     MwAddUserHandler(
         mWindow, MwNcloseHandler,
         +[](MwWidget handle, void *user, void *client) {
@@ -79,7 +79,7 @@ ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
           MwAddUserHandler(
               MwMessageBoxGetChild(msg, MwMB_BUTTONYES), MwNactivateHandler,
               +[](MwWidget handle, void *user, void *client) {
-                ((ProgmanWindow *)user)->mRegistry->InitiateClose();
+                ((ProgmanWindow *)user)->mVarlink->InitiateClose();
               },
               th);
           auto no = +[](MwWidget handle, void *user, void *client) {
@@ -119,7 +119,7 @@ void ProgmanWindow::run() {
       }
     }
 
-    mRegistry->step();
+    mVarlink->step();
   }
 }
 

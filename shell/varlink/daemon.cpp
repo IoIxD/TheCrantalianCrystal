@@ -7,12 +7,12 @@
 #include <cstdio>
 #include <sys/epoll.h>
 
-TCCRegistryDaemon::TCCRegistryDaemon(TCCClient *cli) : mClient(cli) {
+TCCClientVarlink::TCCClientVarlink(TCCClient *cli) : mClient(cli) {
   int error;
 
-  if ((error = varlink_service_new(&mService, "TCC", "Registry Service", "1",
-                                   "https://ioi-xd.net",
-                                   "unix:@tcc_registry.socket", -1)) != 0) {
+  if ((error = varlink_service_new(
+           &mService, "TCC", "Registry Service", "1", "https://ioi-xd.net",
+           "unix:@tcc_desktop_varlink.socket", -1)) != 0) {
     printf("varlink_service_new error: %s\n", varlink_error_string(-error));
     raise(SIGTRAP);
   };
@@ -27,7 +27,7 @@ TCCRegistryDaemon::TCCRegistryDaemon(TCCClient *cli) : mClient(cli) {
     raise(SIGTRAP);
   };
 }
-void TCCRegistryDaemon::run() {
+void TCCClientVarlink::run() {
   mEPollFD = epoll_create1(EPOLL_CLOEXEC);
   if (mEPollFD < 0) {
     perror("epoll_create1");

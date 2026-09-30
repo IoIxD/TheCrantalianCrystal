@@ -4,7 +4,7 @@
 
 #include "iconlib.hpp"
 
-#include "registry.hpp"
+#include "desktop_varlink.hpp"
 
 #include <gio-unix-2.0/gio/gdesktopappinfo.h>
 #include <glib-2.0/glib.h>
@@ -22,7 +22,7 @@ class ProgmanWindow {
   MwWidget mFolders = nullptr;
   int doubleClickTimer = 0;
 
-  TCCRegistryConnection *mRegistry;
+  TCCVarlinkConnection *mVarlink;
 
   std::unordered_map<std::string, std::vector<GAppInfo *>> mItems;
   static void MWAPI tick(MwWidget handle, void *user, void *client);

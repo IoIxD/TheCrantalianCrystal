@@ -1,13 +1,13 @@
-#include "registry.hpp"
+#include "desktop_varlink.hpp"
 #include "dynload.hpp"
 #include <csignal>
 #include <cstdio>
 #include <poll.h>
 
-TCCRegistryConnection::TCCRegistryConnection() {
+TCCVarlinkConnection::TCCVarlinkConnection() {
   int error = 0;
-  if ((error = varlink_connection_new(&mConn, "unix:@tcc_registry.socket")) !=
-      0) {
+  if ((error = varlink_connection_new(
+           &mConn, "unix:@tcc_desktop_varlink.socket")) != 0) {
     printf("[connection] varlink_connection_new error: %s\n",
            varlink_error_string(-error));
     mValidConn = false;
@@ -22,7 +22,7 @@ static long close_callback(VarlinkConnection *connection, const char *error,
   return 0;
 }
 
-void TCCRegistryConnection::InitiateClose() {
+void TCCVarlinkConnection::InitiateClose() {
   if (!mValidConn) {
     return;
   }
@@ -33,7 +33,8 @@ void TCCRegistryConnection::InitiateClose() {
     printf("varlink_object_new error\n");
     return;
   };
-  if (varlink_connection_call(mConn, "net.ioi-xd.tccdaemon.InitiateClose",
+  if (varlink_connection_call(mConn,
+                              "net.ioi-xd.tcc-desktop-varlink.InitiateClose",
                               parameters, 0, close_callback, this) != 0) {
     printf("varlink_connection_call error\n");
     return;
@@ -44,7 +45,7 @@ void TCCRegistryConnection::InitiateClose() {
   };
 }
 
-void TCCRegistryConnection::step() {
+void TCCVarlinkConnection::step() {
   if (!mValidConn) {
     return;
   }
