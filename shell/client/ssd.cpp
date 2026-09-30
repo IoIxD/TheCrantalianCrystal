@@ -148,6 +148,10 @@ void TCCClient::Window::setup_decor() {
 };
 
 void TCCClient::Window::decor_draw() {
+  if (!mEGLWindow) {
+    printf("WARNING: no %p\n", mEGLWindow);
+    return;
+  }
   wl_egl_window_resize(mEGLWindow, decor_width, decor_height, 0, 0);
 
   if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
