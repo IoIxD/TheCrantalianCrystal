@@ -9,6 +9,7 @@
 #include "gl_loader.hpp"
 #include "gtk_loader.hpp"
 #include "pulse_loader.hpp"
+#include "varlink_loader.hpp"
 #include "wayland_loader.h"
 
 WaylandLib *WL_LIB = nullptr;
@@ -18,6 +19,7 @@ GLLib *GL_LIB = nullptr;
 FreetypeLib *FT_LIB = nullptr;
 EGLLib *EGL_LIB = nullptr;
 DBusLib *DBUS_LIB = nullptr;
+VarlinkLib *VARLINK_LIB = nullptr;
 
 static void *open_library(std::initializer_list<const char *> sonames,
                           const char *what = "") {
@@ -63,7 +65,7 @@ bool pulse() {
   PL_LIB->handle = open_library({"libpulse.so.0", "libpulse.so"});
 
   if (!PL_LIB->handle) {
-    fprintf(stderr, "tcc_systray: could not load libpulse: %s\n", dlerror());
+    fprintf(stderr, "could not load libpulse: %s\n", dlerror());
     return false;
   }
 
@@ -71,7 +73,7 @@ bool pulse() {
   PL_LIB->name =                                                               \
       reinterpret_cast<decltype(PL_LIB->name)>(dlsym(PL_LIB->handle, #name));  \
   if (!PL_LIB->name) {                                                         \
-    fprintf(stderr, "tcc_systray: libpulse is missing symbol %s\n", #name);    \
+    fprintf(stderr, "libpulse is missing symbol %s\n", #name);                 \
     dlclose(PL_LIB->handle);                                                   \
     PL_LIB->handle = nullptr;                                                  \
     return false;                                                              \
@@ -191,7 +193,7 @@ bool dbus() {
       break;
   }
   if (!DBUS_LIB->handle) {
-    fprintf(stderr, "tcc_systray: could not load libdbus-1: %s\n", dlerror());
+    fprintf(stderr, "could not load libdbus-1: %s\n", dlerror());
     return false;
   }
 
@@ -199,7 +201,7 @@ bool dbus() {
   DBUS_LIB->name = reinterpret_cast<decltype(DBUS_LIB->name)>(                 \
       dlsym(DBUS_LIB->handle, #name));                                         \
   if (!DBUS_LIB->name) {                                                       \
-    fprintf(stderr, "tcc_systray: libdbus-1 is missing symbol %s\n", #name);   \
+    fprintf(stderr, "libdbus-1 is missing symbol %s\n", #name);                \
     dlclose(DBUS_LIB->handle);                                                 \
     DBUS_LIB->handle = nullptr;                                                \
     return false;                                                              \
@@ -210,4 +212,31 @@ bool dbus() {
   return true;
 }
 
+bool varlink() {
+  VARLINK_LIB = new VarlinkLib();
+
+  for (const char *soname : {"libvarlink.so.0", "libvarlink.so"}) {
+    VARLINK_LIB->handle = dlopen(soname, RTLD_NOW | RTLD_LOCAL);
+    if (VARLINK_LIB->handle)
+      break;
+  }
+  if (!VARLINK_LIB->handle) {
+    fprintf(stderr, "could not load libvarlink: %s\n", dlerror());
+    return false;
+  }
+
+#define X(name)                                                                \
+  VARLINK_LIB->name = reinterpret_cast<decltype(VARLINK_LIB->name)>(           \
+      dlsym(VARLINK_LIB->handle, #name));                                      \
+  if (!VARLINK_LIB->name) {                                                    \
+    fprintf(stderr, "libvarlink is missing symbol %s\n", #name);               \
+    dlclose(VARLINK_LIB->handle);                                              \
+    VARLINK_LIB->handle = nullptr;                                             \
+    return false;                                                              \
+  }
+  TCC_VARLINK_FUNCS(X)
+#undef X
+
+  return true;
+}
 } // namespace dynload_setup

@@ -8,4 +8,5 @@ bool gl();
 bool gtk();
 bool pulse();
 bool wayland();
+bool varlink();
 }; // namespace dynload_setup

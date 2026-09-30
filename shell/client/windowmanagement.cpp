@@ -42,22 +42,18 @@ void TCCClient::river_wm_manage_start(
   }
   client->output_adopt_orphans();
 
-  // Keep maximized windows filling their output if it moved or got resized.
+  // Keep maximized/fullscreen windows filling their output if it moved or got
+  // resized.
   for (Output *output : client->mOutputs) {
     if (!output->geometry_changed) {
       continue;
     }
     output->geometry_changed = false;
-    // (fullscreen ones are taken care of by the compositor)
     for (Window *window : output->windows) {
-      if (window->maximized && !window->fullscreen) {
-        client->window_apply_maximized(window, output);
-      }
+      client->window_apply_geometry(window, output);
     }
     for (Window *window : output->minimized_windows) {
-      if (window->maximized && !window->fullscreen) {
-        client->window_apply_maximized(window, output);
-      }
+      client->window_apply_geometry(window, output);
     }
   }
 
@@ -454,18 +450,6 @@ void TCCClient::output_maybe_destroy(Output *output) {
   output->windows.clear();
   output->minimized_windows.clear();
   for (Window *window : windows) {
-    if (window->fullscreen) {
-      // The compositor already took it out of fullscreen along with the
-      // output, it just needs its old geometry back.
-      window->fullscreen = window->want_fullscreen = false;
-      river_window_v1_inform_not_fullscreen(window->id);
-      if (!window->maximized && window->saved_width > 0) {
-        window->x = window->saved_x;
-        window->y = window->saved_y;
-        river_window_v1_propose_dimensions(window->id, window->saved_width,
-                                           window->saved_height);
-      }
-    }
     if (target) {
       // Not in any output's lists anymore, so move it in by hand.
       (window->minimized ? target->minimized_windows : target->windows)
@@ -558,9 +542,7 @@ void TCCClient::window_transfer(Window *window, Output *from, Output *to) {
       window->saved_x = to->x + SSD_BORDER_SIZE;
       window->saved_y = to->y + SSD_BORDER_SIZE_TOP;
     }
-    if (!window->fullscreen) {
-      window_apply_maximized(window, to);
-    }
+    window_apply_geometry(window, to);
     return;
   }
 
@@ -585,6 +567,23 @@ void TCCClient::window_update_output(Window *window) {
   if (out) {
     window_move_to_output(window, out);
   }
+}
+
+// Fills the output with a maximized or fullscreen window, no-op otherwise.
+void TCCClient::window_apply_geometry(Window *window, Output *out) {
+  if (window->fullscreen) {
+    window_apply_fullscreen(window, out);
+  } else if (window->maximized) {
+    window_apply_maximized(window, out);
+  }
+}
+
+void TCCClient::window_apply_fullscreen(Window *window, Output *out) {
+  window_set_position(window, out->x, out->y);
+  river_window_v1_propose_dimensions(window->id, out->width, out->height);
+  // The decoration sits outside the window content, so clipping to the
+  // output's size cuts it off.
+  river_window_v1_set_clip_box(window->id, 0, 0, out->width, out->height);
 }
 
 void TCCClient::window_apply_maximized(Window *window, Output *out) {
@@ -641,8 +640,8 @@ void TCCClient::window_set_position(Window *window, int32_t x, int32_t y) {
 }
 
 // Maximized and fullscreen are independent, e.g. a maximized window that goes
-// fullscreen comes back maximized. While fullscreen the compositor takes care
-// of the geometry, otherwise it's up to us.
+// fullscreen comes back maximized. Fullscreen is just the window resized to
+// cover its output with the decoration clipped away.
 void TCCClient::window_set_state(Window *window, bool maximized,
                                  bool fullscreen, Output *fullscreen_output) {
   Output *out = output_of(window);
@@ -670,13 +669,11 @@ void TCCClient::window_set_state(Window *window, bool maximized,
         window->saved_y += fullscreen_output->y - out->y;
         out = fullscreen_output;
       }
-      river_window_v1_fullscreen(window->id, out->id);
       river_window_v1_inform_fullscreen(window->id);
-      // Only the top fullscreen window gets shown.
       river_node_v1_place_top(window->node);
     } else {
-      river_window_v1_exit_fullscreen(window->id);
       river_window_v1_inform_not_fullscreen(window->id);
+      river_window_v1_set_clip_box(window->id, 0, 0, 0, 0);
     }
   }
   if (maximized != window->maximized) {
@@ -689,12 +686,8 @@ void TCCClient::window_set_state(Window *window, bool maximized,
   window->maximized = maximized;
   window->fullscreen = fullscreen;
 
-  if (fullscreen) {
-    return;
-  }
-  // Geometry has to be set in the same manage sequence as exit_fullscreen.
-  if (maximized) {
-    window_apply_maximized(window, out);
+  if (fullscreen || maximized) {
+    window_apply_geometry(window, out);
   } else if (window->saved_width > 0) {
     window_set_position(window, window->saved_x, window->saved_y);
     river_window_v1_propose_dimensions(window->id, window->saved_width,
@@ -916,6 +909,7 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
 }
 
 void TCCClient::launch_component(std::string name) {
+  printf("%s\n", name.c_str());
   char dest[PATH_MAX];
   memset(dest, 0, sizeof(dest));
   if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {

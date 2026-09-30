@@ -1,5 +1,6 @@
 #include "progman.hpp"
 #include "gtk_loader.hpp"
+#include "registry.hpp"
 #include "utils.hpp"
 #include <set>
 #include <string>
@@ -63,32 +64,34 @@ ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
       MwVaCreateWidget(MwViewportClass, NULL, mWindow, 5, 5, 630, 390, NULL);
   MwAddUserHandler(mWindow, MwNtickHandler, tick, this);
 
-  /*MwAddUserHandler(
-      mWindow, MwNcloseHandler,
-      +[](MwWidget handle, void *user, void *client) {
-        MwWidget msg = MwMessageBox(handle, "Break the Crantalian Crystal?",
-                                    "Close?", MwMB_BUTTONYESNO);
-        handle->close = 0;
+  mRegistry = new TCCRegistryConnection();
 
-        MwAddUserHandler(
-            MwMessageBoxGetChild(msg, MwMB_BUTTONYES), MwNactivateHandler,
-            +[](MwWidget handle, void *user, void *client) {
-              ProgmanWindow *th = (ProgmanWindow *)user;
+  if (mRegistry->open()) {
+    MwAddUserHandler(
+        mWindow, MwNcloseHandler,
+        +[](MwWidget handle, void *user, void *client) {
+          ProgmanWindow *th = (ProgmanWindow *)user;
+          handle->close = 0;
 
-              handle->close = 1;
-              th->mCloseCallback(th->mUserPtr);
-            },
-            user);
-        MwAddUserHandler(
-            MwMessageBoxGetChild(msg, MwMB_BUTTONNO), MwNactivateHandler,
-            +[](MwWidget handle, void *user, void *client) {
-              ProgmanWindow *th = (ProgmanWindow *)user;
-
-              MwDestroyWidget(MwGetParent(handle));
-            },
-            user);
-      },
-      this);*/
+          MwWidget msg =
+              MwMessageBox(th->mWindow, "Break the Crantalian Crystal?",
+                           "Close?", MwMB_BUTTONYESNO);
+          MwAddUserHandler(
+              MwMessageBoxGetChild(msg, MwMB_BUTTONYES), MwNactivateHandler,
+              +[](MwWidget handle, void *user, void *client) {
+                ((ProgmanWindow *)user)->mRegistry->InitiateClose();
+              },
+              th);
+          auto no = +[](MwWidget handle, void *user, void *client) {
+            MwDestroyWidget((MwWidget)user);
+          };
+          MwAddUserHandler(MwMessageBoxGetChild(msg, MwMB_BUTTONNO),
+                           MwNactivateHandler, no, msg);
+          MwAddUserHandler(MwMessageBoxGetChild(msg, MwMB_BUTTONNO),
+                           MwNcloseHandler, no, msg);
+        },
+        this);
+  }
 
   update_list();
 }
@@ -115,6 +118,8 @@ void ProgmanWindow::run() {
           break;
       }
     }
+
+    mRegistry->step();
   }
 }
 

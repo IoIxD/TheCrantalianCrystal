@@ -63,7 +63,8 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
 
 int main() {
   if (!dynload_setup::gtk() || !dynload_setup::egl() || !dynload_setup::gl() ||
-      !dynload_setup::wayland() || !dynload_setup::freetype()) {
+      !dynload_setup::wayland() || !dynload_setup::freetype() ||
+      !dynload_setup::varlink()) {
     return 1;
   };
 

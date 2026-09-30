@@ -10,6 +10,7 @@
 
 #include "../desktop/desktop.hpp"
 #include "../utils/glyph.hpp"
+#include "../varlink/daemon.hpp"
 #include <dlfcn.h>
 
 TCCClient::TCCClient() {
@@ -48,6 +49,9 @@ TCCClient::TCCClient() {
   }
 
   GlyphManager::Init();
+
+  mDaemon = new TCCRegistryDaemon(this);
+  mThread = new std::thread([&]() { mDaemon->run(); });
 
   // g_desktop_app_info_new();
 }
@@ -176,6 +180,7 @@ void TCCClient::run() {
 void TCCClient::launch_initial_components() {
   launch_component("tcc_systray");
   launch_component("tcc_progman");
+  launch_component("tcc_registry_daemon");
   // mProgmanThread = std::thread([&]() {
   //   extern __attribute__((visibility("default"))) int tcc_program_main(
   //       void (*close_callback)(void *user), void *user);

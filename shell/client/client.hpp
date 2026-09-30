@@ -25,6 +25,8 @@
 
 #include "../utils/glyph.hpp"
 
+#include "../varlink/daemon.hpp"
+
 #define SSD_BORDER_SIZE 5
 #define SSD_BORDER_LEEWAY 5
 #define SSD_BORDER_SIZE_TOP 32
@@ -303,6 +305,9 @@ private:
   // Processes we spawned that haven't been reaped yet.
   std::vector<pid_t> mChildren;
 
+  TCCRegistryDaemon *mDaemon;
+  std::thread *mThread;
+
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
       .global_remove = global_remove,
@@ -549,6 +554,8 @@ private:
   void window_move_to_output(Window *window, Output *output);
   void window_transfer(Window *window, Output *from, Output *to);
   void window_update_output(Window *window);
+  void window_apply_geometry(Window *window, Output *output);
+  void window_apply_fullscreen(Window *window, Output *output);
   void window_apply_maximized(Window *window, Output *output);
 
   void window_maybe_destroy(Window *window);

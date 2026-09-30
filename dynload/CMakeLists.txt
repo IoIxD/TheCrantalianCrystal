@@ -23,6 +23,7 @@ pkg_check_modules(deps REQUIRED
   egl
   wayland-egl
   freetype2
+  libvarlink
 )
 
 # Dependencies that do not need to be avaliable at runtime.

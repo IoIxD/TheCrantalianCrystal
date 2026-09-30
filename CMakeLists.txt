@@ -16,6 +16,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dynload)
 add_subdirectory(iconlib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/iconlib)
 
+add_subdirectory(registry)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/registry)
+
 add_subdirectory(shell)
 add_subdirectory(progman)
 add_subdirectory(systray)

@@ -1,0 +1,3 @@
+interface net.ioi-xd.tccdaemon
+
+method InitiateClose() -> ()
