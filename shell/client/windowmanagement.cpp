@@ -817,16 +817,20 @@ void TCCClient::window_manage(Window *window) {
     // A window that started out maximized/fullscreen is already where it
     // should be, it only needs showing.
     if (!window->maximized && !window->fullscreen) {
-      window_set_position(window,
-                          out->x + ((out->width / 2) - (window->width / 2)) +
-                              SSD_BORDER_SIZE,
-                          out->y + ((out->height / 2) - (window->height / 2)) +
-                              SSD_BORDER_SIZE_TOP);
+      // Undecorated windows can end up here too, after being unmaximized
+      // without ever having had a size of their own.
+      int border_x = window->has_decor ? SSD_BORDER_SIZE : 0;
+      int border_y = window->has_decor ? SSD_BORDER_SIZE_TOP : 0;
+      window_set_position(
+          window, out->x + ((out->width / 2) - (window->width / 2)) + border_x,
+          out->y + ((out->height / 2) - (window->height / 2)) + border_y);
     }
     window->center_requested = false;
     river_window_v1_show(window->id);
 
-    window->decor_draw();
+    if (window->has_decor) {
+      window->decor_draw();
+    }
   }
 }
 
