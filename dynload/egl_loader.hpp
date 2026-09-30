@@ -17,7 +17,8 @@
   X(eglInitialize)                                                             \
   X(eglMakeCurrent)                                                            \
   X(eglSwapBuffers)                                                            \
-  X(eglSwapInterval)
+  X(eglSwapInterval)                                                           \
+  X(eglTerminate)
 
 #define TCC_WAYLAND_EGL_FUNCS(X)                                               \
   X(wl_egl_window_create)                                                      \
@@ -50,6 +51,7 @@ extern EGLLib *EGL_LIB;
 #define eglMakeCurrent EGL_LIB->eglMakeCurrent
 #define eglSwapBuffers EGL_LIB->eglSwapBuffers
 #define eglSwapInterval EGL_LIB->eglSwapInterval
+#define eglTerminate EGL_LIB->eglTerminate
 #define wl_egl_window_create EGL_LIB->wl_egl_window_create
 #define wl_egl_window_destroy EGL_LIB->wl_egl_window_destroy
 #define wl_egl_window_resize EGL_LIB->wl_egl_window_resize

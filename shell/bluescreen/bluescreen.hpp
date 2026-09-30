@@ -21,7 +21,8 @@ class TCCBluescreenClient {
 
   wl_display *mDisplay = nullptr;
   wl_registry *mRegistry;
-  wl_compositor *mCompositor;
+  wl_compositor *mCompositor = nullptr;
+  wl_output *mWlOutput = nullptr;
 
   wl_surface *mSurface;
 
@@ -31,7 +32,7 @@ class TCCBluescreenClient {
   EGLConfig mEGLConfig;
   EGLSurface mEGLSurface;
 
-  zwlr_layer_shell_v1 *mLayerShell;
+  zwlr_layer_shell_v1 *mLayerShell = nullptr;
   zwlr_layer_surface_v1 *mLayerSurface;
 
   GlyphManager mGlyphManager;

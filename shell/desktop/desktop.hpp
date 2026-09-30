@@ -25,9 +25,11 @@ class TCCDesktopClient {
 
   wl_display *mDisplay;
   wl_registry *mRegistry;
-  wl_compositor *mCompositor;
+  wl_compositor *mCompositor = nullptr;
+  // Our output's wl_output, bound on this connection.
+  wl_output *mWlOutput = nullptr;
 
-  wl_surface *mSurface;
+  wl_surface *mSurface = nullptr;
 
   wl_seat *mSeat = nullptr;
   wl_pointer *mPointer = nullptr;
@@ -52,8 +54,8 @@ class TCCDesktopClient {
   IconManager mIconManager;
   std::unordered_map<TCCClient::Window *, IconInf> mWindowIcons;
 
-  zwlr_layer_shell_v1 *mLayerShell;
-  zwlr_layer_surface_v1 *mLayerSurface;
+  zwlr_layer_shell_v1 *mLayerShell = nullptr;
+  zwlr_layer_surface_v1 *mLayerSurface = nullptr;
 
   GLuint mTexture;
 

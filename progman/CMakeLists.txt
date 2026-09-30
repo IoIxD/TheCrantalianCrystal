@@ -7,5 +7,6 @@ find_package(PkgConfig REQUIRED)
 
 file(GLOB_RECURSE sources *.cpp *.c)
 
-add_library(${PROJECT_NAME} SHARED ${sources})
-target_link_libraries(${PROJECT_NAME} PRIVATE Mw tcc_iconlib)
+# add_library(${PROJECT_NAME} SHARED ${sources})
+add_executable(${PROJECT_NAME} ${sources})
+target_link_libraries(${PROJECT_NAME} PRIVATE Mw tcc_iconlib tcc_dynload)
