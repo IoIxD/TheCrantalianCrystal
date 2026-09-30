@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 #include <filesystem>
 #include <format>
+#include <limits.h>
 #include <poll.h>
 #include <string>
 #include <unistd.h>
