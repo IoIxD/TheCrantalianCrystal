@@ -34,10 +34,33 @@ void TCCClient::river_wm_manage_start(
   // Destroy closed windows and removed outputs/seats.
   // also update any of the outputs' desktop clients
   for (Output *output : client->mOutputs) {
-    output->desktop_client->step();
+    if (output->desktop_client) {
+      output->desktop_client->step();
+    }
 
     client->output_maybe_destroy(output);
   }
+  client->output_adopt_orphans();
+
+  // Keep maximized windows filling their output if it moved or got resized.
+  for (Output *output : client->mOutputs) {
+    if (!output->geometry_changed) {
+      continue;
+    }
+    output->geometry_changed = false;
+    // (fullscreen ones are taken care of by the compositor)
+    for (Window *window : output->windows) {
+      if (window->maximized && !window->fullscreen) {
+        client->window_apply_maximized(window, output);
+      }
+    }
+    for (Window *window : output->minimized_windows) {
+      if (window->maximized && !window->fullscreen) {
+        client->window_apply_maximized(window, output);
+      }
+    }
+  }
+
   for (Output *output : client->mOutputs) {
     std::vector<Window *> windows;
     windows.insert(windows.end(), output->windows.begin(),
@@ -49,21 +72,32 @@ void TCCClient::river_wm_manage_start(
       if (window->queue_minimize) {
         client->window_minimize(window);
         window->queue_minimize = false;
-        client->seat_focus(client->mSeats[0], window);
-        output->desktop_client->step();
+        if (!window->minimized) {
+          client->seat_focus(client->mSeats[0], window);
+        }
+        if (output->desktop_client) {
+          output->desktop_client->step();
+        }
       }
       client->window_maybe_destroy(window);
     }
+  }
+  for (Window *window : client->mOrphanedWindows) {
+    client->window_maybe_destroy(window);
   }
   for (Seat *seat : client->mSeats) {
     client->seat_maybe_destroy(seat);
   }
 
   // Carry out window management policy
+  // (iterating over a copy, minimizing takes windows out of the list)
   for (Output *output : client->mOutputs) {
-    for (Window *window : output->windows) {
+    for (Window *window : std::vector<Window *>(output->windows)) {
       client->window_manage(window);
     }
+  }
+  for (Window *window : client->mOrphanedWindows) {
+    client->window_manage(window);
   }
   for (Seat *seat : client->mSeats) {
     client->seat_manage(seat);
@@ -83,7 +117,7 @@ void TCCClient::river_wm_render_start(
 
   for (Output *output : client->mOutputs) {
     for (Window *window : output->windows) {
-      if (window->has_decor && !window->hide_decor) {
+      if (window->has_decor) {
         window->decor_draw();
         client->window_position_nav_surfaces(window);
         client->window_position_resize_surfaces(window);
@@ -120,8 +154,12 @@ void TCCClient::river_wm_window(
   river_window_v1_add_listener(window->id, &client->mRiverWindowListener,
                                window);
 
-  /* todo: whatever output the cursor is on. */
-  client->mOutputs[0]->windows.push_back(window);
+  Output *output = client->output_under_pointer();
+  if (output) {
+    output->windows.push_back(window);
+  } else {
+    client->mOrphanedWindows.push_back(window);
+  }
 }
 
 void TCCClient::river_wm_output(
@@ -252,36 +290,33 @@ void TCCClient::river_window_parent(void *data, struct river_window_v1 *id,
 
 void TCCClient::river_window_show_window_menu_requested(
     void *data, struct river_window_v1 *id, int32_t x, int32_t y) {}
+// These arrive before manage_start, so they only record what the window wants
+// and window_manage carries it out.
 void TCCClient::river_window_maximize_requested(void *data,
                                                 struct river_window_v1 *id) {
   Window *window = (Window *)data;
-  window->client->window_maximize(window);
+  window->want_maximized = true;
 }
 void TCCClient::river_window_unmaximize_requested(void *data,
                                                   struct river_window_v1 *id) {
   Window *window = (Window *)data;
-  window->client->window_maximize(window);
+  window->want_maximized = false;
 }
 void TCCClient::river_window_fullscreen_requested(
     void *data, struct river_window_v1 *id, struct river_output_v1 *output) {
   Window *window = (Window *)data;
-  printf("fullscreen detected\n");
-  window->client->window_maximize(window);
-  window->hide_decor = true;
-
-  window->client->seat_focus(window->client->mSeats[0], window);
+  window->want_fullscreen = true;
+  window->want_fullscreen_output = output;
 }
 void TCCClient::river_window_exit_fullscreen_requested(
     void *data, struct river_window_v1 *id) {
   Window *window = (Window *)data;
-  printf("fullscreen undetected\n");
-  window->hide_decor = false;
-  window->client->window_maximize(window);
+  window->want_fullscreen = false;
 }
 void TCCClient::river_window_minimize_requested(void *data,
                                                 struct river_window_v1 *id) {
   Window *window = (Window *)data;
-  window->client->window_minimize(window);
+  window->want_minimized = true;
 }
 void TCCClient::river_window_unreliable_pid(void *data,
                                             struct river_window_v1 *id,
@@ -300,8 +335,7 @@ void TCCClient::river_output_removed(void *data, struct river_output_v1 *id) {
 void TCCClient::river_output_wl_output(void *data, struct river_output_v1 *id,
                                        uint32_t name) {
   TCCClient::Output *output = (TCCClient::Output *)data;
-  output->width = 10;
-  output->height = 10;
+  output->wl_output_name = name;
   output->desktop_client = std::make_unique<TCCDesktopClient>(output);
 }
 void TCCClient::river_output_position(void *data, struct river_output_v1 *id,
@@ -309,12 +343,14 @@ void TCCClient::river_output_position(void *data, struct river_output_v1 *id,
   TCCClient::Output *output = (TCCClient::Output *)data;
   output->x = x;
   output->y = y;
+  output->geometry_changed = true;
 }
 void TCCClient::river_output_dimensions(void *data, struct river_output_v1 *id,
                                         int32_t width, int32_t height) {
   TCCClient::Output *output = (TCCClient::Output *)data;
   output->width = (width < 1) ? 1 : width;
   output->height = (height < 1) ? 1 : height;
+  output->geometry_changed = true;
 }
 
 void TCCClient::river_seat_removed(void *data, struct river_seat_v1 *id) {
@@ -339,7 +375,7 @@ void TCCClient::river_seat_window_interaction(void *data,
   Seat *seat = (Seat *)data;
   seat->interacted = (Window *)river_window_v1_get_user_data(window);
 
-  if (seat->interacted->maximized) {
+  if (seat->interacted->maximized || seat->interacted->fullscreen) {
     return;
   }
 
@@ -400,9 +436,168 @@ void TCCClient::output_maybe_destroy(Output *output) {
   if (!output->removed) {
     return;
   }
-  river_output_v1_destroy(output->id);
   std::erase(mOutputs, output);
+
+  // Hand the windows over to another output so they don't end up stranded
+  // off-screen, or stash them until one shows up if this was the last.
+  Output *target = nullptr;
+  for (Output *out : mOutputs) {
+    if (!out->removed) {
+      target = out;
+      break;
+    }
+  }
+  std::vector<Window *> windows;
+  windows.insert(windows.end(), output->windows.begin(), output->windows.end());
+  windows.insert(windows.end(), output->minimized_windows.begin(),
+                 output->minimized_windows.end());
+  output->windows.clear();
+  output->minimized_windows.clear();
+  for (Window *window : windows) {
+    if (window->fullscreen) {
+      // The compositor already took it out of fullscreen along with the
+      // output, it just needs its old geometry back.
+      window->fullscreen = window->want_fullscreen = false;
+      river_window_v1_inform_not_fullscreen(window->id);
+      if (!window->maximized && window->saved_width > 0) {
+        window->x = window->saved_x;
+        window->y = window->saved_y;
+        river_window_v1_propose_dimensions(window->id, window->saved_width,
+                                           window->saved_height);
+      }
+    }
+    if (target) {
+      // Not in any output's lists anymore, so move it in by hand.
+      (window->minimized ? target->minimized_windows : target->windows)
+          .push_back(window);
+      window_transfer(window, output, target);
+    } else {
+      mOrphanedWindows.push_back(window);
+    }
+  }
+
+  river_output_v1_destroy(output->id);
   delete output;
+}
+
+void TCCClient::output_adopt_orphans() {
+  if (mOrphanedWindows.empty()) {
+    return;
+  }
+  Output *target = output_under_pointer();
+  if (!target) {
+    return;
+  }
+  for (Window *window : std::vector<Window *>(mOrphanedWindows)) {
+    window_move_to_output(window, target);
+    window_transfer(window, nullptr, target);
+  }
+}
+
+TCCClient::Output *TCCClient::output_of(Window *window) {
+  for (Output *out : mOutputs) {
+    if (std::find(out->windows.begin(), out->windows.end(), window) !=
+            out->windows.end() ||
+        std::find(out->minimized_windows.begin(), out->minimized_windows.end(),
+                  window) != out->minimized_windows.end()) {
+      return out;
+    }
+  }
+  return nullptr;
+}
+
+TCCClient::Output *TCCClient::output_at(int x, int y) {
+  for (Output *out : mOutputs) {
+    if (!out->removed && out->contains(x, y)) {
+      return out;
+    }
+  }
+  return nullptr;
+}
+
+TCCClient::Output *TCCClient::output_under_pointer() {
+  if (!mSeats.empty()) {
+    Output *out = output_at(mSeats[0]->pointer_x, mSeats[0]->pointer_y);
+    if (out) {
+      return out;
+    }
+  }
+  for (Output *out : mOutputs) {
+    if (!out->removed) {
+      return out;
+    }
+  }
+  return nullptr;
+}
+
+void TCCClient::window_move_to_output(Window *window, Output *output) {
+  Output *from = output_of(window);
+  if (from == output) {
+    return;
+  }
+  if (from) {
+    std::erase(from->windows, window);
+    std::erase(from->minimized_windows, window);
+  } else {
+    std::erase(mOrphanedWindows, window);
+  }
+  (window->minimized ? output->minimized_windows : output->windows)
+      .push_back(window);
+}
+
+// Moves the window's position from one output's space over to another's,
+// keeping it at the same place relative to the output. `from` is nullptr if
+// that's unknown, in which case it's only made sure to be on `to`.
+void TCCClient::window_transfer(Window *window, Output *from, Output *to) {
+  if (window->maximized || window->fullscreen) {
+    // Otherwise unmaximizing would put it back on the old output.
+    if (from) {
+      window->saved_x += to->x - from->x;
+      window->saved_y += to->y - from->y;
+    } else {
+      window->saved_x = to->x + SSD_BORDER_SIZE;
+      window->saved_y = to->y + SSD_BORDER_SIZE_TOP;
+    }
+    if (!window->fullscreen) {
+      window_apply_maximized(window, to);
+    }
+    return;
+  }
+
+  int x = window->x, y = window->y;
+  if (from) {
+    x += to->x - from->x;
+    y += to->y - from->y;
+  }
+  // The new output might be smaller, keep the titlebar reachable.
+  if (!to->contains(x, y)) {
+    x = to->x + SSD_BORDER_SIZE;
+    y = to->y + SSD_BORDER_SIZE_TOP;
+  }
+  window_set_position(window, x, y);
+}
+
+// Reassigns the window to whichever output its center is on, e.g. after it
+// got dragged over to another one.
+void TCCClient::window_update_output(Window *window) {
+  Output *out =
+      output_at(window->x + window->width / 2, window->y + window->height / 2);
+  if (out) {
+    window_move_to_output(window, out);
+  }
+}
+
+void TCCClient::window_apply_maximized(Window *window, Output *out) {
+  if (window->has_decor) {
+    window_set_position(window, out->x + SSD_BORDER_SIZE,
+                        out->y + SSD_BORDER_SIZE_TOP);
+    river_window_v1_propose_dimensions(
+        window->id, out->width - (SSD_BORDER_SIZE * 2),
+        out->height - SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE);
+  } else {
+    window_set_position(window, out->x, out->y);
+    river_window_v1_propose_dimensions(window->id, out->width, out->height);
+  }
 }
 
 void TCCClient::window_maybe_destroy(Window *window) {
@@ -432,16 +627,10 @@ void TCCClient::window_maybe_destroy(Window *window) {
   river_window_v1_destroy(window->id);
 
   for (auto out : mOutputs) {
-    for (auto win : out->windows) {
-      if (!out->windows.empty()) {
-        if (win == window) {
-          std::erase(out->windows, window);
-          std::erase(out->minimized_windows, window);
-          break;
-        };
-      }
-    }
+    std::erase(out->windows, window);
+    std::erase(out->minimized_windows, window);
   }
+  std::erase(mOrphanedWindows, window);
   delete window;
 }
 
@@ -451,60 +640,94 @@ void TCCClient::window_set_position(Window *window, int32_t x, int32_t y) {
   window->y = y;
 }
 
-void TCCClient::window_maximize(Window *window) {
-  for (auto out : mOutputs) {
-    for (auto win : out->windows) {
-      if (win == window) {
-        win->maximized = !win->maximized;
-        if (win->maximized) {
-          win->saved_x = win->x;
-          win->saved_y = win->y;
-          win->saved_width = win->width;
-          win->saved_height = win->height;
-          if (win->has_decor && !window->hide_decor) {
-            window_set_position(window, SSD_BORDER_SIZE, SSD_BORDER_SIZE_TOP);
-            river_window_v1_propose_dimensions(
-                win->id, out->width - (SSD_BORDER_SIZE * 2),
-                out->height - SSD_BORDER_SIZE_TOP - SSD_BORDER_SIZE);
-          } else {
-            window_set_position(window, 0, 0);
-            river_window_v1_propose_dimensions(win->id, out->width,
-                                               out->height);
-          }
-          river_window_v1_inform_maximized(win->id);
-        } else {
-          window_set_position(win, win->saved_x, win->saved_y);
-          river_window_v1_propose_dimensions(win->id, win->saved_width,
-                                             win->saved_height);
-          river_window_v1_inform_unmaximized(win->id);
-        }
-        break;
-      };
+// Maximized and fullscreen are independent, e.g. a maximized window that goes
+// fullscreen comes back maximized. While fullscreen the compositor takes care
+// of the geometry, otherwise it's up to us.
+void TCCClient::window_set_state(Window *window, bool maximized,
+                                 bool fullscreen, Output *fullscreen_output) {
+  Output *out = output_of(window);
+  if (!out) {
+    return;
+  }
+  if (maximized == window->maximized && fullscreen == window->fullscreen) {
+    return;
+  }
+
+  bool was_floating = !window->maximized && !window->fullscreen;
+  if (was_floating) {
+    window->saved_x = window->x;
+    window->saved_y = window->y;
+    window->saved_width = window->width;
+    window->saved_height = window->height;
+  }
+
+  if (fullscreen != window->fullscreen) {
+    if (fullscreen) {
+      if (fullscreen_output && fullscreen_output != out) {
+        window_move_to_output(window, fullscreen_output);
+        // So leaving fullscreen puts it back on the output it's now on.
+        window->saved_x += fullscreen_output->x - out->x;
+        window->saved_y += fullscreen_output->y - out->y;
+        out = fullscreen_output;
+      }
+      river_window_v1_fullscreen(window->id, out->id);
+      river_window_v1_inform_fullscreen(window->id);
+      // Only the top fullscreen window gets shown.
+      river_node_v1_place_top(window->node);
+    } else {
+      river_window_v1_exit_fullscreen(window->id);
+      river_window_v1_inform_not_fullscreen(window->id);
     }
+  }
+  if (maximized != window->maximized) {
+    if (maximized) {
+      river_window_v1_inform_maximized(window->id);
+    } else {
+      river_window_v1_inform_unmaximized(window->id);
+    }
+  }
+  window->maximized = maximized;
+  window->fullscreen = fullscreen;
+
+  if (fullscreen) {
+    return;
+  }
+  // Geometry has to be set in the same manage sequence as exit_fullscreen.
+  if (maximized) {
+    window_apply_maximized(window, out);
+  } else if (window->saved_width > 0) {
+    window_set_position(window, window->saved_x, window->saved_y);
+    river_window_v1_propose_dimensions(window->id, window->saved_width,
+                                       window->saved_height);
+  } else {
+    // Never had a size of its own, let it pick one and center it.
+    window->center_requested = true;
+    river_window_v1_propose_dimensions(window->id, 0, 0);
   }
 }
 
 void TCCClient::window_minimize(Window *window) {
-  for (auto out : mOutputs) {
-    std::vector<Window *> windows;
-    windows.insert(windows.end(), out->windows.begin(), out->windows.end());
-    windows.insert(windows.end(), out->minimized_windows.begin(),
-                   out->minimized_windows.end());
-    for (auto win : windows) {
-      if (win == window) {
-        win->minimized = !win->minimized;
-        if (win->minimized) {
-          std::erase(out->windows, window);
-          out->minimized_windows.push_back(window);
-          river_window_v1_hide(window->id);
-        } else {
-          std::erase(out->minimized_windows, window);
-          out->windows.push_back(window);
-          river_window_v1_show(window->id);
-        }
-        break;
+  Output *out = output_of(window);
+  if (!out) {
+    return;
+  }
+  window->minimized = !window->minimized;
+  window->want_minimized = false;
+  if (window->minimized) {
+    std::erase(out->windows, window);
+    out->minimized_windows.push_back(window);
+    river_window_v1_hide(window->id);
+    // Don't leave keyboard input going to a hidden window. seat_manage picks
+    // the next window to focus.
+    for (Seat *seat : mSeats) {
+      if (seat->focused == window) {
+        seat_focus(seat, nullptr);
       }
     }
+  } else {
+    std::erase(out->minimized_windows, window);
+    out->windows.push_back(window);
+    river_window_v1_show(window->id);
   }
 }
 
@@ -516,7 +739,7 @@ void TCCClient::window_manage(Window *window) {
                         RIVER_WINDOW_V1_CAPABILITIES_MINIMIZE |
                         RIVER_WINDOW_V1_CAPABILITIES_FULLSCREEN);
 
-    if (window->has_decor && !window->hide_decor) {
+    if (window->has_decor) {
       window->center_requested = true;
       river_window_v1_hide(window->id); /* hide the window so that we don't see
                                            it in its initial position */
@@ -524,19 +747,28 @@ void TCCClient::window_manage(Window *window) {
       window->setup_decor();
       window->decor_draw();
     } else {
-      window_set_position(window, 0, 0);
+      Output *out = output_of(window);
+      window_set_position(window, out ? out->x : 0, out ? out->y : 0);
     }
     river_window_v1_propose_dimensions(window->id, 0, 0);
+
+    // Focus new windows as they open. seat_manage runs after this and does the
+    // actual focusing, a click in the same manage sequence takes priority.
+    for (Seat *seat : mSeats) {
+      if (!seat->interacted) {
+        seat->interacted = window;
+      }
+    }
   }
   switch (window->pending_nav_action) {
   case NAV_BUTTON_CLOSE:
     river_window_v1_close(window->id);
     break;
   case NAV_BUTTON_MAX:
-    window_maximize(window);
+    window->want_maximized = !window->maximized;
     break;
   case NAV_BUTTON_MIN:
-    window_minimize(window);
+    window->want_minimized = true;
     break;
   default:
     break;
@@ -544,30 +776,52 @@ void TCCClient::window_manage(Window *window) {
   window->pending_nav_action = NAV_BUTTON_NONE;
 
   if (window->pointer_move_requested != nullptr) {
-    if (window->maximized) {
-      window_maximize(window);
+    if (!window->fullscreen) {
+      // Dragging a maximized window off unmaximizes it.
+      window->want_maximized = false;
+      window_set_state(window, false, false);
+      seat_pointer_move(window->pointer_move_requested, window);
     }
-    seat_pointer_move(window->pointer_move_requested, window);
     window->pointer_move_requested = nullptr;
   }
   if (window->pointer_resize_requested != nullptr) {
-    if (!window->maximized) {
+    if (!window->maximized && !window->fullscreen) {
       seat_pointer_resize(window->pointer_resize_requested, window,
                           window->pointer_resize_requested_edges);
     }
     window->pointer_resize_requested = nullptr;
   }
 
-  if (window->center_requested && window->width > 0 && window->height > 0) {
-    for (auto out : mOutputs) {
-      for (auto win : out->windows) {
-        if (win == window) {
-          window_set_position(
-              window, ((out->width / 2) - (win->width / 2)) + SSD_BORDER_SIZE,
-              ((out->height / 2) - (win->height / 2)) + SSD_BORDER_SIZE_TOP);
-          break;
-        }
+  if (window->want_maximized != window->maximized ||
+      window->want_fullscreen != window->fullscreen) {
+    Output *fullscreen_output = nullptr;
+    for (Output *o : mOutputs) {
+      if (!o->removed && o->id == window->want_fullscreen_output) {
+        fullscreen_output = o;
       }
+    }
+    window_set_state(window, window->want_maximized, window->want_fullscreen,
+                     fullscreen_output);
+  }
+  window->want_fullscreen_output = nullptr;
+
+  // Last, since it takes the window out of the output's window list.
+  if (window->want_minimized && !window->minimized) {
+    window_minimize(window);
+  }
+
+  // Orphaned windows wait for an output before getting centered on it.
+  Output *out = output_of(window);
+  if (window->center_requested && out && window->width > 0 &&
+      window->height > 0) {
+    // A window that started out maximized/fullscreen is already where it
+    // should be, it only needs showing.
+    if (!window->maximized && !window->fullscreen) {
+      window_set_position(window,
+                          out->x + ((out->width / 2) - (window->width / 2)) +
+                              SSD_BORDER_SIZE,
+                          out->y + ((out->height / 2) - (window->height / 2)) +
+                              SSD_BORDER_SIZE_TOP);
     }
     window->center_requested = false;
     river_window_v1_show(window->id);
@@ -603,21 +857,8 @@ void TCCClient::seat_maybe_destroy(Seat *seat) {
   delete seat;
 }
 
+// Passing nullptr clears focus.
 void TCCClient::seat_focus(Seat *seat, Window *window) {
-  // Focus the top window (if any) when there is no explicit target.
-  if (!window) {
-    for (auto out : mOutputs) {
-      for (auto win : out->windows) {
-        if (win == window) {
-          if (!out->windows.empty()) {
-            window = out->windows.back();
-            break;
-          };
-        }
-      }
-    }
-  }
-
   if (seat->focused == window) {
     return;
   }
@@ -745,13 +986,14 @@ void TCCClient::seat_action(Seat *seat, Action action) {
       river_window_v1_close(seat->focused->id);
     }
     break;
-  case ACTION_FOCUS_NEXT:
-    /* todo: whatever output the cursor is on. */
-    if (!mOutputs[0]->windows.empty()) {
+  case ACTION_FOCUS_NEXT: {
+    Output *out = output_under_pointer();
+    if (out && !out->windows.empty()) {
       // Focus the bottom window
-      seat_focus(seat, mOutputs[0]->windows.front());
+      seat_focus(seat, out->windows.front());
     }
     break;
+  }
   case ACTION_MOVE:
     if (seat->op == SEAT_OP_NONE && seat->hovered != nullptr) {
       seat_pointer_move(seat, seat->hovered);
@@ -768,6 +1010,7 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     river_window_manager_v1_exit_session(mRiverWindowManager);
     break;
   case ACTION_SPAWN_SIGSEGV: {
+    printf("segfault spawn?\n");
     void (*func)() = nullptr;
     func();
     break;
@@ -805,10 +1048,16 @@ void TCCClient::seat_manage(Seat *seat) {
         XKB_KEY_F2, ACTION_SPAWN_SIGSEGV);
   }
 
-  // If no window was interacted with in the current manage sequence,
-  // intentionally pass nullptr to ensure the window on top has focus.
-  // This is necessary to handle new windows for example.
-  seat_focus(seat, seat->interacted);
+  // Only touch focus when a window was interacted with, or the focused one
+  // went away (closed/minimized), in which case the top window takes over.
+  // Otherwise every unrelated manage sequence would steal focus.
+  if (seat->interacted) {
+    seat_focus(seat, seat->interacted);
+  } else if (!seat->focused) {
+    Output *out = output_under_pointer();
+    seat_focus(seat,
+               (out && !out->windows.empty()) ? out->windows.back() : nullptr);
+  }
 
   seat->interacted = nullptr;
 
@@ -820,6 +1069,7 @@ void TCCClient::seat_manage(Seat *seat) {
     break;
   case SEAT_OP_MOVE:
     if (seat->op_release) {
+      window_update_output(seat->op_window);
       river_seat_v1_op_end(seat->id);
       seat->op = SEAT_OP_NONE;
       seat->op_window = nullptr;
@@ -828,6 +1078,7 @@ void TCCClient::seat_manage(Seat *seat) {
   case SEAT_OP_RESIZE: {
     if (seat->op_release) {
       river_window_v1_inform_resize_end(seat->op_window->id);
+      window_update_output(seat->op_window);
       river_seat_v1_op_end(seat->id);
       seat->op = SEAT_OP_NONE;
       seat->op_window = nullptr;
@@ -1113,9 +1364,11 @@ void TCCClient::window_position_resize_surfaces(Window *window) {
       continue;
     }
 
-    // Maximized windows can't be resized, so unmap the surfaces entirely.
-    int width = window->maximized ? 0 : rects[i].width;
-    int height = window->maximized ? 0 : rects[i].height;
+    // Maximized and fullscreen windows can't be resized, so unmap the
+    // surfaces entirely.
+    bool fixed = window->maximized || window->fullscreen;
+    int width = fixed ? 0 : rects[i].width;
+    int height = fixed ? 0 : rects[i].height;
 
     // Like the nav surfaces, these are synchronized, so the new size and
     // position land with the decoration's commit.

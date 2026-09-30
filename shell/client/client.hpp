@@ -107,10 +107,12 @@ public:
     river_node_v1 *node = nullptr;
     bool is_new = false;
     bool closed = false;
+    // Geometry to go back to once neither maximized nor fullscreen. A
+    // saved_width of 0 means there isn't one yet, e.g. it went fullscreen
+    // straight away.
     int saved_x = 0, saved_y = 0;
     int saved_width = 0, saved_height = 0;
 
-    bool hide_decor = false;
     bool has_decor = false;
     river_decoration_v1 *decor_decor = nullptr;
     wl_surface *decor_surface = nullptr;
@@ -154,6 +156,15 @@ public:
 
     bool maximized = false;
     bool minimized = false;
+    bool fullscreen = false;
+
+    // What the window (or the user) asked for. These can only be acted on in
+    // a manage sequence, so the requests just set these, see window_manage.
+    bool want_maximized = false;
+    bool want_fullscreen = false;
+    // Output hint that came with the fullscreen request, may be null.
+    river_output_v1 *want_fullscreen_output = nullptr;
+    bool want_minimized = false;
 
     bool close_held = false;
     bool minimize_held = false;
@@ -186,11 +197,17 @@ public:
   public:
     std::shared_ptr<TCCClient> client;
     river_output_v1 *id;
+    uint32_t wl_output_name = 0;
     bool removed = false;
+    bool geometry_changed = false;
     int x = 0;
     int y = 0;
     int width = 10;
     int height = 10;
+
+    bool contains(int px, int py) const {
+      return px >= x && px < x + width && py >= y && py < y + height;
+    }
     std::unique_ptr<class TCCDesktopClient> desktop_client;
     std::vector<Window *> windows;
     std::vector<Window *> minimized_windows;
@@ -271,6 +288,10 @@ private:
   std::vector<Output *> mOutputs;
   std::vector<Seat *> mSeats;
 
+  // Windows that exist while there are no outputs to put them on. They get
+  // adopted by the next output that shows up.
+  std::vector<Window *> mOrphanedWindows;
+
   // wl_seat global name -> advertised version
   std::unordered_map<uint32_t, uint32_t> mWlSeatVersions;
 
@@ -298,7 +319,7 @@ private:
   river_xkb_bindings_v1 *mRiverXKBBinding = nullptr;
   wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
 
-  std::thread mProgmanThread;
+  // std::thread mProgmanThread;
 
   const river_window_manager_v1_listener mRiverWindowManagementListener = {
       .unavailable = river_wm_unavailable,
@@ -521,6 +542,14 @@ private:
 
   // Window management policy helpers, ported from tinyrwm.c.
   void output_maybe_destroy(Output *output);
+  void output_adopt_orphans();
+  Output *output_of(Window *window);
+  Output *output_at(int x, int y);
+  Output *output_under_pointer();
+  void window_move_to_output(Window *window, Output *output);
+  void window_transfer(Window *window, Output *from, Output *to);
+  void window_update_output(Window *window);
+  void window_apply_maximized(Window *window, Output *output);
 
   void window_maybe_destroy(Window *window);
   void window_set_position(Window *window, int32_t x, int32_t y);
@@ -567,7 +596,8 @@ public:
   TCCClient();
   ~TCCClient();
   void run();
-  void window_maximize(Window *window);
+  void window_set_state(Window *window, bool maximized, bool fullscreen,
+                        Output *fullscreen_output = nullptr);
   void window_minimize(Window *window);
 
   void dirty() { river_window_manager_v1_manage_dirty(mRiverWindowManager); }

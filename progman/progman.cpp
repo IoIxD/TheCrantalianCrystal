@@ -49,8 +49,8 @@ void ProgmanWindow::update_list() {
   }
 }
 
-ProgmanWindow::ProgmanWindow(void (*close_callback)(void *user), void *user)
-    : mCloseCallback(close_callback), mUserPtr(user) {
+ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
+/*: mCloseCallback(close_callback), mUserPtr(user) */ {
   MwSizeHints hints = {0};
 
   hints.min_width = hints.max_width = 640;
@@ -63,7 +63,7 @@ ProgmanWindow::ProgmanWindow(void (*close_callback)(void *user), void *user)
       MwVaCreateWidget(MwViewportClass, NULL, mWindow, 5, 5, 630, 390, NULL);
   MwAddUserHandler(mWindow, MwNtickHandler, tick, this);
 
-  MwAddUserHandler(
+  /*MwAddUserHandler(
       mWindow, MwNcloseHandler,
       +[](MwWidget handle, void *user, void *client) {
         MwWidget msg = MwMessageBox(handle, "Break the Crantalian Crystal?",
@@ -88,7 +88,7 @@ ProgmanWindow::ProgmanWindow(void (*close_callback)(void *user), void *user)
             },
             user);
       },
-      this);
+      this);*/
 
   update_list();
 }
@@ -266,7 +266,6 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
   this->appinfos = items;
 
   MwWidget table = nullptr;
-  auto folder_width = (items.size() / 6) * ICON_SIZE;
   auto folder_height = (items.size() / 5) * ICON_SIZE;
   if (folder_height < 160) {
     folder_height = 160;
@@ -285,15 +284,15 @@ ProgmanWindow::Subwindow::create_icon_table(std::vector<GAppInfo *> items) {
     int width = ICON_SIZE;
     int height = ICON_SIZE;
 
-    f->holder = MwVaCreateWidget(MwFrameClass, NULL, table, 0, 0, ICON_SIZE,
-                                 ICON_SIZE, NULL);
-
     auto name = g_app_info_get_name(item);
 
     if (added.contains(name)) {
       continue;
     }
     added.insert(added.end(), name);
+
+    f->holder = MwVaCreateWidget(MwFrameClass, NULL, table, 0, 0, ICON_SIZE,
+                                 ICON_SIZE, NULL);
 
     f->info = item;
 
@@ -353,15 +352,13 @@ void MWAPI ProgmanWindow::Subwindow::resize(MwWidget handle, void *user,
                                             void *client) {
   Subwindow *sub = (Subwindow *)user;
 
-  auto width = MwGetInteger(handle, MwNwidth) - 15;
-  auto height = MwGetInteger(handle, MwNheight) - 35;
-  auto folder_width = (sub->appinfos.size() / 6) * ICON_SIZE;
   auto folder_height = (sub->appinfos.size() / 5) * ICON_SIZE;
   if (folder_height < 160) {
     folder_height = 160;
   }
-  printf("%ld\n", folder_height);
+  auto width = MwGetInteger(handle, MwNwidth) - 15;
+  auto height = MwGetInteger(handle, MwNheight) - 35;
   MwVaApply(sub->viewport, MwNwidth, width, MwNheight, height, NULL);
-  MwViewportSetSize(sub->viewport, folder_width, folder_height);
-  MwViewportSetSize(sub->items, folder_width, folder_height);
+  MwViewportSetSize(sub->viewport, width * 2, folder_height + (height * 2));
+  MwViewportSetSize(sub->items, width * 2, folder_height + (height * 2));
 };

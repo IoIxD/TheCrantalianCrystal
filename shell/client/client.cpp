@@ -10,7 +10,6 @@
 
 #include "../desktop/desktop.hpp"
 #include "../utils/glyph.hpp"
-
 #include <dlfcn.h>
 
 TCCClient::TCCClient() {
@@ -176,14 +175,15 @@ void TCCClient::run() {
 
 void TCCClient::launch_initial_components() {
   launch_component("tcc_systray");
-  mProgmanThread = std::thread([&]() {
-    extern __attribute__((visibility("default"))) int tcc_program_main(
-        void (*close_callback)(void *user), void *user);
-    tcc_program_main(
-        +[](void *user) {
-          TCCClient *cli = (TCCClient *)user;
-          cli->terminate();
-        },
-        this);
-  });
+  launch_component("tcc_progman");
+  // mProgmanThread = std::thread([&]() {
+  //   extern __attribute__((visibility("default"))) int tcc_program_main(
+  //       void (*close_callback)(void *user), void *user);
+  //   tcc_program_main(
+  //       +[](void *user) {
+  //         TCCClient *cli = (TCCClient *)user;
+  //         cli->terminate();
+  //       },
+  //       this);
+  // });
 }

@@ -29,24 +29,14 @@ void TCCBluescreenClient::registry_global(void *data,
   if (inter == wl_compositor_interface.name) {
     client->mCompositor = (wl_compositor *)wl_registry_bind(
         client->mRegistry, name, &wl_compositor_interface, version);
-
-    client->mSurface = wl_compositor_create_surface(client->mCompositor);
   } else if (inter == zwlr_layer_shell_v1_interface.name) {
     client->mLayerShell = (zwlr_layer_shell_v1 *)wl_registry_bind(
         client->mRegistry, name, &zwlr_layer_shell_v1_interface, version);
-
-    client->mLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
-        client->mLayerShell, client->mSurface, NULL,
-        ZWLR_LAYER_SHELL_V1_LAYER_TOP, "tcc-bluescreen");
-    zwlr_layer_surface_v1_set_margin(client->mLayerSurface, 0, 0, 0, 0);
-    zwlr_layer_surface_v1_set_size(
-        client->mLayerSurface, client->mOutput->width, client->mOutput->height);
-
-    zwlr_layer_surface_v1_add_listener(client->mLayerSurface,
-                                       &client->mLayerSurfaceListener, client);
-
-    wl_surface_commit(client->mSurface);
-    client->setup_egl();
+  } else if (inter == wl_output_interface.name &&
+             name == client->mOutput->wl_output_name) {
+    // So we end up on the output mOutput's size is for.
+    client->mWlOutput = (wl_output *)wl_registry_bind(client->mRegistry, name,
+                                                      &wl_output_interface, 1);
   }
 };
 void TCCBluescreenClient::global_remove(void *data,
@@ -72,6 +62,25 @@ TCCBluescreenClient::TCCBluescreenClient(
     raise(SIGTRAP);
     return;
   }
+  if (!mCompositor || !mLayerShell) {
+    fprintf(stderr, "wl_compositor or zwlr_layer_shell_v1 not supported\n");
+    raise(SIGTRAP);
+    return;
+  }
+
+  mSurface = wl_compositor_create_surface(mCompositor);
+  mLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
+      mLayerShell, mSurface, mWlOutput, ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+      "tcc-bluescreen");
+  zwlr_layer_surface_v1_set_margin(mLayerSurface, 0, 0, 0, 0);
+  zwlr_layer_surface_v1_set_size(mLayerSurface, mOutput->width,
+                                 mOutput->height);
+
+  zwlr_layer_surface_v1_add_listener(mLayerSurface, &mLayerSurfaceListener,
+                                     this);
+
+  wl_surface_commit(mSurface);
+  setup_egl();
 
   mGlyphManager.set_text_size(24);
 }

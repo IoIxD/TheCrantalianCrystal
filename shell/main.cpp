@@ -48,12 +48,15 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
   }
 
   if (!getenv("TCC_BYPASS_BLUESCREEN")) {
-    auto bluescreen = new TCCBluescreenClient(client->outputs()[0],
-                                              fullStacktrace, registers);
+    for (auto output : client->outputs()) {
+      printf("%p\n", output);
+      auto bluescreen =
+          new TCCBluescreenClient(output, fullStacktrace, registers);
 
-    bluescreen->run();
-    client->terminate();
-    client->run();
+      bluescreen->run();
+      client->terminate();
+      client->run();
+    }
   }
   exit(0);
 }
