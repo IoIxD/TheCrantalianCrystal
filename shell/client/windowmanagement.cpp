@@ -909,7 +909,6 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
 }
 
 void TCCClient::launch_component(std::string name) {
-  printf("%s\n", name.c_str());
   char dest[PATH_MAX];
   memset(dest, 0, sizeof(dest));
   if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
