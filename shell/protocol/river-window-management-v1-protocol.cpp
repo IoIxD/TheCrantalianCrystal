@@ -23,19 +23,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "river-window-management-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface river_decoration_v1_interface;
@@ -105,7 +102,7 @@ static const struct wl_message river_window_manager_v1_events[] = {
     {"seat", "n", river_window_management_v1_types + 10},
 };
 
-WL_PRIVATE const struct wl_interface river_window_manager_v1_interface = {
+const struct wl_interface river_window_manager_v1_interface = {
     "river_window_manager_v1",        4, 7,
     river_window_manager_v1_requests, 9, river_window_manager_v1_events,
 };
@@ -158,7 +155,7 @@ static const struct wl_message river_window_v1_events[] = {
     {"identifier", "4s", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_window_v1_interface = {
+const struct wl_interface river_window_v1_interface = {
     "river_window_v1",        4,  24,
     river_window_v1_requests, 18, river_window_v1_events,
 };
@@ -169,7 +166,7 @@ static const struct wl_message river_decoration_v1_requests[] = {
     {"sync_next_commit", "", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_decoration_v1_interface = {
+const struct wl_interface river_decoration_v1_interface = {
     "river_decoration_v1", 4, 3, river_decoration_v1_requests, 0, NULL,
 };
 
@@ -179,7 +176,7 @@ static const struct wl_message river_shell_surface_v1_requests[] = {
     {"sync_next_commit", "", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_shell_surface_v1_interface = {
+const struct wl_interface river_shell_surface_v1_interface = {
     "river_shell_surface_v1", 4, 3, river_shell_surface_v1_requests, 0, NULL,
 };
 
@@ -192,7 +189,7 @@ static const struct wl_message river_node_v1_requests[] = {
     {"place_below", "o", river_window_management_v1_types + 24},
 };
 
-WL_PRIVATE const struct wl_interface river_node_v1_interface = {
+const struct wl_interface river_node_v1_interface = {
     "river_node_v1", 4, 6, river_node_v1_requests, 0, NULL,
 };
 
@@ -208,7 +205,7 @@ static const struct wl_message river_output_v1_events[] = {
     {"dimensions", "ii", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_output_v1_interface = {
+const struct wl_interface river_output_v1_interface = {
     "river_output_v1",        4, 2,
     river_output_v1_requests, 4, river_output_v1_events,
 };
@@ -237,7 +234,7 @@ static const struct wl_message river_seat_v1_events[] = {
     {"pointer_position", "2ii", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_seat_v1_interface = {
+const struct wl_interface river_seat_v1_interface = {
     "river_seat_v1", 4, 9, river_seat_v1_requests, 9, river_seat_v1_events,
 };
 
@@ -252,7 +249,8 @@ static const struct wl_message river_pointer_binding_v1_events[] = {
     {"released", "", river_window_management_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_pointer_binding_v1_interface = {
+const struct wl_interface river_pointer_binding_v1_interface = {
     "river_pointer_binding_v1",        4, 3,
     river_pointer_binding_v1_requests, 2, river_pointer_binding_v1_events,
 };
+}

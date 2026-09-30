@@ -7,18 +7,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "../protocol/wayland-client-protocol.h"
+#include "../protocol/wayland-client-protocol.hpp"
 
-#include "../protocol/cursor-shape-v1-protocol.h"
-#include "../protocol/river-input-management-v1-protocol.h"
-#include "../protocol/river-layer-shell-v1-protocol.h"
-#include "../protocol/river-window-management-v1-protocol.h"
-#include "../protocol/river-xkb-bindings-v1-protocol.h"
+#include "../protocol/cursor-shape-v1-protocol.hpp"
+#include "../protocol/river-input-management-v1-protocol.hpp"
+#include "../protocol/river-layer-shell-v1-protocol.hpp"
+#include "../protocol/river-window-management-v1-protocol.hpp"
+#include "../protocol/river-xkb-bindings-v1-protocol.hpp"
 
 #include "egl_loader.hpp"
 #include "gl_loader.hpp"

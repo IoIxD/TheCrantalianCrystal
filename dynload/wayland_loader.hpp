@@ -52,7 +52,7 @@ void wl_proxy_set_user_data(struct wl_proxy *proxy, void *user_data);
   X(wl_proxy_set_user_data)
 
 typedef struct WaylandLib {
-#define X(name) typeof(&name) name;
+#define X(name) decltype(&::name) name;
   TCC_WAYLAND_FUNCS(X)
 #undef X
 

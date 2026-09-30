@@ -26,19 +26,16 @@
  * SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "tablet-v2-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface wl_seat_interface;
@@ -84,7 +81,7 @@ static const struct wl_message zwp_tablet_manager_v2_requests[] = {
     {"destroy", "", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_manager_v2_interface = {
+const struct wl_interface zwp_tablet_manager_v2_interface = {
     "zwp_tablet_manager_v2", 2, 2, zwp_tablet_manager_v2_requests, 0, NULL,
 };
 
@@ -98,7 +95,7 @@ static const struct wl_message zwp_tablet_seat_v2_events[] = {
     {"pad_added", "n", tablet_v2_types + 7},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_seat_v2_interface = {
+const struct wl_interface zwp_tablet_seat_v2_interface = {
     "zwp_tablet_seat_v2",        2, 1,
     zwp_tablet_seat_v2_requests, 3, zwp_tablet_seat_v2_events,
 };
@@ -130,7 +127,7 @@ static const struct wl_message zwp_tablet_tool_v2_events[] = {
     {"frame", "u", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_tool_v2_interface = {
+const struct wl_interface zwp_tablet_tool_v2_interface = {
     "zwp_tablet_tool_v2",        2,  2,
     zwp_tablet_tool_v2_requests, 19, zwp_tablet_tool_v2_events,
 };
@@ -148,7 +145,7 @@ static const struct wl_message zwp_tablet_v2_events[] = {
     {"bustype", "2u", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_v2_interface = {
+const struct wl_interface zwp_tablet_v2_interface = {
     "zwp_tablet_v2", 2, 1, zwp_tablet_v2_requests, 6, zwp_tablet_v2_events,
 };
 
@@ -164,7 +161,7 @@ static const struct wl_message zwp_tablet_pad_ring_v2_events[] = {
     {"frame", "u", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_pad_ring_v2_interface = {
+const struct wl_interface zwp_tablet_pad_ring_v2_interface = {
     "zwp_tablet_pad_ring_v2",        2, 2,
     zwp_tablet_pad_ring_v2_requests, 4, zwp_tablet_pad_ring_v2_events,
 };
@@ -181,7 +178,7 @@ static const struct wl_message zwp_tablet_pad_strip_v2_events[] = {
     {"frame", "u", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_pad_strip_v2_interface = {
+const struct wl_interface zwp_tablet_pad_strip_v2_interface = {
     "zwp_tablet_pad_strip_v2",        2, 2,
     zwp_tablet_pad_strip_v2_requests, 4, zwp_tablet_pad_strip_v2_events,
 };
@@ -200,7 +197,7 @@ static const struct wl_message zwp_tablet_pad_group_v2_events[] = {
     {"dial", "2n", tablet_v2_types + 17},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_pad_group_v2_interface = {
+const struct wl_interface zwp_tablet_pad_group_v2_interface = {
     "zwp_tablet_pad_group_v2",        2, 1,
     zwp_tablet_pad_group_v2_requests, 7, zwp_tablet_pad_group_v2_events,
 };
@@ -221,7 +218,7 @@ static const struct wl_message zwp_tablet_pad_v2_events[] = {
     {"removed", "", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_pad_v2_interface = {
+const struct wl_interface zwp_tablet_pad_v2_interface = {
     "zwp_tablet_pad_v2",        2, 2,
     zwp_tablet_pad_v2_requests, 8, zwp_tablet_pad_v2_events,
 };
@@ -236,7 +233,8 @@ static const struct wl_message zwp_tablet_pad_dial_v2_events[] = {
     {"frame", "u", tablet_v2_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwp_tablet_pad_dial_v2_interface = {
+const struct wl_interface zwp_tablet_pad_dial_v2_interface = {
     "zwp_tablet_pad_dial_v2",        2, 2,
     zwp_tablet_pad_dial_v2_requests, 2, zwp_tablet_pad_dial_v2_events,
 };
+}

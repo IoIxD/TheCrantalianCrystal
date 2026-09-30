@@ -25,19 +25,16 @@
  * THIS SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "wlr-layer-shell-unstable-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface wl_output_interface;
@@ -63,7 +60,7 @@ static const struct wl_message zwlr_layer_shell_v1_requests[] = {
     {"destroy", "3", wlr_layer_shell_unstable_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwlr_layer_shell_v1_interface = {
+const struct wl_interface zwlr_layer_shell_v1_interface = {
     "zwlr_layer_shell_v1", 5, 2, zwlr_layer_shell_v1_requests, 0, NULL,
 };
 
@@ -85,7 +82,8 @@ static const struct wl_message zwlr_layer_surface_v1_events[] = {
     {"closed", "", wlr_layer_shell_unstable_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface zwlr_layer_surface_v1_interface = {
+const struct wl_interface zwlr_layer_surface_v1_interface = {
     "zwlr_layer_surface_v1",        5, 10,
     zwlr_layer_surface_v1_requests, 2, zwlr_layer_surface_v1_events,
 };
+}

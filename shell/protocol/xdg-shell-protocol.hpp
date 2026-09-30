@@ -3,7 +3,7 @@
 #ifndef XDG_SHELL_CLIENT_PROTOCOL_H
 #define XDG_SHELL_CLIENT_PROTOCOL_H
 
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 #include <stddef.h>
 #include <stdint.h>
 

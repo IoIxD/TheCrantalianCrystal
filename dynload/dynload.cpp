@@ -10,7 +10,7 @@
 #include "gtk_loader.hpp"
 #include "pulse_loader.hpp"
 #include "varlink_loader.hpp"
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 
 WaylandLib *WL_LIB = nullptr;
 PulseLib *PL_LIB = nullptr;

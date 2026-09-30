@@ -3,7 +3,7 @@
 #include "../client/client.hpp"
 #include "../utils/glyph.hpp"
 
-#include "../protocol/wlr-layer-shell-unstable-v1-protocol.h"
+#include "../protocol/wlr-layer-shell-unstable-v1-protocol.hpp"
 #include <chrono>
 
 #include "egl_loader.hpp"

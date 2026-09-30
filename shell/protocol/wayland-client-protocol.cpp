@@ -27,19 +27,16 @@
  * SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "wayland-client-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface wl_buffer_interface;
@@ -169,7 +166,7 @@ static const struct wl_message wl_display_events[] = {
     {"delete_id", "u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_display_interface = {
+const struct wl_interface wl_display_interface = {
     "wl_display", 1, 2, wl_display_requests, 2, wl_display_events,
 };
 
@@ -182,7 +179,7 @@ static const struct wl_message wl_registry_events[] = {
     {"global_remove", "u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_registry_interface = {
+const struct wl_interface wl_registry_interface = {
     "wl_registry", 1, 1, wl_registry_requests, 2, wl_registry_events,
 };
 
@@ -190,7 +187,7 @@ static const struct wl_message wl_callback_events[] = {
     {"done", "u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_callback_interface = {
+const struct wl_interface wl_callback_interface = {
     "wl_callback", 1, 0, NULL, 1, wl_callback_events,
 };
 
@@ -200,7 +197,7 @@ static const struct wl_message wl_compositor_requests[] = {
     {"release", "7", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_compositor_interface = {
+const struct wl_interface wl_compositor_interface = {
     "wl_compositor", 7, 3, wl_compositor_requests, 0, NULL,
 };
 
@@ -210,7 +207,7 @@ static const struct wl_message wl_shm_pool_requests[] = {
     {"resize", "i", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_shm_pool_interface = {
+const struct wl_interface wl_shm_pool_interface = {
     "wl_shm_pool", 2, 3, wl_shm_pool_requests, 0, NULL,
 };
 
@@ -223,7 +220,7 @@ static const struct wl_message wl_shm_events[] = {
     {"format", "u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_shm_interface = {
+const struct wl_interface wl_shm_interface = {
     "wl_shm", 2, 2, wl_shm_requests, 1, wl_shm_events,
 };
 
@@ -235,7 +232,7 @@ static const struct wl_message wl_buffer_events[] = {
     {"release", "", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_buffer_interface = {
+const struct wl_interface wl_buffer_interface = {
     "wl_buffer", 1, 1, wl_buffer_requests, 1, wl_buffer_events,
 };
 
@@ -253,7 +250,7 @@ static const struct wl_message wl_data_offer_events[] = {
     {"action", "3u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_data_offer_interface = {
+const struct wl_interface wl_data_offer_interface = {
     "wl_data_offer", 4, 5, wl_data_offer_requests, 3, wl_data_offer_events,
 };
 
@@ -272,7 +269,7 @@ static const struct wl_message wl_data_source_events[] = {
     {"action", "3u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_data_source_interface = {
+const struct wl_interface wl_data_source_interface = {
     "wl_data_source", 4, 3, wl_data_source_requests, 6, wl_data_source_events,
 };
 
@@ -291,7 +288,7 @@ static const struct wl_message wl_data_device_events[] = {
     {"selection", "?o", wayland_types + 33},
 };
 
-WL_PRIVATE const struct wl_interface wl_data_device_interface = {
+const struct wl_interface wl_data_device_interface = {
     "wl_data_device", 4, 3, wl_data_device_requests, 6, wl_data_device_events,
 };
 
@@ -301,7 +298,7 @@ static const struct wl_message wl_data_device_manager_requests[] = {
     {"release", "4", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_data_device_manager_interface = {
+const struct wl_interface wl_data_device_manager_interface = {
     "wl_data_device_manager", 4, 3, wl_data_device_manager_requests, 0, NULL,
 };
 
@@ -309,7 +306,7 @@ static const struct wl_message wl_shell_requests[] = {
     {"get_shell_surface", "no", wayland_types + 37},
 };
 
-WL_PRIVATE const struct wl_interface wl_shell_interface = {
+const struct wl_interface wl_shell_interface = {
     "wl_shell", 1, 1, wl_shell_requests, 0, NULL,
 };
 
@@ -332,7 +329,7 @@ static const struct wl_message wl_shell_surface_events[] = {
     {"popup_done", "", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_shell_surface_interface = {
+const struct wl_interface wl_shell_surface_interface = {
     "wl_shell_surface",        1, 10,
     wl_shell_surface_requests, 3, wl_shell_surface_events,
 };
@@ -359,7 +356,7 @@ static const struct wl_message wl_surface_events[] = {
     {"preferred_buffer_transform", "6u", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_surface_interface = {
+const struct wl_interface wl_surface_interface = {
     "wl_surface", 7, 12, wl_surface_requests, 4, wl_surface_events,
 };
 
@@ -375,7 +372,7 @@ static const struct wl_message wl_seat_events[] = {
     {"name", "2s", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_seat_interface = {
+const struct wl_interface wl_seat_interface = {
     "wl_seat", 10, 4, wl_seat_requests, 2, wl_seat_events,
 };
 
@@ -398,7 +395,7 @@ static const struct wl_message wl_pointer_events[] = {
     {"axis_relative_direction", "9uu", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_pointer_interface = {
+const struct wl_interface wl_pointer_interface = {
     "wl_pointer", 10, 2, wl_pointer_requests, 11, wl_pointer_events,
 };
 
@@ -415,7 +412,7 @@ static const struct wl_message wl_keyboard_events[] = {
     {"repeat_info", "4ii", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_keyboard_interface = {
+const struct wl_interface wl_keyboard_interface = {
     "wl_keyboard", 10, 1, wl_keyboard_requests, 6, wl_keyboard_events,
 };
 
@@ -433,7 +430,7 @@ static const struct wl_message wl_touch_events[] = {
     {"orientation", "6if", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_touch_interface = {
+const struct wl_interface wl_touch_interface = {
     "wl_touch", 10, 1, wl_touch_requests, 7, wl_touch_events,
 };
 
@@ -450,7 +447,7 @@ static const struct wl_message wl_output_events[] = {
     {"description", "4s", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_output_interface = {
+const struct wl_interface wl_output_interface = {
     "wl_output", 4, 1, wl_output_requests, 6, wl_output_events,
 };
 
@@ -460,7 +457,7 @@ static const struct wl_message wl_region_requests[] = {
     {"subtract", "iiii", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_region_interface = {
+const struct wl_interface wl_region_interface = {
     "wl_region", 7, 3, wl_region_requests, 0, NULL,
 };
 
@@ -469,7 +466,7 @@ static const struct wl_message wl_subcompositor_requests[] = {
     {"get_subsurface", "noo", wayland_types + 91},
 };
 
-WL_PRIVATE const struct wl_interface wl_subcompositor_interface = {
+const struct wl_interface wl_subcompositor_interface = {
     "wl_subcompositor", 1, 2, wl_subcompositor_requests, 0, NULL,
 };
 
@@ -482,7 +479,7 @@ static const struct wl_message wl_subsurface_requests[] = {
     {"set_desync", "", wayland_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wl_subsurface_interface = {
+const struct wl_interface wl_subsurface_interface = {
     "wl_subsurface", 1, 6, wl_subsurface_requests, 0, NULL,
 };
 
@@ -491,6 +488,7 @@ static const struct wl_message wl_fixes_requests[] = {
     {"destroy_registry", "o", wayland_types + 96},
 };
 
-WL_PRIVATE const struct wl_interface wl_fixes_interface = {
+const struct wl_interface wl_fixes_interface = {
     "wl_fixes", 1, 2, wl_fixes_requests, 0, NULL,
 };
+}

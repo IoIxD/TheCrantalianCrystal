@@ -1,6 +1,6 @@
 #ifdef TCC_SYSTRAY_RIVER
 #include "river_keyboard_layout.hpp"
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 
 #include <river-input-management-v1-protocol.h>
 #include <river-xkb-config-v1-protocol.h>

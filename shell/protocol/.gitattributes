@@ -1,2 +1,1 @@
-*.c linguist-generated
-*.h linguist-generated
+*.* linguist-generated

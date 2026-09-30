@@ -23,19 +23,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "river-xkb-bindings-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface river_seat_v1_interface;
@@ -58,7 +55,7 @@ static const struct wl_message river_xkb_bindings_v1_requests[] = {
     {"get_seat", "2no", river_xkb_bindings_v1_types + 5},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_bindings_v1_interface = {
+const struct wl_interface river_xkb_bindings_v1_interface = {
     "river_xkb_bindings_v1", 2, 3, river_xkb_bindings_v1_requests, 0, NULL,
 };
 
@@ -75,7 +72,7 @@ static const struct wl_message river_xkb_binding_v1_events[] = {
     {"stop_repeat", "2", river_xkb_bindings_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_binding_v1_interface = {
+const struct wl_interface river_xkb_binding_v1_interface = {
     "river_xkb_binding_v1",        2, 4,
     river_xkb_binding_v1_requests, 3, river_xkb_binding_v1_events,
 };
@@ -90,7 +87,8 @@ static const struct wl_message river_xkb_bindings_seat_v1_events[] = {
     {"ate_unbound_key", "2", river_xkb_bindings_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_bindings_seat_v1_interface = {
+const struct wl_interface river_xkb_bindings_seat_v1_interface = {
     "river_xkb_bindings_seat_v1",        2, 3,
     river_xkb_bindings_seat_v1_requests, 1, river_xkb_bindings_seat_v1_events,
 };
+}

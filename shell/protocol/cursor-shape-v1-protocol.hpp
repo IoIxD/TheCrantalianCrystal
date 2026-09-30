@@ -3,7 +3,7 @@
 #ifndef CURSOR_SHAPE_V1_CLIENT_PROTOCOL_H
 #define CURSOR_SHAPE_V1_CLIENT_PROTOCOL_H
 
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 #include <stddef.h>
 #include <stdint.h>
 

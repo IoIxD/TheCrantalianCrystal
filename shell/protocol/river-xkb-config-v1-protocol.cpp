@@ -23,19 +23,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "river-xkb-config-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface river_input_device_v1_interface;
@@ -64,7 +61,7 @@ static const struct wl_message river_xkb_config_v1_events[] = {
     {"xkb_keyboard", "n", river_xkb_config_v1_types + 5},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_config_v1_interface = {
+const struct wl_interface river_xkb_config_v1_interface = {
     "river_xkb_config_v1",        1, 3,
     river_xkb_config_v1_requests, 2, river_xkb_config_v1_events,
 };
@@ -78,7 +75,7 @@ static const struct wl_message river_xkb_keymap_v1_events[] = {
     {"failure", "s", river_xkb_config_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_keymap_v1_interface = {
+const struct wl_interface river_xkb_keymap_v1_interface = {
     "river_xkb_keymap_v1",        1, 1,
     river_xkb_keymap_v1_requests, 2, river_xkb_keymap_v1_events,
 };
@@ -104,7 +101,8 @@ static const struct wl_message river_xkb_keyboard_v1_events[] = {
     {"numlock_disabled", "", river_xkb_config_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_xkb_keyboard_v1_interface = {
+const struct wl_interface river_xkb_keyboard_v1_interface = {
     "river_xkb_keyboard_v1",        1, 8,
     river_xkb_keyboard_v1_requests, 7, river_xkb_keyboard_v1_events,
 };
+}

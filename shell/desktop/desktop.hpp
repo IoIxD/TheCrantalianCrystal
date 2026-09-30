@@ -5,10 +5,10 @@
 
 #include "egl_loader.hpp"
 #include "gl_loader.hpp"
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 
-#include "../protocol/wayland-client-protocol.h"
-#include "../protocol/wlr-layer-shell-unstable-v1-protocol.h"
+#include "../protocol/wayland-client-protocol.hpp"
+#include "../protocol/wlr-layer-shell-unstable-v1-protocol.hpp"
 #include <functional>
 
 #define ICON_SIZE 64

@@ -4,7 +4,7 @@
 #include "varlink_loader.hpp"
 #include <thread>
 
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 
 class TCCClientVarlink {
   class TCCClient *mClient;

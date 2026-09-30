@@ -11,6 +11,8 @@ add_library(${PROJECT_NAME} STATIC ${sources})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_DL_LIBS})
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-changes-meaning")
+
 # Dependencies that need to be avaliable at runtime
 
 pkg_check_modules(deps REQUIRED

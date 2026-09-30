@@ -23,19 +23,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "river-layer-shell-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface river_layer_shell_output_v1_interface;
@@ -60,7 +57,7 @@ static const struct wl_message river_layer_shell_v1_requests[] = {
     {"get_seat", "no", river_layer_shell_v1_types + 6},
 };
 
-WL_PRIVATE const struct wl_interface river_layer_shell_v1_interface = {
+const struct wl_interface river_layer_shell_v1_interface = {
     "river_layer_shell_v1", 1, 3, river_layer_shell_v1_requests, 0, NULL,
 };
 
@@ -73,7 +70,7 @@ static const struct wl_message river_layer_shell_output_v1_events[] = {
     {"non_exclusive_area", "iiii", river_layer_shell_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_layer_shell_output_v1_interface = {
+const struct wl_interface river_layer_shell_output_v1_interface = {
     "river_layer_shell_output_v1",        1, 2,
     river_layer_shell_output_v1_requests, 1, river_layer_shell_output_v1_events,
 };
@@ -88,7 +85,8 @@ static const struct wl_message river_layer_shell_seat_v1_events[] = {
     {"focus_none", "", river_layer_shell_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface river_layer_shell_seat_v1_interface = {
+const struct wl_interface river_layer_shell_seat_v1_interface = {
     "river_layer_shell_seat_v1",        1, 1,
     river_layer_shell_seat_v1_requests, 3, river_layer_shell_seat_v1_events,
 };
+}

@@ -22,19 +22,16 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "wayland_loader.h"
+#include "cursor-shape-v1-protocol.hpp"
+#include "wayland_loader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+extern "C" {
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
-#endif
-
-#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
-#define WL_PRIVATE __attribute__((visibility("hidden")))
-#else
-#define WL_PRIVATE
 #endif
 
 extern const struct wl_interface wl_pointer_interface;
@@ -56,7 +53,7 @@ static const struct wl_message wp_cursor_shape_manager_v1_requests[] = {
     {"get_tablet_tool_v2", "no", cursor_shape_v1_types + 4},
 };
 
-WL_PRIVATE const struct wl_interface wp_cursor_shape_manager_v1_interface = {
+const struct wl_interface wp_cursor_shape_manager_v1_interface = {
     "wp_cursor_shape_manager_v1",        2, 3,
     wp_cursor_shape_manager_v1_requests, 0, NULL,
 };
@@ -66,7 +63,8 @@ static const struct wl_message wp_cursor_shape_device_v1_requests[] = {
     {"set_shape", "uu", cursor_shape_v1_types + 0},
 };
 
-WL_PRIVATE const struct wl_interface wp_cursor_shape_device_v1_interface = {
+const struct wl_interface wp_cursor_shape_device_v1_interface = {
     "wp_cursor_shape_device_v1",        2, 2,
     wp_cursor_shape_device_v1_requests, 0, NULL,
 };
+}

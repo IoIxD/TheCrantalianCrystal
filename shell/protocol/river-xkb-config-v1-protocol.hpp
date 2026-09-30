@@ -3,7 +3,7 @@
 #ifndef RIVER_XKB_CONFIG_V1_CLIENT_PROTOCOL_H
 #define RIVER_XKB_CONFIG_V1_CLIENT_PROTOCOL_H
 
-#include "wayland_loader.h"
+#include "wayland_loader.hpp"
 #include <stddef.h>
 #include <stdint.h>
 
