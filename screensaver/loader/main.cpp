@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <vector>
 
+#include "shaders.h"
+
 typedef void (*PFNEGLIMAGETARGETTEXTURE2DOES)(GLenum target, void *image);
 
 /*
@@ -127,18 +129,6 @@ static GLuint composite_program = 0;
 // what's around them rather than fading out.
 constexpr int BLUR_MARGIN = 32;
 
-static const char *QUAD_VERT = R"(
-)";
-
-// One direction of a gaussian blur, over the part of tex given by src.
-static const char *BLUR_FRAG = R"(
-)";
-
-// The blurred result back onto the frame, with rounded corners (using the
-// same distance function as the decorations).
-static const char *COMPOSITE_FRAG = R"(
-)";
-
 [[noreturn]] static void die(const char *what) {
   fprintf(stderr, "tcc_scr_loader: %s\n", what);
   exit(1);
@@ -197,7 +187,7 @@ static GLuint compile_shader(GLenum type, const char *source) {
 }
 
 static GLuint create_program(const char *fragment_source) {
-  GLuint vert = compile_shader(GL_VERTEX_SHADER, QUAD_VERT);
+  GLuint vert = compile_shader(GL_VERTEX_SHADER, QUAD_VERT_SOURCE);
   GLuint frag = compile_shader(GL_FRAGMENT_SHADER, fragment_source);
   GLuint program = gl::glCreateProgram();
   gl::glAttachShader(program, vert);
@@ -262,8 +252,8 @@ static void setup_egl() {
   GL_FUNCS(X)
 #undef X
 
-  blur_program = create_program(BLUR_FRAG);
-  composite_program = create_program(COMPOSITE_FRAG);
+  blur_program = create_program(BLUR_FRAG_SOURCE);
+  composite_program = create_program(COMPOSITE_FRAG_SOURCE);
 }
 
 static void buffer_free(Buffer *buffer) {
