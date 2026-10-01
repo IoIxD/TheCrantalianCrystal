@@ -1,9 +1,12 @@
 #include "progman.hpp"
+#include "Mw/Abstract/Time.h"
 #include "desktop_varlink.hpp"
 #include "gtk_loader.hpp"
 #include "utils.hpp"
+#include <emmintrin.h>
 #include <set>
 #include <string>
+#include <thread>
 
 #define ICON_SIZE 72
 
@@ -109,47 +112,74 @@ void ProgmanWindow::run() {
   if (wait == MwDEFAULT)
     wait = MwWaitMS;
   while (!MwWindowShouldClose(mWindow)) {
-    int v = 0;
-    long t = 0, t2 = 0;
+#define LOOP_BEGIN                                                             \
+  {                                                                            \
+    int v = 0;                                                                 \
+    long t = 0, t2 = 0;                                                        \
     long more = 0;
+#define LOOP_END                                                               \
+  more = over % (wait / 2);                                                    \
+  t = (tick + wait - more) - (t2 = MwTimeGetTick());                           \
+  if (t > 0) {                                                                 \
+    MwTimeSleep(t);                                                            \
+    tick = MwTimeGetTick();                                                    \
+    over -= more;                                                              \
+  } else {                                                                     \
+    tick = t2;                                                                 \
+    over += -t;                                                                \
+  }                                                                            \
+  }
+
+    LOOP_BEGIN
+
+    /* we only ever expect this to run on wayland, where the widget hierarchy is
+     * flat, and thus the window not pending = nothing pending.  */
+    if (!MwLLPending(mWindow->lowlevel)) {
+      LOOP_BEGIN /* not a loop but before continue we want to make sure we pause
+                    properly */
+#ifdef __x86_64__
+                 _mm_pause();
+#endif
+      LOOP_END
+      continue;
+    }
 
     while (MwPending(mWindow)) {
+      LOOP_BEGIN
       if ((v = MwStep(mWindow)) != 0)
         break;
+      LOOP_END
     }
 
     for (auto sub : subwindows) {
       while (MwPending(sub->subwindow)) {
+        LOOP_BEGIN
         if ((v = MwStep(sub->subwindow)) != 0)
           break;
+        LOOP_END
       }
     }
 
     for (auto sub : ctrl_panel_windows) {
       while (MwPending(sub->subwindow)) {
+        LOOP_BEGIN
         if ((v = MwStep(sub->subwindow)) != 0)
           break;
+        LOOP_END
       }
       if (sub->popup) {
         while (MwPending(sub->popup)) {
+          LOOP_BEGIN
           if ((v = MwStep(sub->popup)) != 0)
             break;
+          LOOP_END
         }
       }
     }
 
     mVarlink->step();
 
-    more = over % (wait / 2);
-    t = (tick + wait - more) - (t2 = MwTimeGetTick());
-    if (t > 0) {
-      MwTimeSleep(t);
-      tick = MwTimeGetTick();
-      over -= more;
-    } else {
-      tick = t2;
-      over += -t;
-    }
+    LOOP_END
   }
 }
 
