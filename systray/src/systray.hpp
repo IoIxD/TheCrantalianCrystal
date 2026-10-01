@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mw/BaseTypes.h"
 #include "systray_protocol.hpp"
 #include "windows/mixer_window.hpp"
 
@@ -30,6 +31,7 @@ class TCCSystrayClient {
   };
 
   MwRect mBounds;
+  MwRect mKnownBounds = {0};
   MwWidget mWindow;
   // An MwFrame after the last icon, drawn by drawNotch.
   MwWidget mNotch;

@@ -1,4 +1,5 @@
 #include "systray.hpp"
+#include <emmintrin.h>
 #ifdef TCC_HAS_DBUS
 #include "dbus/sni_watcher.hpp"
 #include "othericons/upower_battery.hpp"
@@ -489,6 +490,7 @@ void TCCSystrayClient::run() {
     int v = 0;
     long t = 0, t2 = 0;
     long more = 0;
+
     for (auto &protocol : mProtocols)
       protocol->poll();
 
@@ -499,10 +501,16 @@ void TCCSystrayClient::run() {
     }
 
     MwGetScreenSize(mWindow, &mBounds);
-    MwVaApply(mWindow, MwNx, 0, MwNy, mBounds.height - 32, NULL);
-    MwVaApply(mWindow, MwNwidth,
-              (mIconWidgets.size() * BUTTON_SIZE) + ICON_SPACING + NOTCH_WIDTH,
-              MwNheight, 32, NULL);
+    if (mBounds.width != mKnownBounds.width ||
+        mBounds.height != mKnownBounds.height || mBounds.x != mKnownBounds.x ||
+        mBounds.y != mKnownBounds.y) {
+      MwVaApply(mWindow, MwNx, 0, MwNy, mBounds.height - 32, NULL);
+      MwVaApply(mWindow, MwNwidth,
+                (mIconWidgets.size() * BUTTON_SIZE) + ICON_SPACING +
+                    NOTCH_WIDTH,
+                MwNheight, 32, NULL);
+      mKnownBounds = mBounds;
+    }
 
     std::vector<MwPixmap> oldPixmaps = std::move(mOldPixmaps);
     mOldPixmaps.clear();
