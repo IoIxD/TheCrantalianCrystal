@@ -122,8 +122,8 @@ void ProgmanWindow::run() {
     if (!MwLLPending(mWindow->lowlevel)) {
 #ifdef __x86_64__
       /* bit funny that this works since we end up sleeping manually later,
-       * anyways. but if we skip it we do see the cpu usage suffer when moving a
-       * window so fuck it sure.  */
+       * anyways. but if we skip it we do see the cpu usage worsen so fuck it
+       * sure. */
       _mm_pause();
 #endif
     } else {
