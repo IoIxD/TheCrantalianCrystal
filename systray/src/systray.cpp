@@ -510,9 +510,6 @@ void TCCSystrayClient::run() {
     for (auto pixmap : oldPixmaps)
       MwDestroyPixmap(pixmap);
 
-    // Removed icons are only gone once that step has freed them, and nothing
-    // repaints where they were otherwise (e.g. what collapsing leaves under
-    // the notch).
     if (relaidOut)
       MwForceRender(mWindow);
 

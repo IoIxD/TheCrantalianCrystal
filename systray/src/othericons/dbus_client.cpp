@@ -1,3 +1,4 @@
+#include <emmintrin.h>
 #ifdef TCC_HAS_DBUS
 #include "dbus_client.hpp"
 
@@ -48,6 +49,9 @@ void DBusClient::poll() {
   }
   while (mConn &&
          dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
+#ifdef __x86_64__
+    _mm_pause();
+#endif
   }
 }
 

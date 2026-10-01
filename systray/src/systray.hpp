@@ -113,7 +113,6 @@ extern "C" {
 #endif
 
 MwWidget window_setup(MwRect *bounds);
-/* Turns a child widget into a popup at x, y relative to its parent. */
 void popup_setup(MwWidget widget, int x, int y);
 
 #ifdef __cplusplus

@@ -25,7 +25,6 @@ void popup_setup(MwWidget widget, int x, int y) {
   point.x = x;
   point.y = y;
 
-  /* the same way MwComboBox opens its list */
   MwLLBeginStateChange(widget->lowlevel);
   MwLLDetach(widget->lowlevel, &point);
   MwLLMakeToolWindow(widget->lowlevel);
