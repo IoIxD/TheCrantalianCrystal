@@ -26,6 +26,7 @@
   X(dbus_message_new_method_return)                                            \
   X(dbus_message_new_error)                                                    \
   X(dbus_message_new_signal)                                                   \
+  X(dbus_message_ref)                                                          \
   X(dbus_message_unref)                                                        \
   X(dbus_message_set_no_reply)                                                 \
   X(dbus_message_append_args)                                                  \
@@ -46,6 +47,8 @@
   X(dbus_message_iter_get_basic)                                               \
   X(dbus_message_iter_next)                                                    \
   X(dbus_message_iter_get_fixed_array)                                         \
+  X(dbus_message_iter_get_signature)                                           \
+  X(dbus_free)                                                                 \
   X(dbus_connection_send_with_reply)                                           \
   X(dbus_pending_call_set_notify)                                              \
   X(dbus_pending_call_steal_reply)                                             \
@@ -89,6 +92,7 @@ extern DBusLib *DBUS_LIB;
 #define dbus_message_new_method_return DBUS_LIB->dbus_message_new_method_return
 #define dbus_message_new_error DBUS_LIB->dbus_message_new_error
 #define dbus_message_new_signal DBUS_LIB->dbus_message_new_signal
+#define dbus_message_ref DBUS_LIB->dbus_message_ref
 #define dbus_message_unref DBUS_LIB->dbus_message_unref
 #define dbus_message_set_no_reply DBUS_LIB->dbus_message_set_no_reply
 #define dbus_message_append_args DBUS_LIB->dbus_message_append_args
@@ -112,6 +116,9 @@ extern DBusLib *DBUS_LIB;
 #define dbus_message_iter_next DBUS_LIB->dbus_message_iter_next
 #define dbus_message_iter_get_fixed_array                                      \
   DBUS_LIB->dbus_message_iter_get_fixed_array
+#define dbus_message_iter_get_signature                                        \
+  DBUS_LIB->dbus_message_iter_get_signature
+#define dbus_free DBUS_LIB->dbus_free
 #define dbus_connection_send_with_reply                                        \
   DBUS_LIB->dbus_connection_send_with_reply
 #define dbus_pending_call_set_notify DBUS_LIB->dbus_pending_call_set_notify

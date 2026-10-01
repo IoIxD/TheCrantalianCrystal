@@ -26,6 +26,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screensaver/loader)
 
 add_subdirectory(shell)
 add_subdirectory(progman)
+add_subdirectory(portal)
 add_subdirectory(systray)
 
 set(TCC_INSTALL_DIR ${CMAKE_INSTALL_LIBEXECDIR}/TheCrantalianCrystal)
@@ -42,6 +43,10 @@ set(TCC_INSTALL_TARGETS
   tcc_iconlib
   tcc_varlinklib
 )
+# Not built without dbus-1, see portal/CMakeLists.txt.
+if(TARGET tcc_portal)
+  list(APPEND TCC_INSTALL_TARGETS tcc_portal)
+endif()
 
 # Find our libraries next to us, and Milsko's where it installs itself.
 file(RELATIVE_PATH TCC_LIBDIR_FROM_INSTALL_DIR

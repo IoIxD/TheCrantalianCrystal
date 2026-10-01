@@ -1,12 +1,16 @@
 #include "client.hpp"
 
 #include <algorithm>
+#include <cerrno>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -934,6 +938,58 @@ void TCCClient::launch_component(std::string name) {
 
   const char *args[] = {path.c_str(), NULL};
   spawn(path.c_str(), args);
+}
+
+void TCCClient::launch_kwallet() {
+  // pam_kwallet starts ksecretd at login with the password, which then waits
+  // on this socket for the session's environment before unlocking the wallet
+  // and going on the session bus. Plasma sends it with pam_kwallet_init (env |
+  // socat), done here directly so it doesn't need socat or a libexec path.
+  const char *socket_path = getenv("PAM_KWALLET5_LOGIN");
+  if (socket_path == nullptr) {
+    // Not logged in through pam_kwallet, so the wallet will have to be
+    // unlocked with a prompt.
+    const char *args[] = {"ksecretd", nullptr};
+    spawn("ksecretd", args);
+    return;
+  }
+
+  sockaddr_un addr = {};
+  addr.sun_family = AF_UNIX;
+  if (strlen(socket_path) >= sizeof(addr.sun_path)) {
+    fprintf(stderr, "kwallet: socket path too long: %s\n", socket_path);
+    return;
+  }
+  strcpy(addr.sun_path, socket_path);
+
+  int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  if (fd < 0) {
+    perror("kwallet: socket");
+    return;
+  }
+  if (connect(fd, (sockaddr *)&addr, sizeof(addr)) < 0) {
+    perror("kwallet: connect");
+    close(fd);
+    return;
+  }
+
+  std::string env;
+  for (char **var = environ; *var != nullptr; var++) {
+    env += *var;
+    env += '\n';
+  }
+  size_t sent = 0;
+  while (sent < env.size()) {
+    ssize_t n = send(fd, env.data() + sent, env.size() - sent, MSG_NOSIGNAL);
+    if (n < 0) {
+      if (errno == EINTR)
+        continue;
+      perror("kwallet: send");
+      break;
+    }
+    sent += n;
+  }
+  close(fd);
 }
 
 void TCCClient::spawn(const char *path, const char *const argv[]) {

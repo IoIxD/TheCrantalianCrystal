@@ -1,0 +1,30 @@
+# Mirrors org.freedesktop.impl.portal.Session
+
+interface net.ioi-xd.tcc.portal.Session
+
+# A D-Bus variant: its type signature and the value, as converted
+# for that signature (so not necessarily an object).
+type Variant (signature: string, value: object)
+
+method Close(
+  path: string
+) -> ()
+
+# D-Bus properties, by name.
+method GetProperties(
+  path: string
+) -> (properties: [string]Variant)
+
+# D-Bus signals. Needs the "more" flag; every reply sets one field,
+# named after the signal. `path` is the session's object path.
+method Subscribe() -> (
+  Closed: ?(path: string)
+)
+
+error Failed (message: ?string)
+error InvalidArgument (message: ?string)
+error NotFound (message: ?string)
+error Exists (message: ?string)
+error NotAllowed (message: ?string)
+error Cancelled (message: ?string)
+error WindowDestroyed (message: ?string)

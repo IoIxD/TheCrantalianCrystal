@@ -578,6 +578,7 @@ private:
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
   void launch_initial_components();
   void launch_component(std::string name);
+  void launch_kwallet();
   void spawn(const char *path, const char *const argv[]);
   void reap_children();
   void seat_action(Seat *seat, Action action);

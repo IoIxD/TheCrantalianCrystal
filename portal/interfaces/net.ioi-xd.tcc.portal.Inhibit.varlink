@@ -1,0 +1,42 @@
+# Mirrors org.freedesktop.impl.portal.Inhibit
+
+interface net.ioi-xd.tcc.portal.Inhibit
+
+# A D-Bus variant: its type signature and the value, as converted
+# for that signature (so not necessarily an object).
+type Variant (signature: string, value: object)
+
+method Inhibit(
+  handle: string,
+  app_id: string,
+  window: string,
+  flags: int,
+  options: [string]Variant
+) -> ()
+
+method CreateMonitor(
+  handle: string,
+  session_handle: string,
+  app_id: string,
+  window: string
+) -> (
+  response: int
+)
+
+method QueryEndResponse(
+  session_handle: string
+) -> ()
+
+# D-Bus signals. Needs the "more" flag; every reply sets one field,
+# named after the signal.
+method Subscribe() -> (
+  StateChanged: ?(session_handle: string, state: [string]Variant)
+)
+
+error Failed (message: ?string)
+error InvalidArgument (message: ?string)
+error NotFound (message: ?string)
+error Exists (message: ?string)
+error NotAllowed (message: ?string)
+error Cancelled (message: ?string)
+error WindowDestroyed (message: ?string)

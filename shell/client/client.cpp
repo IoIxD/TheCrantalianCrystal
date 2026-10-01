@@ -199,6 +199,7 @@ void TCCClient::launch_initial_components() {
   launch_component("tcc_systray");
   launch_component("tcc_progman");
   launch_component("tcc_desktop_varlink_daemon");
+  launch_kwallet();
   // mProgmanThread = std::thread([&]() {
   //   extern __attribute__((visibility("default"))) int tcc_program_main(
   //       void (*close_callback)(void *user), void *user);

@@ -25,3 +25,4 @@ In-line with what I do for all my Linux projects now, all shared libraries are d
 - DBus (systray icons)
 - pam, systemd (Screen locking)
 - gbm (Screensaver on the lock screen)
+- kwallet (XDG Secrets Portal)

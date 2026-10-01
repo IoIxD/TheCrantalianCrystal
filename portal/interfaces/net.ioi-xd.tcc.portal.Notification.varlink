@@ -1,0 +1,35 @@
+# Mirrors org.freedesktop.impl.portal.Notification
+
+interface net.ioi-xd.tcc.portal.Notification
+
+# A D-Bus variant: its type signature and the value, as converted
+# for that signature (so not necessarily an object).
+type Variant (signature: string, value: object)
+
+method AddNotification(
+  app_id: string,
+  id: string,
+  notification: [string]Variant
+) -> ()
+
+method RemoveNotification(
+  app_id: string,
+  id: string
+) -> ()
+
+# D-Bus properties, by name.
+method GetProperties() -> (properties: [string]Variant)
+
+# D-Bus signals. Needs the "more" flag; every reply sets one field,
+# named after the signal.
+method Subscribe() -> (
+  ActionInvoked: ?(app_id: string, id: string, action: string, parameter: []Variant)
+)
+
+error Failed (message: ?string)
+error InvalidArgument (message: ?string)
+error NotFound (message: ?string)
+error Exists (message: ?string)
+error NotAllowed (message: ?string)
+error Cancelled (message: ?string)
+error WindowDestroyed (message: ?string)
