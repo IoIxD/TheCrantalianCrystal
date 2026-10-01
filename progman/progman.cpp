@@ -105,27 +105,29 @@ void ProgmanWindow::setup() { mFolders = create_icon_table(mItems); }
 void ProgmanWindow::run() {
   long tick = MwTimeGetTick();
   long over = 0;
-
+  long wait = MwGetInteger(mWindow, MwNwaitMS);
+  if (wait == MwDEFAULT)
+    wait = MwWaitMS;
   while (!MwWindowShouldClose(mWindow)) {
     int v = 0;
-    long t, t2;
-    long more;
+    long t = 0, t2 = 0;
+    long more = 0;
 
-    if (MwPending(mWindow)) {
-      while ((v = MwStep(mWindow)) != 0)
+    while (MwPending(mWindow)) {
+      if ((v = MwStep(mWindow)) != 0)
         break;
     }
 
     for (auto sub : subwindows) {
-      if (MwPending(sub->subwindow)) {
-        while ((v = MwStep(sub->subwindow)) != 0)
+      while (MwPending(sub->subwindow)) {
+        if ((v = MwStep(sub->subwindow)) != 0)
           break;
       }
     }
 
     for (auto sub : ctrl_panel_windows) {
-      if (MwPending(sub->subwindow)) {
-        while ((v = MwStep(sub->subwindow)) != 0)
+      while (MwPending(sub->subwindow)) {
+        if ((v = MwStep(sub->subwindow)) != 0)
           break;
       }
       if (sub->popup) {
@@ -137,6 +139,17 @@ void ProgmanWindow::run() {
     }
 
     mVarlink->step();
+
+    more = over % (wait / 2);
+    t = (tick + wait - more) - (t2 = MwTimeGetTick());
+    if (t > 0) {
+      MwTimeSleep(t);
+      tick = MwTimeGetTick();
+      over -= more;
+    } else {
+      tick = t2;
+      over += -t;
+    }
   }
 }
 

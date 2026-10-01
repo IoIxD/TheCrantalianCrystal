@@ -480,7 +480,15 @@ void MWAPI TCCSystrayClient::menuChosen(MwWidget handle, void *user,
 }
 
 void TCCSystrayClient::run() {
+  long tick = MwTimeGetTick();
+  long over = 0;
+  long wait = MwGetInteger(mWindow, MwNwaitMS);
+  if (wait == MwDEFAULT)
+    wait = MwWaitMS;
   while (!MwWindowShouldClose(mWindow)) {
+    int v = 0;
+    long t = 0, t2 = 0;
+    long more = 0;
     for (auto &protocol : mProtocols)
       protocol->poll();
 
@@ -507,5 +515,16 @@ void TCCSystrayClient::run() {
     // the notch).
     if (relaidOut)
       MwForceRender(mWindow);
+
+    more = over % (wait / 2);
+    t = (tick + wait - more) - (t2 = MwTimeGetTick());
+    if (t > 0) {
+      MwTimeSleep(t);
+      tick = MwTimeGetTick();
+      over -= more;
+    } else {
+      tick = t2;
+      over += -t;
+    }
   };
 }
