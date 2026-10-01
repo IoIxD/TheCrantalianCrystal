@@ -9,6 +9,8 @@ include(GNUInstallDirs)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+# === Code ===
+
 add_subdirectory(submodules/milsko)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/submodules/milsko/include)
 
@@ -32,9 +34,9 @@ add_subdirectory(progman)
 add_subdirectory(portal)
 add_subdirectory(systray)
 
+# === Install ===
+
 set(TCC_INSTALL_DIR ${CMAKE_INSTALL_LIBEXECDIR}/TheCrantalianCrystal)
-# PAM only looks in /etc/pam.d (and the distro's vendor dir), never under the
-# install prefix.
 set(TCC_PAM_DIR /etc/pam.d CACHE PATH "Where to install the PAM service file")
 
 set(TCC_INSTALL_TARGETS
@@ -48,12 +50,10 @@ set(TCC_INSTALL_TARGETS
   tcc_registry
   tcc_registrylib
 )
-# Not built without dbus-1, see portal/CMakeLists.txt.
 if(TARGET tcc_portal)
   list(APPEND TCC_INSTALL_TARGETS tcc_portal)
 endif()
 
-# Find our libraries next to us, and Milsko's where it installs itself.
 file(RELATIVE_PATH TCC_LIBDIR_FROM_INSTALL_DIR
   ${CMAKE_INSTALL_FULL_LIBEXECDIR}/TheCrantalianCrystal
   ${CMAKE_INSTALL_FULL_LIBDIR})

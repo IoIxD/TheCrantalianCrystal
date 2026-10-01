@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "dynload.hpp"
+#include "utils/session_env.hpp"
 
 static std::shared_ptr<TCCClient> client;
 
@@ -72,6 +73,7 @@ int main() {
 #ifdef TCC_HAS_DBUS
   dynload_setup::dbus();
 #endif
+  tcc_setup_session_env();
 
   char *p;
   char a;

@@ -64,3 +64,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/tcc.portal
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/org.freedesktop.impl.portal.desktop.tcc.service
   DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/services)
+# Picks us for the portals we implement and GTK for everything else, when
+# XDG_CURRENT_DESKTOP is TCC (set by tcc_shell).
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/tcc-portals.conf
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/xdg-desktop-portal)
