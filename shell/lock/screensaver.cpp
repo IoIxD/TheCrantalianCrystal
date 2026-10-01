@@ -13,15 +13,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-/*
- * The shell's end of the screensaver loader (see scr_ipc.hpp).
- *
- * The loader runs third party code, so nothing it sends is trusted: anything
- * off gets it stopped, and the lock screen goes black. In particular a buffer
- * the compositor would object to has to be caught here, since a protocol
- * error would take the whole shell's connection down with it.
- */
-
 void TCCLock::start_screensaver() {
   if (!mDmabuf || mModifiers.empty()) {
     fprintf(stderr, "lock: no usable zwp_linux_dmabuf_v1, so no "
@@ -44,8 +35,8 @@ void TCCLock::start_screensaver() {
     perror("socketpair");
     return;
   }
-  // (worked out before forking, only async-signal-safe calls are allowed
-  // after it)
+  // (worked out before forking, only async-signal-safe calls are allowed after
+  // it)
   std::string fd_arg = std::to_string(fds[1]);
 
   pid_t pid = fork();
@@ -133,8 +124,6 @@ void TCCLock::scr_configure(Surface *surface) {
   scr_send(msg);
 }
 
-// Has the loader blur what's under the dialog, if it's up, so its glass has
-// something frosted behind it.
 void TCCLock::scr_blur(Surface *surface) {
   ScrMsg msg;
   msg.type = SCR_MSG_BLUR;
@@ -299,9 +288,8 @@ bool TCCLock::scr_handle_buffer(Surface *surface, const ScrMsg &msg, int fd) {
   buffer->params = zwp_linux_dmabuf_v1_create_params(mDmabuf);
   zwp_linux_buffer_params_v1_add_listener(buffer->params, &mParamsListener,
                                           buffer);
-  zwp_linux_buffer_params_v1_add(buffer->params, fd, 0, msg.offset,
-                                 msg.stride, msg.modifier >> 32,
-                                 msg.modifier & 0xffffffff);
+  zwp_linux_buffer_params_v1_add(buffer->params, fd, 0, msg.offset, msg.stride,
+                                 msg.modifier >> 32, msg.modifier & 0xffffffff);
   // (the request has its own copy of it)
   close(fd);
   zwp_linux_buffer_params_v1_create(buffer->params, msg.width, msg.height,
@@ -343,8 +331,7 @@ void TCCLock::scr_present(ScrBuffer *buffer) {
   wl_surface_damage(surface->surface, 0, 0, INT32_MAX, INT32_MAX);
   if (!surface->frame_callback) {
     surface->frame_callback = wl_surface_frame(surface->surface);
-    wl_callback_add_listener(surface->frame_callback, &mFrameListener,
-                             surface);
+    wl_callback_add_listener(surface->frame_callback, &mFrameListener, surface);
   }
   wl_surface_commit(surface->surface);
 }

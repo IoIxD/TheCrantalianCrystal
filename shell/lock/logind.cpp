@@ -70,11 +70,11 @@ bool TCCLogind::connect() {
 
   // Signals are only sent to us for the session we're in (by path), and
   // only logind itself can send them.
-  std::string session_rule =
-      std::string("type='signal',sender='") + LOGIN1_NAME +
-      "',interface='" + SESSION_IFACE + "',path='" + mSessionPath + "'";
-  std::string sleep_rule = std::string("type='signal',sender='") +
-                           LOGIN1_NAME + "',interface='" + MANAGER_IFACE +
+  std::string session_rule = std::string("type='signal',sender='") +
+                             LOGIN1_NAME + "',interface='" + SESSION_IFACE +
+                             "',path='" + mSessionPath + "'";
+  std::string sleep_rule = std::string("type='signal',sender='") + LOGIN1_NAME +
+                           "',interface='" + MANAGER_IFACE +
                            "',member='PrepareForSleep'";
   for (const std::string &rule : {session_rule, sleep_rule}) {
     dbus_bus_add_match(mConn, rule.c_str(), &err);
@@ -98,13 +98,13 @@ bool TCCLogind::find_session() {
   // process is part of.
   const char *id = getenv("XDG_SESSION_ID");
   if (id && *id) {
-    msg = dbus_message_new_method_call(LOGIN1_NAME, MANAGER_PATH,
-                                       MANAGER_IFACE, "GetSession");
+    msg = dbus_message_new_method_call(LOGIN1_NAME, MANAGER_PATH, MANAGER_IFACE,
+                                       "GetSession");
     dbus_message_append_args(msg, DBUS_TYPE_STRING, &id, DBUS_TYPE_INVALID);
   } else {
     dbus_uint32_t pid = getpid();
-    msg = dbus_message_new_method_call(LOGIN1_NAME, MANAGER_PATH,
-                                       MANAGER_IFACE, "GetSessionByPID");
+    msg = dbus_message_new_method_call(LOGIN1_NAME, MANAGER_PATH, MANAGER_IFACE,
+                                       "GetSessionByPID");
     dbus_message_append_args(msg, DBUS_TYPE_UINT32, &pid, DBUS_TYPE_INVALID);
   }
 
@@ -184,9 +184,9 @@ void TCCLogind::take_sleep_inhibitor() {
   const char *who = "TheCrantalianCrystal";
   const char *why = "Lock the screen before sleeping";
   const char *mode = "delay";
-  dbus_message_append_args(msg, DBUS_TYPE_STRING, &what, DBUS_TYPE_STRING,
-                           &who, DBUS_TYPE_STRING, &why, DBUS_TYPE_STRING,
-                           &mode, DBUS_TYPE_INVALID);
+  dbus_message_append_args(msg, DBUS_TYPE_STRING, &what, DBUS_TYPE_STRING, &who,
+                           DBUS_TYPE_STRING, &why, DBUS_TYPE_STRING, &mode,
+                           DBUS_TYPE_INVALID);
 
   DBusError err;
   dbus_error_init(&err);

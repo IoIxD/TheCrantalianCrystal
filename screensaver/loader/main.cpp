@@ -1,15 +1,3 @@
-/*
- * Runs a screensaver module for the shell's lock screen, drawing into dmabufs
- * the shell puts on its lock surfaces. It's a separate process so a module
- * crashing or hanging can't take the lock screen down with it. See
- * scr_ipc.hpp for how it talks to the shell.
- *
- * There's no Wayland connection here at all: we draw with EGL straight on a
- * GPU render node through GBM.
- *
- * usage: tcc_scr_loader <socket fd>
- */
-
 #include "dynload.hpp"
 #include "egl_loader.hpp"
 #include "gbm_loader.hpp"
@@ -36,8 +24,10 @@
 
 typedef void (*PFNEGLIMAGETARGETTEXTURE2DOES)(GLenum target, void *image);
 
-// Everything GL we need ourselves, from eglGetProcAddress. (The module finds
-// its own.)
+/*
+ * The sheer volume of gl functions that are specific to the screensaver loader
+means we load it all here instead of dynload.
+*/
 #define GL_FUNCS(X)                                                            \
   X(PFNGLGENFRAMEBUFFERSPROC, glGenFramebuffers)                               \
   X(PFNGLDELETEFRAMEBUFFERSPROC, glDeleteFramebuffers)                         \
@@ -137,48 +127,16 @@ static GLuint composite_program = 0;
 // what's around them rather than fading out.
 constexpr int BLUR_MARGIN = 32;
 
-static const char *QUAD_VERT = R"(#version 120
-attribute vec2 position;
-varying vec2 uv;
-void main() {
-    uv = position * 0.5 + 0.5;
-    gl_Position = vec4(position, 0.0, 1.0);
-}
+static const char *QUAD_VERT = R"(
 )";
 
 // One direction of a gaussian blur, over the part of tex given by src.
-static const char *BLUR_FRAG = R"(#version 120
-uniform sampler2D tex;
-uniform vec4 src;  // x, y, width, height, as texture coordinates
-uniform vec2 dir;  // one step along the blur, as texture coordinates
-varying vec2 uv;
-void main() {
-    vec2 p = src.xy + uv * src.zw;
-    vec3 sum = vec3(0.0);
-    float total = 0.0;
-    for (int i = -12; i <= 12; i++) {
-        float w = exp(-float(i * i) / 32.0);  // sigma of 4 steps
-        sum += texture2D(tex, p + dir * float(i)).rgb * w;
-        total += w;
-    }
-    gl_FragColor = vec4(sum / total, 1.0);
-}
+static const char *BLUR_FRAG = R"(
 )";
 
 // The blurred result back onto the frame, with rounded corners (using the
 // same distance function as the decorations).
-static const char *COMPOSITE_FRAG = R"(#version 120
-uniform sampler2D tex;
-uniform vec4 src;
-uniform vec2 size;
-uniform float radius;
-varying vec2 uv;
-void main() {
-    vec2 q = abs(uv * size - size * 0.5) - size * 0.5 + radius;
-    float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
-    float alpha = 1.0 - smoothstep(-0.75, 0.75, dist);
-    gl_FragColor = vec4(texture2D(tex, src.xy + uv * src.zw).rgb, alpha);
-}
+static const char *COMPOSITE_FRAG = R"(
 )";
 
 [[noreturn]] static void die(const char *what) {
@@ -214,8 +172,8 @@ static int open_render_node() {
     return open(path, O_RDWR | O_CLOEXEC);
   }
   for (int i = 128; i < 192; i++) {
-    int fd = open(std::format("/dev/dri/renderD{}", i).c_str(),
-                  O_RDWR | O_CLOEXEC);
+    int fd =
+        open(std::format("/dev/dri/renderD{}", i).c_str(), O_RDWR | O_CLOEXEC);
     if (fd >= 0) {
       return fd;
     }
@@ -281,8 +239,8 @@ static void setup_egl() {
   // (EGL_KHR_surfaceless_context).
   EGLint context_attribs[] = {EGL_CONTEXT_MAJOR_VERSION, 2,
                               EGL_CONTEXT_MINOR_VERSION, 0, EGL_NONE};
-  egl_context = eglCreateContext(egl_display, EGL_NO_CONFIG_KHR,
-                                 EGL_NO_CONTEXT, context_attribs);
+  egl_context = eglCreateContext(egl_display, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT,
+                                 context_attribs);
   if (egl_context == EGL_NO_CONTEXT) {
     die("eglCreateContext failed");
   }
@@ -336,9 +294,9 @@ static gbm_bo *create_bo(int width, int height, uint64_t *modifier) {
   }
 
   if (!explicit_modifiers.empty()) {
-    gbm_bo *bo = gbm_bo_create_with_modifiers(
-        gbm, width, height, SCR_FORMAT, explicit_modifiers.data(),
-        explicit_modifiers.size());
+    gbm_bo *bo = gbm_bo_create_with_modifiers(gbm, width, height, SCR_FORMAT,
+                                              explicit_modifiers.data(),
+                                              explicit_modifiers.size());
     if (bo) {
       *modifier = gbm_bo_get_modifier(bo);
       return bo;
@@ -346,8 +304,7 @@ static gbm_bo *create_bo(int width, int height, uint64_t *modifier) {
   }
   if (implicit) {
     *modifier = SCR_MOD_INVALID;
-    return gbm_bo_create(gbm, width, height, SCR_FORMAT,
-                         GBM_BO_USE_RENDERING);
+    return gbm_bo_create(gbm, width, height, SCR_FORMAT, GBM_BO_USE_RENDERING);
   }
   return nullptr;
 }
@@ -383,11 +340,10 @@ static void buffer_create(Output *output, uint32_t id) {
       (EGLint)stride,
   };
   if (modifier != SCR_MOD_INVALID) {
-    attribs.insert(attribs.end(),
-                   {EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
-                    (EGLint)(modifier & 0xffffffff),
-                    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT,
-                    (EGLint)(modifier >> 32)});
+    attribs.insert(attribs.end(), {EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
+                                   (EGLint)(modifier & 0xffffffff),
+                                   EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT,
+                                   (EGLint)(modifier >> 32)});
   }
   attribs.push_back(EGL_NONE);
   buffer->image = egl_create_image(egl_display, EGL_NO_CONTEXT,
@@ -418,8 +374,7 @@ static void buffer_create(Output *output, uint32_t id) {
                              GL_TEXTURE_2D, buffer->texture, 0);
   gl::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                 GL_RENDERBUFFER, buffer->depth);
-  if (gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-      GL_FRAMEBUFFER_COMPLETE) {
+  if (gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
     die("framebuffer incomplete");
   }
   gl::glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -446,8 +401,7 @@ static void target_free(Target *target) {
 }
 
 static void target_resize(Target *target, int width, int height) {
-  if (target->texture && target->width == width &&
-      target->height == height) {
+  if (target->texture && target->width == width && target->height == height) {
     return;
   }
   target_free(target);
@@ -485,8 +439,7 @@ static void blur(Output *output, Buffer *buffer) {
   int sx = std::max(output->blur_x - BLUR_MARGIN, 0);
   int sy = std::max(output->blur_y - BLUR_MARGIN, 0);
   int sw = std::min(output->blur_x + output->blur_width + BLUR_MARGIN, w) - sx;
-  int sh =
-      std::min(output->blur_y + output->blur_height + BLUR_MARGIN, h) - sy;
+  int sh = std::min(output->blur_y + output->blur_height + BLUR_MARGIN, h) - sy;
   if (sw <= 0 || sh <= 0) {
     return;
   }
@@ -514,16 +467,16 @@ static void blur(Output *output, Buffer *buffer) {
   gl::glBindFramebuffer(GL_FRAMEBUFFER, horizontal->fbo);
   gl::glViewport(0, 0, horizontal->width, horizontal->height);
   gl::glBindTexture(GL_TEXTURE_2D, buffer->texture);
-  gl::glUniform4f(gl::glGetUniformLocation(blur_program, "src"),
-                  (float)sx / w, (float)sy / h, (float)sw / w, (float)sh / h);
+  gl::glUniform4f(gl::glGetUniformLocation(blur_program, "src"), (float)sx / w,
+                  (float)sy / h, (float)sw / w, (float)sh / h);
   gl::glUniform2f(gl::glGetUniformLocation(blur_program, "dir"), 2.f / w, 0.f);
   draw_quad();
 
   // Then vertically.
   gl::glBindFramebuffer(GL_FRAMEBUFFER, vertical->fbo);
   gl::glBindTexture(GL_TEXTURE_2D, horizontal->texture);
-  gl::glUniform4f(gl::glGetUniformLocation(blur_program, "src"), 0.f, 0.f,
-                  1.f, 1.f);
+  gl::glUniform4f(gl::glGetUniformLocation(blur_program, "src"), 0.f, 0.f, 1.f,
+                  1.f);
   gl::glUniform2f(gl::glGetUniformLocation(blur_program, "dir"), 0.f,
                   1.f / vertical->height);
   draw_quad();
@@ -537,11 +490,10 @@ static void blur(Output *output, Buffer *buffer) {
   gl::glUseProgram(composite_program);
   gl::glUniform1i(gl::glGetUniformLocation(composite_program, "tex"), 0);
   gl::glBindTexture(GL_TEXTURE_2D, vertical->texture);
-  gl::glUniform4f(gl::glGetUniformLocation(composite_program, "src"),
-                  (float)(output->blur_x - sx) / sw,
-                  (float)(output->blur_y - sy) / sh,
-                  (float)output->blur_width / sw,
-                  (float)output->blur_height / sh);
+  gl::glUniform4f(
+      gl::glGetUniformLocation(composite_program, "src"),
+      (float)(output->blur_x - sx) / sw, (float)(output->blur_y - sy) / sh,
+      (float)output->blur_width / sw, (float)output->blur_height / sh);
   gl::glUniform2f(gl::glGetUniformLocation(composite_program, "size"),
                   (float)output->blur_width, (float)output->blur_height);
   gl::glUniform1f(gl::glGetUniformLocation(composite_program, "radius"),
@@ -554,8 +506,8 @@ static void blur(Output *output, Buffer *buffer) {
 }
 
 // x and y are from the top left, and from the shell.
-static void output_set_blur(Output *output, int x, int y, int width,
-                            int height, int radius) {
+static void output_set_blur(Output *output, int x, int y, int width, int height,
+                            int radius) {
   if (width <= 0 || height <= 0 || radius < 0) {
     output->blur_width = output->blur_height = 0;
     return;
@@ -662,9 +614,9 @@ static void output_draw(Output *output) {
 static void handle_msg(const ScrMsg &msg) {
   switch (msg.type) {
   case SCR_MSG_MODIFIERS:
-    modifiers.assign(msg.modifiers,
-                     msg.modifiers +
-                         std::min<uint32_t>(msg.n_modifiers, SCR_MAX_MODIFIERS));
+    modifiers.assign(
+        msg.modifiers,
+        msg.modifiers + std::min<uint32_t>(msg.n_modifiers, SCR_MAX_MODIFIERS));
     break;
   case SCR_MSG_CONFIGURE:
     output_configure(msg.output, msg.width, msg.height);
@@ -679,8 +631,7 @@ static void handle_msg(const ScrMsg &msg) {
     break;
   case SCR_MSG_BLUR:
     if (Output *output = find_output(msg.output)) {
-      output_set_blur(output, msg.x, msg.y, msg.width, msg.height,
-                      msg.radius);
+      output_set_blur(output, msg.x, msg.y, msg.width, msg.height, msg.radius);
     }
     break;
   case SCR_MSG_RELEASE:

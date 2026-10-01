@@ -188,8 +188,7 @@ class TCCLock {
 
   bool setup_egl();
   void setup_gl();
-  void dialog_frame(Surface *surface, int *x, int *y, int *width,
-                    int *height);
+  void dialog_frame(Surface *surface, int *x, int *y, int *width, int *height);
   bool close_button_contains(Surface *surface, double x, double y);
   bool field_contains(Surface *surface, double x, double y);
   void set_field_focused(bool focused);
@@ -251,8 +250,7 @@ class TCCLock {
   };
 
   static void idle_idled(void *data, ext_idle_notification_v1 *notification);
-  static void idle_resumed(void *data,
-                           ext_idle_notification_v1 *notification);
+  static void idle_resumed(void *data, ext_idle_notification_v1 *notification);
   const ext_idle_notification_v1_listener mIdleListener = {
       .idled = idle_idled,
       .resumed = idle_resumed,
@@ -265,11 +263,10 @@ class TCCLock {
 
   static void keyboard_keymap(void *data, wl_keyboard *keyboard,
                               uint32_t format, int32_t fd, uint32_t size);
-  static void keyboard_enter(void *data, wl_keyboard *keyboard,
-                             uint32_t serial, wl_surface *surface,
-                             wl_array *keys);
-  static void keyboard_leave(void *data, wl_keyboard *keyboard,
-                             uint32_t serial, wl_surface *surface);
+  static void keyboard_enter(void *data, wl_keyboard *keyboard, uint32_t serial,
+                             wl_surface *surface, wl_array *keys);
+  static void keyboard_leave(void *data, wl_keyboard *keyboard, uint32_t serial,
+                             wl_surface *surface);
   static void keyboard_key(void *data, wl_keyboard *keyboard, uint32_t serial,
                            uint32_t time, uint32_t key, uint32_t state);
   static void keyboard_modifiers(void *data, wl_keyboard *keyboard,

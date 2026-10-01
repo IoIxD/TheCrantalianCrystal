@@ -1,12 +1,5 @@
 #version 330
 
-/*
- * The lock screen dialog's decoration: shell/client/ssd.frag, but only ever
- * with a close button, in its own colours, and made of glass.
- */
-
-/* as somebody who has struggled with math for 24 fucking years of his life i will shamefully admit i used AI for some of this code */
-
 #define BUTTON_TYPE_CLOSE 0
 
 in vec4 pos;
@@ -113,11 +106,9 @@ void draw_button(int type, vec2 lo, vec2 hi) {
 }
 
 void main() {
-    // (still what the close button's shading goes by)
     mixBy = (1.0 - pos.y);
     if (mixBy > 0.75) mixBy = 0.75;
 
-    // All the way from one colour at the top to the other at the bottom.
     mixedColorBackground = mix(baseColorBackground, lowColorBackground, (1.0 - pos.y) * 0.5);
 
     frag_coord = (pos.xy * 0.5 + 0.5) * resolution;

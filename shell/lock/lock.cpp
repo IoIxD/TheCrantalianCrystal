@@ -75,8 +75,8 @@ void TCCLock::idle_idled(void *data, ext_idle_notification_v1 *notification) {
   self->do_lock();
 }
 
-void TCCLock::idle_resumed(void *data,
-                           ext_idle_notification_v1 *notification) {}
+void TCCLock::idle_resumed(void *data, ext_idle_notification_v1 *notification) {
+}
 
 void TCCLock::dmabuf_format(void *data, zwp_linux_dmabuf_v1 *dmabuf,
                             uint32_t format) {}
@@ -395,8 +395,8 @@ static wl_buffer *create_black_buffer(wl_shm *shm, int width, int height) {
     return nullptr;
   }
   wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
-  wl_buffer *buffer = wl_shm_pool_create_buffer(pool, 0, width, height,
-                                                width * 4, WL_SHM_FORMAT_XRGB8888);
+  wl_buffer *buffer = wl_shm_pool_create_buffer(
+      pool, 0, width, height, width * 4, WL_SHM_FORMAT_XRGB8888);
   wl_shm_pool_destroy(pool);
   close(fd);
   return buffer;
@@ -439,8 +439,8 @@ void TCCLock::surface_configure(void *data,
       create_black_buffer(self->mClient->mShm, width, height);
 
   int dialog_w, dialog_h;
-  self->dialog_frame(surface, &surface->dialog_x, &surface->dialog_y,
-                     &dialog_w, &dialog_h);
+  self->dialog_frame(surface, &surface->dialog_x, &surface->dialog_y, &dialog_w,
+                     &dialog_h);
   wl_subsurface_set_position(surface->dialog_subsurface, surface->dialog_x,
                              surface->dialog_y);
 

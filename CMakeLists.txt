@@ -21,16 +21,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/iconlib)
 add_subdirectory(varlink)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/varlink)
 
+add_subdirectory(screensaver)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screensaver/loader)
+
 add_subdirectory(shell)
 add_subdirectory(progman)
 add_subdirectory(systray)
-add_subdirectory(screensaver)
-
-# Install
-#
-# The shell starts its components and loads its screensavers from the
-# directory it's in, so everything goes in one private directory with just
-# the shell linked into bin.
 
 set(TCC_INSTALL_DIR ${CMAKE_INSTALL_LIBEXECDIR}/TheCrantalianCrystal)
 # PAM only looks in /etc/pam.d (and the distro's vendor dir), never under the

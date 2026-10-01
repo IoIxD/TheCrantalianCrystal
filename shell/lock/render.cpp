@@ -1,19 +1,17 @@
 #include "lock.hpp"
 
 #include "../client/ssd.hpp"
-#include "lock_ssd_shader.h"
 #include "../utils/texture.hpp"
+#include "lock_ssd_shader.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <format>
 
-// The dialog's contents, not counting the decoration.
 #define DIALOG_WIDTH 380
 #define DIALOG_HEIGHT 112
 #define FIELD_HEIGHT 22
-// How opaque the white behind the dialog's contents is.
 #define DIALOG_ALPHA 0.6f
 
 // The password box, in the dialog's coordinates.
@@ -26,20 +24,11 @@ bool TCCLock::setup_egl() {
     return true;
   }
 
-  EGLint config_attribs[] = {EGL_SURFACE_TYPE,
-                             EGL_WINDOW_BIT,
-                             EGL_RENDERABLE_TYPE,
-                             EGL_OPENGL_BIT,
-                             EGL_RED_SIZE,
-                             8,
-                             EGL_GREEN_SIZE,
-                             8,
-                             EGL_BLUE_SIZE,
-                             8,
+  EGLint config_attribs[] = {EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                             EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_RED_SIZE,
+                             8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
                              // For the decoration's rounded corners.
-                             EGL_ALPHA_SIZE,
-                             8,
-                             EGL_NONE};
+                             EGL_ALPHA_SIZE, 8, EGL_NONE};
   EGLint context_attribs[] = {EGL_CONTEXT_MAJOR_VERSION, 1,
                               EGL_CONTEXT_MINOR_VERSION, 1, EGL_NONE};
   EGLint major, minor, n;
@@ -183,10 +172,6 @@ void TCCLock::dialog_unmap(Surface *surface) {
   scr_blur(surface);
 }
 
-/*
- * The dialog, decorated like any other window but with only a close button.
- * Drawn in its own coordinates, it's a subsurface.
- */
 void TCCLock::draw(Surface *surface) {
   if (surface->egl_surface == EGL_NO_SURFACE) {
     return;
