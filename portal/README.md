@@ -5,12 +5,9 @@ you'll notice the dbus here is done by AI. the meta here is using AI to not have
 
 ## implemented interfaces:
 
-- Account portal
-- Email portal
-- File chooser portal
 - Inhibit portal
 - Notification portal
-- Print portal
 - Settings portal
 
-Secrets portal is handled by kwalletd6, everything else falls back to gtk
+Everything else relies on the GTK portal
+

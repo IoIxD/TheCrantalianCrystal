@@ -94,8 +94,7 @@ bool TCCPortal::start(const char *address) {
       });
   mDarkTheme = mRegistry->GetValue<bool>("Dark Theme");
 
-  return addAccount() && addEmail() && addFileChooser() && addInhibit() &&
-         addNotification() && addPrint() && addRequest() && addSession() &&
+  return addInhibit() && addNotification() && addRequest() && addSession() &&
          addSettings();
 }
 

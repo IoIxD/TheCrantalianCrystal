@@ -54,40 +54,14 @@ class TCCPortal {
   // Logs a varlink_service_add_interface() failure.
   static bool checkInterface(const char *name, long error);
 
-  bool addAccount();
-  bool addEmail();
-  bool addFileChooser();
   bool addInhibit();
   bool addNotification();
-  bool addPrint();
   bool addRequest();
   bool addSession();
   bool addSettings();
 
   // Emits SettingChanged if `dark` is new.
   void updateDarkTheme(std::optional<bool> dark);
-
-  // net.ioi-xd.tcc.portal.Account
-  static long AccountGetUserInformation(VarlinkService *service,
-                                        VarlinkCall *call,
-                                        VarlinkObject *parameters,
-                                        uint64_t flags, void *userdata);
-
-  // net.ioi-xd.tcc.portal.Email
-  static long EmailComposeEmail(VarlinkService *service, VarlinkCall *call,
-                                VarlinkObject *parameters, uint64_t flags,
-                                void *userdata);
-
-  // net.ioi-xd.tcc.portal.FileChooser
-  static long FileChooserOpenFile(VarlinkService *service, VarlinkCall *call,
-                                  VarlinkObject *parameters, uint64_t flags,
-                                  void *userdata);
-  static long FileChooserSaveFile(VarlinkService *service, VarlinkCall *call,
-                                  VarlinkObject *parameters, uint64_t flags,
-                                  void *userdata);
-  static long FileChooserSaveFiles(VarlinkService *service, VarlinkCall *call,
-                                   VarlinkObject *parameters, uint64_t flags,
-                                   void *userdata);
 
   static long InhibitInhibit(VarlinkService *service, VarlinkCall *call,
                              VarlinkObject *parameters, uint64_t flags,
@@ -113,14 +87,6 @@ class TCCPortal {
                                         VarlinkCall *call,
                                         VarlinkObject *parameters,
                                         uint64_t flags, void *userdata);
-
-  // net.ioi-xd.tcc.portal.Print
-  static long PrintPreparePrint(VarlinkService *service, VarlinkCall *call,
-                                VarlinkObject *parameters, uint64_t flags,
-                                void *userdata);
-  static long PrintPrint(VarlinkService *service, VarlinkCall *call,
-                         VarlinkObject *parameters, uint64_t flags,
-                         void *userdata);
 
   // net.ioi-xd.tcc.portal.Request
   static long RequestClose(VarlinkService *service, VarlinkCall *call,
