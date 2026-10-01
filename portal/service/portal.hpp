@@ -1,7 +1,9 @@
 #pragma once
 
+#include "registry.hpp"
 #include "varlink_loader.hpp"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -37,6 +39,12 @@ class TCCPortal {
   TCCPortalSubscribers mSessionSubscribers;
   TCCPortalSubscribers mSettingsSubscribers;
 
+  TCCRegistryConnection *mRegistry;
+  // For SettingChanged.
+  TCCRegistrySubscription *mRegistrySubscription = nullptr;
+  // Dark Theme as last seen, to tell whether it changed.
+  std::optional<bool> mDarkTheme;
+
   TCCPortal() = default;
   ~TCCPortal();
 
@@ -55,6 +63,9 @@ class TCCPortal {
   bool addRequest();
   bool addSession();
   bool addSettings();
+
+  // Emits SettingChanged if `dark` is new.
+  void updateDarkTheme(std::optional<bool> dark);
 
   // net.ioi-xd.tcc.portal.Account
   static long AccountGetUserInformation(VarlinkService *service,
@@ -146,4 +157,11 @@ public:
   // What to poll for, and what to call when it's readable.
   int fd();
   void process();
+
+  // The same for tcc_registry, which may not be (or stay) up: subscribe until
+  // that works, and in the meantime registryFd() is -1.
+  bool subscribeRegistry();
+  int registryFd();
+  short registryEvents();
+  void processRegistry(short revents);
 };

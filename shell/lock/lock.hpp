@@ -16,13 +16,10 @@
 #include "egl_loader.hpp"
 #include "scr_ipc.hpp"
 
+#include "registry.hpp"
+
 #include "logind.hpp"
 #include "pam.hpp"
-
-// How long without any input before the session locks itself.
-#ifndef TCC_LOCK_IDLE_MS
-#define TCC_LOCK_IDLE_MS (5 * 60 * 1000)
-#endif
 
 /*
  * Locks the session with ext_session_lock_v1, and unlocks it again once the
@@ -126,6 +123,8 @@ class TCCLock {
   uint32_t mNextSurfaceId = 1;
   std::vector<Seat *> mSeats;
   struct xkb_context *mXkbContext = nullptr;
+
+  TCCRegistryConnection *mRegistry;
 
   // Wakes the main loop up for request_lock and finished PAM conversations.
   int mWakeFd = -1;

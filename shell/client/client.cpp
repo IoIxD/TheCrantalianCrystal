@@ -196,6 +196,7 @@ void TCCClient::run() {
 void TCCClient::lock() { mLock->request_lock(); }
 
 void TCCClient::launch_initial_components() {
+  launch_component("tcc_registry");
   launch_component("tcc_systray");
   launch_component("tcc_progman");
   launch_component("tcc_desktop_varlink_daemon");

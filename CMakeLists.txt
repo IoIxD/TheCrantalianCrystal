@@ -21,6 +21,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/iconlib)
 add_subdirectory(varlink)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/varlink)
 
+add_subdirectory(registry)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/registry/lib)
+
 add_subdirectory(screensaver)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screensaver/loader)
 
@@ -42,6 +45,8 @@ set(TCC_INSTALL_TARGETS
   tcc_scr_tunnel
   tcc_iconlib
   tcc_varlinklib
+  tcc_registry
+  tcc_registrylib
 )
 # Not built without dbus-1, see portal/CMakeLists.txt.
 if(TARGET tcc_portal)

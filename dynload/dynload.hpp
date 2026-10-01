@@ -9,6 +9,7 @@ bool gl();
 bool gtk();
 bool pam();
 bool pulse();
+bool sqlite();
 bool wayland();
 bool varlink();
 bool xkbcommon();

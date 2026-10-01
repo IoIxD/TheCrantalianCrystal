@@ -86,6 +86,14 @@ bool TCCPortal::start(const char *address) {
     mService = nullptr;
     return false;
   }
+  mRegistry = new TCCRegistryConnection();
+  mRegistrySubscription = new TCCRegistrySubscription(
+      [this](const std::string &key, const TCCRegistryValue &value) {
+        if (key == "Dark Theme" && std::holds_alternative<bool>(value))
+          updateDarkTheme(std::get<bool>(value));
+      });
+  mDarkTheme = mRegistry->GetValue<bool>("Dark Theme");
+
   return addAccount() && addEmail() && addFileChooser() && addInhibit() &&
          addNotification() && addPrint() && addRequest() && addSession() &&
          addSettings();
@@ -98,4 +106,22 @@ void TCCPortal::process() {
   if (error < 0)
     fprintf(stderr, "tcc_portal: varlink service: %s\n",
             varlink_error_string(-error));
+}
+
+bool TCCPortal::subscribeRegistry() {
+  if (mRegistrySubscription->subscribed())
+    return true;
+  if (!mRegistrySubscription->subscribe())
+    return false;
+  // It may have changed while we weren't subscribed.
+  updateDarkTheme(mRegistry->GetValue<bool>("Dark Theme"));
+  return true;
+}
+
+int TCCPortal::registryFd() { return mRegistrySubscription->fd(); }
+
+short TCCPortal::registryEvents() { return mRegistrySubscription->events(); }
+
+void TCCPortal::processRegistry(short revents) {
+  mRegistrySubscription->process(revents);
 }

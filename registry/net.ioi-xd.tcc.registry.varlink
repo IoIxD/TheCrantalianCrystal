@@ -1,0 +1,38 @@
+# The settings registry. Settings live in a fixed set of keys, each
+# with a type and a default (see daemon/keys.cpp); anything else is
+# rejected.
+
+interface net.ioi-xd.tcc.registry
+
+type Type (bool, int, float, string)
+
+# Exactly one field is set, the one named by the key's type.
+type Value (
+  bool: ?bool,
+  int: ?int,
+  float: ?float,
+  string: ?string
+)
+
+type Key (
+  name: string,
+  type: Type,
+  default: Value,
+  description: string
+)
+
+# The key's value, or its default if it was never set.
+method GetValue(key: string) -> (value: Value)
+
+method SetValue(key: string, value: Value) -> ()
+
+# Every valid key.
+method ListKeys() -> (keys: []Key)
+
+# Needs the "more" flag; replies whenever a SetValue (from anyone)
+# changes a key's value.
+method Subscribe() -> (key: string, value: Value)
+
+error InvalidKey (key: string)
+error InvalidValue (key: string, expected: Type)
+error Failed (message: string)

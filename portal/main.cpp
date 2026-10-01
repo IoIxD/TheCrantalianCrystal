@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 static const char *BUS_NAME = "org.freedesktop.impl.portal.desktop.tcc";
+static const int REGISTRY_RETRY_MS = 5000;
 
 int main() {
   if (!dynload_setup::dbus() || !dynload_setup::varlink())
@@ -71,10 +72,14 @@ int main() {
       ;
     dbus_connection_flush(bus);
 
+    // Until tcc_registry is up, its pollfd is ignored and we retry
+    // periodically.
+    bool subscribed = portal.subscribeRegistry();
     std::vector<pollfd> fds = {{bus_fd, POLLIN, 0},
-                               {portal.fd(), POLLIN, 0}};
+                               {portal.fd(), POLLIN, 0},
+                               {portal.registryFd(), portal.registryEvents(), 0}};
     bridge.add_pollfds(fds);
-    if (poll(fds.data(), fds.size(), -1) < 0) {
+    if (poll(fds.data(), fds.size(), subscribed ? -1 : REGISTRY_RETRY_MS) < 0) {
       if (errno == EINTR)
         continue;
       perror("tcc_portal: poll");
@@ -85,7 +90,8 @@ int main() {
       break;
     if (fds[1].revents)
       portal.process();
-    bridge.dispatch(fds, 2);
+    portal.processRegistry(fds[2].revents);
+    bridge.dispatch(fds, 3);
   }
 
   unlink(socket_path.c_str());

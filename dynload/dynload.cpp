@@ -11,6 +11,7 @@
 #include "gtk_loader.hpp"
 #include "pam_loader.hpp"
 #include "pulse_loader.hpp"
+#include "sqlite_loader.hpp"
 #include "varlink_loader.hpp"
 #include "wayland_loader.hpp"
 #include "xkbcommon_loader.hpp"
@@ -26,6 +27,7 @@ VarlinkLib *VARLINK_LIB = nullptr;
 PamLib *PAM_LIB = nullptr;
 XkbcommonLib *XKB_LIB = nullptr;
 GbmLib *GBM_LIB = nullptr;
+SqliteLib *SQLITE_LIB = nullptr;
 
 static void *open_library(std::initializer_list<const char *> sonames,
                           const char *what = "") {
@@ -311,6 +313,30 @@ bool gbm() {
     return false;                                                              \
   }
   TCC_GBM_FUNCS(X)
+#undef X
+
+  return true;
+}
+
+bool sqlite() {
+  SQLITE_LIB = new SqliteLib();
+  SQLITE_LIB->handle =
+      open_library({"libsqlite3.so.0", "libsqlite3.so"}, "libsqlite3");
+
+  if (!SQLITE_LIB->handle) {
+    return false;
+  }
+
+#define X(name)                                                                \
+  SQLITE_LIB->name = reinterpret_cast<decltype(SQLITE_LIB->name)>(             \
+      dlsym(SQLITE_LIB->handle, #name));                                       \
+  if (!SQLITE_LIB->name) {                                                     \
+    fprintf(stderr, "libsqlite3 is missing symbol %s\n", #name);               \
+    dlclose(SQLITE_LIB->handle);                                               \
+    SQLITE_LIB->handle = nullptr;                                              \
+    return false;                                                              \
+  }
+  TCC_SQLITE_FUNCS(X)
 #undef X
 
   return true;

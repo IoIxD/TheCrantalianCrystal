@@ -26,6 +26,7 @@ pkg_check_modules(deps REQUIRED
   wayland-egl
   freetype2
   libvarlink
+  sqlite3
   xkbcommon
   gbm
 )

@@ -48,10 +48,13 @@ void ProgmanWindow::update_list() {
       }
     }
   }
+
+  if (!mItems.contains("Settings")) {
+    mItems.insert_or_assign("Settings", std::vector<GAppInfo *>());
+  }
 }
 
-ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
-/*: mCloseCallback(close_callback), mUserPtr(user) */ {
+ProgmanWindow::ProgmanWindow() {
   MwSizeHints hints = {0};
 
   hints.min_width = hints.max_width = 640;
@@ -65,6 +68,7 @@ ProgmanWindow::ProgmanWindow(/*void (*close_callback)(void *user), void *user*/)
   MwAddUserHandler(mWindow, MwNtickHandler, tick, this);
 
   mVarlink = new TCCVarlinkConnection();
+  mRegistry = new TCCRegistryConnection();
 
   if (mVarlink->open()) {
     MwAddUserHandler(
@@ -108,14 +112,27 @@ void ProgmanWindow::run() {
     long more;
 
     if (MwPending(mWindow)) {
-      if ((v = MwStep(mWindow)) != 0)
+      while ((v = MwStep(mWindow)) != 0)
         break;
     }
 
     for (auto sub : subwindows) {
       if (MwPending(sub->subwindow)) {
-        if ((v = MwStep(sub->subwindow)) != 0)
+        while ((v = MwStep(sub->subwindow)) != 0)
           break;
+      }
+    }
+
+    for (auto sub : ctrl_panel_windows) {
+      if (MwPending(sub->subwindow)) {
+        while ((v = MwStep(sub->subwindow)) != 0)
+          break;
+      }
+      if (sub->popup) {
+        while (MwPending(sub->popup)) {
+          if ((v = MwStep(sub->popup)) != 0)
+            break;
+        }
       }
     }
 
@@ -222,7 +239,12 @@ void MWAPI ProgmanWindow::FolderPair::icon_dbl_click(MwWidget handle,
       pair->win->doubleClickTimer = 10;
     } else {
       /* we've double clicked */
-      pair->win->create_subwindow(MwGetString(pair->folder_name, MwNtext));
+      std::string name = MwGetString(pair->folder_name, MwNtext);
+      if (name == "Settings") {
+        pair->win->create_control_panel();
+      } else {
+        pair->win->create_subwindow(name);
+      }
     }
   } else if (pair->subwin) {
     for (auto p : pair->subwin->folderPairs) {

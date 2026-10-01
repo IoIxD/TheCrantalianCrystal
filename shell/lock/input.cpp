@@ -35,10 +35,13 @@ void TCCLock::seat_capabilities(wl_seat *wl_seat, uint32_t capabilities) {
     mSeats.push_back(seat);
 
     if (mIdleNotifier) {
-      seat->idle_notification = ext_idle_notifier_v1_get_idle_notification(
-          mIdleNotifier, TCC_LOCK_IDLE_MS, wl_seat);
-      ext_idle_notification_v1_add_listener(seat->idle_notification,
-                                            &mIdleListener, this);
+      auto timeout = mRegistry->GetValue<int64_t>("Idle Timeout");
+      if (timeout.has_value()) {
+        seat->idle_notification = ext_idle_notifier_v1_get_idle_notification(
+            mIdleNotifier, timeout.value(), wl_seat);
+        ext_idle_notification_v1_add_listener(seat->idle_notification,
+                                              &mIdleListener, this);
+      }
     }
   }
 
@@ -183,9 +186,9 @@ void TCCLock::keyboard_keymap(void *data, wl_keyboard *wl_keyboard,
   if (map == MAP_FAILED) {
     return;
   }
-  xkb_keymap *keymap = xkb_keymap_new_from_string(
-      self->mXkbContext, map, XKB_KEYMAP_FORMAT_TEXT_V1,
-      XKB_KEYMAP_COMPILE_NO_FLAGS);
+  xkb_keymap *keymap = xkb_keymap_new_from_string(self->mXkbContext, map,
+                                                  XKB_KEYMAP_FORMAT_TEXT_V1,
+                                                  XKB_KEYMAP_COMPILE_NO_FLAGS);
   munmap(map, size);
   if (!keymap) {
     return;

@@ -15,7 +15,7 @@ endif()
 file(GLOB_RECURSE sources *.cpp)
 
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} PRIVATE tcc_dynload)
+target_link_libraries(${PROJECT_NAME} PRIVATE tcc_dynload tcc_registrylib)
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${DBUS_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}

@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "registry.hpp"
+
 class ProgmanWindow {
   IconManager mIcons;
   MwWidget mWindow = nullptr;
@@ -29,6 +31,8 @@ class ProgmanWindow {
 
   void (*mCloseCallback)(void *user);
   void *mUserPtr;
+
+  TCCRegistryConnection *mRegistry = nullptr;
 
 public:
   ProgmanWindow(void (*close_callback)(void *user), void *user);
@@ -65,9 +69,35 @@ public:
     std::vector<GAppInfo *> appinfos;
     int doubleClickTimer = 0;
   };
+  struct ControlPanelWindow {
+    MwWidget subwindow = nullptr;
+    ProgmanWindow *win = nullptr;
+    MwWidget items = nullptr;
+    MwWidget popup = nullptr;
+    MwWidget popup_box = nullptr;
+    MwWidget popup_text = nullptr;
+    MwWidget popup_sep1 = nullptr;
 
+    MwWidget popup_entry = nullptr;
+    MwWidget popup_checkbox_checkbox = nullptr;
+    MwWidget popup_checkbox_text = nullptr;
+
+    MwWidget popup_sep2 = nullptr;
+    MwWidget popup_submit = nullptr;
+    static void MWAPI remove(MwWidget handle, void *user, void *client);
+    static void MWAPI resize(MwWidget handle, void *user, void *client);
+    static void MWAPI activate(MwWidget handle, void *user, void *call);
+    static void MWAPI submit(MwWidget handle, void *user, void *call);
+    int doubleClickTimer = 0;
+
+    std::string ty_name;
+    TCCRegistryType ty;
+
+    void refresh_items();
+  };
   std::vector<FolderPair *> folderPairs;
   std::vector<Subwindow *> subwindows;
+  std::vector<ControlPanelWindow *> ctrl_panel_windows;
 
   /* collect all the categories/items */
   void update_list();
@@ -77,6 +107,8 @@ public:
 
   void create_subwindow(std::string catName);
   void remove_subwindow(Subwindow *sub);
+
+  void create_control_panel();
 
   MwWidget create_icon_table(
       std::unordered_map<std::string, std::vector<GAppInfo *>> items);

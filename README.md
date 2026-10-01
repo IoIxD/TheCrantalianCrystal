@@ -16,8 +16,10 @@ In-line with what I do for all my Linux projects now, all shared libraries are d
 - GL, EGL, and wayland-egl
 - Freetype2
 - varlink
+- sqlite3
 - Milsko (bundled)
 - xkbcommon
+- sqlite3
 
 **Optional Dependencies:**
 
