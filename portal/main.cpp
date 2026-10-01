@@ -1,14 +1,8 @@
-/*
- * tcc_portal: xdg-desktop-portal backend for TheCrantalianCrystal. Started by
- * D-Bus activation when xdg-desktop-portal first needs it.
- *
- * The portals themselves are varlink interfaces (service/), served on
- * $XDG_RUNTIME_DIR/tcc-portal.varlink; D-Bus only sees them through a
- * generic bridge (bridge/).
- */
 #include "bridge/bridge.hpp"
 #include "dynload.hpp"
 #include "service/portal.hpp"
+
+#include <xmmintrin.h>
 
 #include <cerrno>
 #include <cstdio>
@@ -42,8 +36,8 @@ int main() {
   }
   dbus_connection_set_exit_on_disconnect(bus, false);
 
-  int ret = dbus_bus_request_name(bus, BUS_NAME, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                  &err);
+  int ret =
+      dbus_bus_request_name(bus, BUS_NAME, DBUS_NAME_FLAG_DO_NOT_QUEUE, &err);
   if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
     fprintf(stderr, "tcc_portal: could not own %s%s%s\n", BUS_NAME,
             dbus_error_is_set(&err) ? ": " : "",
@@ -68,16 +62,20 @@ int main() {
     return 1;
 
   for (;;) {
-    while (dbus_connection_dispatch(bus) == DBUS_DISPATCH_DATA_REMAINS)
-      ;
+    while (dbus_connection_dispatch(bus) == DBUS_DISPATCH_DATA_REMAINS) {
+#ifdef __x86_64__
+      _mm_pause();
+#endif
+    }
     dbus_connection_flush(bus);
 
     // Until tcc_registry is up, its pollfd is ignored and we retry
     // periodically.
     bool subscribed = portal.subscribeRegistry();
-    std::vector<pollfd> fds = {{bus_fd, POLLIN, 0},
-                               {portal.fd(), POLLIN, 0},
-                               {portal.registryFd(), portal.registryEvents(), 0}};
+    std::vector<pollfd> fds = {
+        {bus_fd, POLLIN, 0},
+        {portal.fd(), POLLIN, 0},
+        {portal.registryFd(), portal.registryEvents(), 0}};
     bridge.add_pollfds(fds);
     if (poll(fds.data(), fds.size(), subscribed ? -1 : REGISTRY_RETRY_MS) < 0) {
       if (errno == EINTR)
