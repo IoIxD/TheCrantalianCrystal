@@ -1,3 +1,4 @@
+#include <emmintrin.h>
 #ifdef TCC_HAS_DBUS
 #include "sni_watcher.hpp"
 
@@ -156,6 +157,9 @@ void StatusNotifierWatcher::poll() {
     return;
   }
   while (dbus_connection_dispatch(mConn) == DBUS_DISPATCH_DATA_REMAINS) {
+#ifdef __x86_64__
+    _mm_pause();
+#endif
   }
 
   // Done outside of dispatch since it makes a blocking call.
