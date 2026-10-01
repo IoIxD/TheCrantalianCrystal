@@ -126,24 +126,12 @@ void ProgmanWindow::run() {
        * window so fuck it sure.  */
       _mm_pause();
 #endif
-      goto skip_pending;
-    } else if (MwPending(mWindow)) {
-      if ((v = MwStep(mWindow)) != 0)
-        break;
-      for (auto sub : subwindows) {
-        if ((v = MwStep(sub->subwindow)) != 0)
+    } else {
+      while (MwPending(mWindow)) {
+        if ((v = MwStep(mWindow)) != 0)
           break;
-      }
-      for (auto sub : ctrl_panel_windows) {
-        if ((v = MwStep(sub->subwindow)) != 0)
-          break;
-        if (sub->popup) {
-          if ((v = MwStep(sub->popup)) != 0)
-            break;
-        }
       }
     }
-  skip_pending:
     mVarlink->step();
 
     more = over % (wait / 2);
