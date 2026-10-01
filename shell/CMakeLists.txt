@@ -42,7 +42,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/iconlib)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/screensaver)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   tcc_iconlib
-  # tcc_progman
+  tcc_registrylib
   tcc_dynload
 )
 
