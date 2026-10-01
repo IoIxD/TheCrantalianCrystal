@@ -34,6 +34,8 @@ TCCLock::TCCLock(TCCClient *client) : mClient(client) {
   if (XKB_LIB && XKB_LIB->handle) {
     mXkbContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
   }
+
+  mRegistry = new TCCRegistryConnection();
 }
 
 TCCLock::~TCCLock() {
