@@ -943,7 +943,7 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
   seat->op_dy = 0;
 }
 
-void TCCClient::launch_component(std::string name) {
+pid_t TCCClient::launch_component(std::string name) {
   char dest[PATH_MAX];
   memset(dest, 0, sizeof(dest));
   if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
@@ -955,8 +955,14 @@ void TCCClient::launch_component(std::string name) {
 
   printf("%s\n", path.string().c_str());
 
-  const char *args[] = {path.c_str(), NULL};
-  spawn(path.c_str(), args);
+  pid_t pid = fork();
+  if (pid == 0) {
+    char *args[] = {(char *)path.c_str(), NULL};
+    execvp(path.c_str(), (char **)args);
+    _exit(1);
+  } else {
+    return pid;
+  }
 }
 
 void TCCClient::launch_kwallet() {
@@ -1104,6 +1110,12 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     func();
     break;
   }
+  case ACTION_CLOCK_LAUNCH: {
+    mClockPID = launch_component("tcc_clock");
+    break;
+  }
+  case ACTION_SPAWN_PROGMAN:
+    break;
   }
 }
 
@@ -1118,14 +1130,15 @@ void TCCClient::seat_manage(Seat *seat) {
     xkb_binding_create(seat, super, XKB_KEY_Escape, ACTION_EXIT);
     pointer_binding_create(seat, super, BTN_LEFT, ACTION_MOVE);
     pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
-    xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_TERMINAL);
 
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioRaiseVolume, ACTION_VOLUME_UP);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioLowerVolume,
                        ACTION_VOLUME_DOWN);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMute, ACTION_VOLUME_MUTE);
     xkb_binding_create(seat, 0, XKB_KEY_XF86AudioMicMute, ACTION_MIC_MUTE);
+
     xkb_binding_create(seat, super, XKB_KEY_l, ACTION_LOCK);
+    xkb_binding_create(seat, super, XKB_KEY_c, ACTION_CLOCK_LAUNCH);
 
     /*
      * binding for testing what the window manager does when it segfaults.

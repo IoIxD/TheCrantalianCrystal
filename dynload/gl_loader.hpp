@@ -41,7 +41,13 @@
   X(glUseProgram)                                                              \
   X(glVertex2f)                                                                \
   X(glVertex3f)                                                                \
-  X(glViewport)
+  X(glViewport)                                                                \
+  X(glLoadIdentity)                                                            \
+  X(glOrtho)                                                                   \
+  X(glMatrixMode)                                                              \
+  X(glLineWidth)                                                               \
+  X(glPointSize)                                                               \
+  X(glReadPixels)
 
 struct GLLib {
 #define X(name) decltype(&::name) name = nullptr;
@@ -91,4 +97,11 @@ extern GLLib *GL_LIB;
 #define glVertex2f GL_LIB->glVertex2f
 #define glVertex3f GL_LIB->glVertex3f
 #define glViewport GL_LIB->glViewport
+#define glLoadIdentity GL_LIB->glLoadIdentity
+#define glOrtho GL_LIB->glOrtho
+#define glMatrixMode GL_LIB->glMatrixMode
+#define glLineWidth GL_LIB->glLineWidth
+#define glPointSize GL_LIB->glPointSize
+#define glReadPixels GL_LIB->glReadPixels
+
 #endif

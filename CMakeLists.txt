@@ -33,6 +33,7 @@ add_subdirectory(shell)
 add_subdirectory(progman)
 add_subdirectory(portal)
 add_subdirectory(systray)
+add_subdirectory(clock)
 
 # === Install ===
 

@@ -63,6 +63,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     ACTION_VOLUME_MUTE,
     ACTION_MIC_MUTE,
     ACTION_LOCK,
+    ACTION_CLOCK_LAUNCH,
   };
 
   enum SeatOp {
@@ -317,6 +318,8 @@ private:
    */
   Output *mMainOutput = nullptr;
   bool mMainOutputChanged = false;
+
+  pid_t mClockPID = 0;
 
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
@@ -586,7 +589,7 @@ private:
   void seat_pointer_move(Seat *seat, Window *window);
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
   void launch_initial_components();
-  void launch_component(std::string name);
+  pid_t launch_component(std::string name);
   void launch_kwallet();
   void spawn(const char *path, const char *const argv[]);
   void reap_children();

@@ -1,6 +1,7 @@
-#include "client.hpp"
 #include "../lock/lock.hpp"
+#include "client.hpp"
 
+#include <csignal>
 #include <cstdint>
 #include <vector>
 
@@ -21,6 +22,17 @@ void TCCClient::xkb_binding_create(Seat *seat, uint32_t mods,
   river_xkb_binding_v1_enable(binding_ptr->id);
 
   seat->xkb_bindings.push_back(binding);
+}
+
+void TCCClient::river_xkb_binding_released(
+    void *data, struct river_xkb_binding_v1
+                    *river_xkb_binding_v1) { /* special: clock disappears when
+                                                pressed/released */
+  XkbBinding *binding = (XkbBinding *)data;
+  if (binding->client->mClockPID) {
+    kill(binding->client->mClockPID, 9);
+    binding->client->mClockPID = 0;
+  }
 }
 
 void TCCClient::xkb_binding_destroy(std::shared_ptr<XkbBinding> binding) {
@@ -85,8 +97,6 @@ void TCCClient::river_pointer_binding_released(
 }
 
 // Ignored events
-void TCCClient::river_xkb_binding_released(
-    void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
 void TCCClient::river_xkb_binding_stop_repeat(
     void *data, struct river_xkb_binding_v1 *river_xkb_binding_v1) {}
 
