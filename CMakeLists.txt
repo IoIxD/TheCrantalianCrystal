@@ -50,6 +50,7 @@ set(TCC_INSTALL_TARGETS
   tcc_varlinklib
   tcc_registry
   tcc_registrylib
+  tcc_clock
 )
 if(TARGET tcc_portal)
   list(APPEND TCC_INSTALL_TARGETS tcc_portal)

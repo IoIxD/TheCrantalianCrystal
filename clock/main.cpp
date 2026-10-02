@@ -124,7 +124,6 @@ void MWAPI resize(MwWidget handle, void *user, void *call) {
 
 int main() {
   MwColor bgcolor, fgcolor;
-  MwRect bounds;
 
   if (!dynload_setup::gl()) {
     return 1;
@@ -134,7 +133,6 @@ int main() {
 
   ctx.window = MwVaCreateWidget(MwWindowClass, "main", NULL, MwDEFAULT,
                                 MwDEFAULT, 250, 300, MwNtitle, "clock", NULL);
-  MwGetScreenSize(ctx.window, &bounds);
   MwShow(ctx.window, 0);
 
   bgcolor = MwParseColor(ctx.window, MwGetString(ctx.window, MwNbackground));
@@ -158,7 +156,7 @@ int main() {
   MwLLBeginStateChange(ctx.window->lowlevel);
   MwLLMakeToolWindow(ctx.window->lowlevel);
   MwLLEndStateChange(ctx.window->lowlevel);
-  MwVaApply(ctx.window, MwNx, 50, MwNy, bounds.height - 50 - 300, NULL);
+  MwVaApply(ctx.window, MwNx, 50, MwNy, 50, NULL);
 
   MwShow(ctx.window, 1);
   MwStep(ctx.window);
