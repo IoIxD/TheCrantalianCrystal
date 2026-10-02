@@ -208,6 +208,7 @@ public:
     int y = 0;
     int width = 10;
     int height = 10;
+    river_layer_shell_output_v1 *layer_shell;
 
     bool contains(int px, int py) const {
       return px >= x && px < x + width && py >= y && py < y + height;
@@ -310,6 +311,13 @@ private:
   TCCClientVarlink *mVarlink;
   std::thread *mThread;
 
+  /*
+   * main output to launch windows on.
+   * TODO: set this via a config instead of by "largest monitor"
+   */
+  Output *mMainOutput = nullptr;
+  bool mMainOutputChanged = false;
+
   const wl_registry_listener mRegistryListener = {
       .global = registry_global,
       .global_remove = global_remove,
@@ -325,6 +333,7 @@ private:
   river_input_manager_v1 *mRiverInputManager = nullptr;
   river_xkb_bindings_v1 *mRiverXKBBinding = nullptr;
   wp_cursor_shape_manager_v1 *mCursorShapeManager = nullptr;
+  river_layer_shell_v1 *mRiverLayerShell = nullptr;
 
   class TCCLock *mLock = nullptr;
 

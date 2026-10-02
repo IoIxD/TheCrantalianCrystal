@@ -14,7 +14,8 @@ TCCClientVarlink::TCCClientVarlink(TCCClient *cli) : mClient(cli) {
            &mService, "TCC", "Registry Service", "1", "https://ioi-xd.net",
            "unix:@tcc_desktop_varlink.socket", -1)) != 0) {
     printf("varlink_service_new error: %s\n", varlink_error_string(-error));
-    raise(SIGTRAP);
+    mValid = false;
+    return;
   };
   VarlinkCall *later_call = NULL;
   if ((error = varlink_service_add_interface(
@@ -25,10 +26,14 @@ TCCClientVarlink::TCCClientVarlink(TCCClient *cli) : mClient(cli) {
            )) != 0) {
     printf("varlink_service_add_interface error: %s\n",
            varlink_error_string(-error));
-    raise(SIGTRAP);
+    mValid = false;
+    return;
   };
 }
 void TCCClientVarlink::run() {
+  if (!mValid) {
+    return;
+  }
   mEPollFD = epoll_create1(EPOLL_CLOEXEC);
   if (mEPollFD < 0) {
     perror("epoll_create1");

@@ -11,6 +11,7 @@ class TCCClientVarlink {
   VarlinkService *mService;
   int mEPollFD = -1;
   std::thread *mThread;
+  bool mValid = true;
 
   static void InitiateClose(VarlinkService *service, VarlinkCall *call,
                             VarlinkObject *parameters, uint64_t flags,
@@ -21,5 +22,6 @@ class TCCClientVarlink {
 
 public:
   TCCClientVarlink(class TCCClient *cli);
+  bool valid() { return mValid; }
   void run();
 };

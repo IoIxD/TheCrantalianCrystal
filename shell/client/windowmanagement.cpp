@@ -110,6 +110,11 @@ void TCCClient::river_wm_manage_start(
     client->mDoInitialLaunch = false;
   }
 
+  if (client->mMainOutputChanged) {
+    river_layer_shell_output_v1_set_default(client->mMainOutput->layer_shell);
+    client->mMainOutputChanged = false;
+  }
+
   river_window_manager_v1_manage_finish(client->mRiverWindowManager);
 }
 
@@ -156,7 +161,8 @@ void TCCClient::river_wm_window(
   river_window_v1_add_listener(window->id, &client->mRiverWindowListener,
                                window);
 
-  Output *output = client->output_under_pointer();
+  // Output *output = client->output_under_pointer();
+  Output *output = client->mMainOutput;
   if (output) {
     output->windows.push_back(window);
   } else {
@@ -172,6 +178,9 @@ void TCCClient::river_wm_output(
   auto output = new Output();
   output->client = client->shared_from_this();
   output->id = id;
+  output->layer_shell =
+      river_layer_shell_v1_get_output(client->mRiverLayerShell, id);
+  printf("%p\n", output->layer_shell);
 
   river_output_v1_add_listener(output->id, &client->mRiverOutputListener,
                                output);
@@ -354,6 +363,16 @@ void TCCClient::river_output_dimensions(void *data, struct river_output_v1 *id,
   output->width = (width < 1) ? 1 : width;
   output->height = (height < 1) ? 1 : height;
   output->geometry_changed = true;
+
+  if (!output->client->mMainOutput) {
+    output->client->mMainOutput = output;
+    output->client->mMainOutputChanged = true;
+  } else {
+    if (output->width >= output->client->mMainOutput->width) {
+      output->client->mMainOutput = output;
+      output->client->mMainOutputChanged = true;
+    }
+  };
 }
 
 void TCCClient::river_seat_removed(void *data, struct river_seat_v1 *id) {
