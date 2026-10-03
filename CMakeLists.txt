@@ -14,6 +14,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 add_subdirectory(submodules/milsko)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/submodules/milsko/include)
 
+add_subdirectory(resource)
+
 add_subdirectory(dynload)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dynload)
 
@@ -34,6 +36,7 @@ add_subdirectory(progman)
 add_subdirectory(portal)
 add_subdirectory(systray)
 add_subdirectory(clock)
+add_subdirectory(snip)
 
 # === Install ===
 
@@ -51,6 +54,7 @@ set(TCC_INSTALL_TARGETS
   tcc_registry
   tcc_registrylib
   tcc_clock
+  tcc_snip
 )
 if(TARGET tcc_portal)
   list(APPEND TCC_INSTALL_TARGETS tcc_portal)
