@@ -16,6 +16,7 @@
   X(glColor3f)                                                                 \
   X(glColor4f)                                                                 \
   X(glCompileShader)                                                           \
+  X(glCopyTexImage2D)                                                          \
   X(glCreateProgram)                                                           \
   X(glCreateShader)                                                            \
   X(glDeleteShader)                                                            \
@@ -36,8 +37,11 @@
   X(glTexCoord2f)                                                              \
   X(glTexImage2D)                                                              \
   X(glTexParameteri)                                                           \
+  X(glUniform1f)                                                               \
   X(glUniform1i)                                                               \
   X(glUniform2f)                                                               \
+  X(glUniform3f)                                                               \
+  X(glUniform4f)                                                               \
   X(glUseProgram)                                                              \
   X(glVertex2f)                                                                \
   X(glVertex3f)                                                                \
@@ -71,6 +75,7 @@ extern GLLib *GL_LIB;
 #define glColor3f GL_LIB->glColor3f
 #define glColor4f GL_LIB->glColor4f
 #define glCompileShader GL_LIB->glCompileShader
+#define glCopyTexImage2D GL_LIB->glCopyTexImage2D
 #define glCreateProgram GL_LIB->glCreateProgram
 #define glCreateShader GL_LIB->glCreateShader
 #define glDeleteShader GL_LIB->glDeleteShader
@@ -91,8 +96,11 @@ extern GLLib *GL_LIB;
 #define glTexCoord2f GL_LIB->glTexCoord2f
 #define glTexImage2D GL_LIB->glTexImage2D
 #define glTexParameteri GL_LIB->glTexParameteri
+#define glUniform1f GL_LIB->glUniform1f
 #define glUniform1i GL_LIB->glUniform1i
 #define glUniform2f GL_LIB->glUniform2f
+#define glUniform3f GL_LIB->glUniform3f
+#define glUniform4f GL_LIB->glUniform4f
 #define glUseProgram GL_LIB->glUseProgram
 #define glVertex2f GL_LIB->glVertex2f
 #define glVertex3f GL_LIB->glVertex3f
