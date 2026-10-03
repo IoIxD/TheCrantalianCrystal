@@ -14,7 +14,7 @@ int main() {
 
   MwLibraryInit();
 
-  TCCSystrayClient systray = TCCSystrayClient(has_wl, has_dbus, has_pulse);
+  TCCSystrayClient systray = TCCSystrayClient(has_dbus, has_pulse, has_wl);
 
   systray.run();
 }

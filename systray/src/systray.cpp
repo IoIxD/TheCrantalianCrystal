@@ -2,8 +2,8 @@
 #include <emmintrin.h>
 #ifdef TCC_HAS_DBUS
 #include "dbus/sni_watcher.hpp"
-#include "othericons/upower_battery.hpp"
 #endif
+#include "othericons/sysfs_battery.hpp"
 #ifdef TCC_HAS_PULSE
 #include "othericons/pulse_volume.hpp"
 #endif
@@ -31,9 +31,9 @@ TCCSystrayClient::TCCSystrayClient(bool has_dbus, bool has_pulse, bool has_wl) {
 #ifdef TCC_HAS_DBUS
   if (has_dbus) {
     addProtocol(std::make_unique<StatusNotifierWatcher>());
-    addProtocol(std::make_unique<UPowerBattery>());
   }
 #endif
+  addProtocol(std::make_unique<SysfsBattery>());
 #ifdef TCC_HAS_PULSE
   if (has_pulse) {
     addProtocol(std::make_unique<PulseVolume>(PulseVolume::Direction::Input));
