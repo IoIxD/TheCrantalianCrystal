@@ -29,8 +29,9 @@ void TCCClient::river_xkb_binding_released(
                     *river_xkb_binding_v1) { /* special: clock disappears when
                                                 pressed/released */
   XkbBinding *binding = (XkbBinding *)data;
-  if (binding->client->mClockPID) {
-    kill(binding->client->mClockPID, 9);
+  if (binding->client->mClockPID > 0) {
+    // (it fades out before quitting)
+    kill(binding->client->mClockPID, SIGTERM);
     binding->client->mClockPID = 0;
   }
 }

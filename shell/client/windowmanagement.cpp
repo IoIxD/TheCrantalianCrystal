@@ -943,7 +943,8 @@ void TCCClient::seat_pointer_resize(Seat *seat, Window *window,
   seat->op_dy = 0;
 }
 
-pid_t TCCClient::launch_component(std::string name) {
+pid_t TCCClient::launch_component(std::string name,
+                                  std::vector<std::string> args) {
   char dest[PATH_MAX];
   memset(dest, 0, sizeof(dest));
   if (readlink("/proc/self/exe", dest, PATH_MAX) == -1) {
@@ -957,12 +958,19 @@ pid_t TCCClient::launch_component(std::string name) {
 
   pid_t pid = fork();
   if (pid == 0) {
-    char *args[] = {(char *)path.c_str(), NULL};
-    execvp(path.c_str(), (char **)args);
+    std::vector<char *> argv = {(char *)path.c_str()};
+    for (std::string &arg : args) {
+      argv.push_back(arg.data());
+    }
+    argv.push_back(NULL);
+    execvp(path.c_str(), argv.data());
     _exit(1);
-  } else {
-    return pid;
   }
+  if (pid > 0)
+    mChildren.push_back(pid);
+  else
+    perror("fork");
+  return pid;
 }
 
 void TCCClient::launch_kwallet() {
@@ -1111,9 +1119,20 @@ void TCCClient::seat_action(Seat *seat, Action action) {
     break;
   }
   case ACTION_CLOCK_LAUNCH: {
-    mClockPID = launch_component("tcc_clock");
+    // The clock goes on the main output (the default for layer surfaces), and
+    // needs to know which that is to capture what's behind it.
+    mClockPID = launch_component(
+        "tcc_clock",
+        {std::to_string(mMainOutput ? mMainOutput->wl_output_name : 0)});
     break;
   }
+  case ACTION_SNIP:
+    // The snip goes on the main output (the default for layer surfaces), and
+    // needs to know which that is to capture what's on it.
+    launch_component("tcc_snip", {std::to_string(
+                                     mMainOutput ? mMainOutput->wl_output_name
+                                                 : 0)});
+    break;
   case ACTION_SPAWN_PROGMAN:
     break;
   }
@@ -1139,6 +1158,7 @@ void TCCClient::seat_manage(Seat *seat) {
 
     xkb_binding_create(seat, super, XKB_KEY_l, ACTION_LOCK);
     xkb_binding_create(seat, super, XKB_KEY_c, ACTION_CLOCK_LAUNCH);
+    xkb_binding_create(seat, 0, XKB_KEY_Print, ACTION_SNIP);
 
     /*
      * binding for testing what the window manager does when it segfaults.

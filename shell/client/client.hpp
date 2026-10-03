@@ -64,6 +64,7 @@ class TCCClient : public std::enable_shared_from_this<TCCClient> {
     ACTION_MIC_MUTE,
     ACTION_LOCK,
     ACTION_CLOCK_LAUNCH,
+    ACTION_SNIP,
   };
 
   enum SeatOp {
@@ -589,7 +590,8 @@ private:
   void seat_pointer_move(Seat *seat, Window *window);
   void seat_pointer_resize(Seat *seat, Window *window, uint32_t edges);
   void launch_initial_components();
-  pid_t launch_component(std::string name);
+  pid_t launch_component(std::string name,
+                         std::vector<std::string> args = {});
   void launch_kwallet();
   void spawn(const char *path, const char *const argv[]);
   void reap_children();

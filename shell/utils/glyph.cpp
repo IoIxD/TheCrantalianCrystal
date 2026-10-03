@@ -1,5 +1,5 @@
 #include "glyph.hpp"
-#include "../client/font.hpp"
+#include "fonts.hpp"
 #include "texture.hpp"
 #include "utf8.hpp"
 #include <assert.h>

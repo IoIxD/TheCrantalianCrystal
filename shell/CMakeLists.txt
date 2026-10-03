@@ -44,6 +44,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   tcc_iconlib
   tcc_registrylib
   tcc_dynload
+  tcc_fonts
 )
 
 # For logind, see lock/logind.cpp.
